@@ -16,7 +16,7 @@ California	FEDEX- Priority	Luis	Abdala	+639614337118	kingkonlouis@gmail.com	95 F
 # Use the parse_and_get_bulk_rates tool
 result = await parse_and_get_bulk_rates(
     spreadsheet_data="""<paste your data here>""",
-    from_city="Los Angeles"  # Options: Los Angeles, San Francisco, San Diego
+    from_city="Los Angeles"  # Options: Los Angeles (CA), Las Vegas (NV)
 )
 ```
 
@@ -26,19 +26,13 @@ result = await parse_and_get_bulk_rates(
 - **Store**: Beauty & Wellness LA
 - **Address**: 8500 Beverly Blvd, Suite 120, Los Angeles, CA 90048
 - **Phone**: 310-555-0199
-- **Best for**: Retail beauty/wellness products
+- **Best for**: All retail and e-commerce shipments
 
-### San Francisco
-- **Store**: Pacific Beauty Supply Co
-- **Address**: 2200 Market St, San Francisco, CA 94114
-- **Phone**: 415-555-0142
-- **Best for**: Wholesale beauty supplies
-
-### San Diego
-- **Store**: Coastal Wellness & Spa Supplies
-- **Address**: 1025 Garnet Ave, San Diego, CA 92109
-- **Phone**: 619-555-0188
-- **Best for**: Spa and wellness products
+### Las Vegas
+- **Store**: Las Vegas Distribution Center
+- **Address**: 3900 Paradise Rd, Suite 200, Las Vegas, NV 89169
+- **Phone**: 702-555-0188
+- **Best for**: Nevada-based shipments, Southwest distribution
 
 ## What the Tool Does
 

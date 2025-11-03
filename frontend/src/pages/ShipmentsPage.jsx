@@ -3,7 +3,6 @@ import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { SkeletonCard } from '@/components/ui/Skeleton';
 import ShipmentTable from '@/components/shipments/ShipmentTable';
 import ShipmentFilters from '@/components/shipments/ShipmentFilters';
 import { shipmentAPI } from '@/services/api';
@@ -76,7 +75,7 @@ export default function ShipmentsPage() {
             },
           ]);
         }
-      } catch (error) {
+      } catch {
         toast.error('Failed to Load Shipments', { description: 'Using demo data instead' });
         // Fallback to mock data
         setShipments([

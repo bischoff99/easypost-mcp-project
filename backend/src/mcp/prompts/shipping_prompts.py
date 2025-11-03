@@ -14,4 +14,3 @@ def register_shipping_prompts(mcp):
     2. Compare carrier options
     3. Create the shipment with the best rate
     4. Provide tracking information"""
-

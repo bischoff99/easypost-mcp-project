@@ -21,6 +21,8 @@ def register_shipment_tools(mcp, easypost_service):
         from_address: dict,
         parcel: dict,
         carrier: str = "USPS",
+        contents: str = "General Merchandise",
+        value: float = 50.0,
         ctx: Context = None,
     ) -> dict:
         """
@@ -31,6 +33,9 @@ def register_shipment_tools(mcp, easypost_service):
             from_address: Origin address (same structure)
             parcel: Package dimensions (length, width, height, weight in inches/ounces)
             carrier: Preferred carrier (default: USPS)
+            contents: Item description for customs (default: "General Merchandise")
+            value: Item value in USD for customs (default: 50.0)
+            ctx: MCP context
 
         Returns:
             Standardized response with status, data, message, timestamp
@@ -44,22 +49,42 @@ def register_shipment_tools(mcp, easypost_service):
             if ctx:
                 await ctx.info(f"Creating shipment with {carrier}")
 
+            # Check if international shipment
+            is_international = to_addr.country != from_addr.country
+            customs_info = None
+
+            if is_international:
+                # Create customs info for international shipment
+                customs_item = easypost_service.client.customs_item.create(
+                    description=contents,
+                    hs_tariff_number="9999.00.0000",  # Generic code
+                    origin_country=from_addr.country,
+                    quantity=1,
+                    value=value,
+                    weight=parcel_obj.weight,
+                )
+                customs_info = easypost_service.client.customs_info.create(
+                    customs_items=[customs_item]
+                )
+
             # Add timeout to prevent SSE timeout errors
             result = await asyncio.wait_for(
                 easypost_service.create_shipment(
-                    to_addr.dict(), from_addr.dict(), parcel_obj.dict(), carrier
+                    to_addr.dict(), from_addr.dict(), parcel_obj.dict(), carrier, True, customs_info
                 ),
                 timeout=30.0,
             )
 
-            if ctx and result.status == "success":
-                await ctx.info(f"Shipment created: {result.shipment_id}")
+            if ctx and result.get("status") == "success":
+                await ctx.info(f"Shipment created: {result.get('id')}")
 
             return {
-                "status": result.status,
-                "data": result.dict() if result.status == "success" else None,
+                "status": result.get("status", "error"),
+                "data": result if result.get("status") == "success" else None,
                 "message": (
-                    "Shipment created successfully" if result.status == "success" else result.error
+                    "Shipment created successfully"
+                    if result.get("status") == "success"
+                    else result.get("message", "Unknown error")
                 ),
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
@@ -80,10 +105,10 @@ def register_shipment_tools(mcp, easypost_service):
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
         except Exception as e:
-            logger.error(f"Tool error: {str(e)}")
+            logger.error(f"Tool error: {str(e)}", exc_info=True)
             return {
                 "status": "error",
                 "data": None,
-                "message": "An unexpected error occurred",
+                "message": f"Error: {str(e)}",
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }

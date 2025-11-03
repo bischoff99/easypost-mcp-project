@@ -18,7 +18,8 @@ def register_shipment_resources(mcp, easypost_service):
             # Add timeout to prevent SSE timeout errors
             result = await asyncio.wait_for(
                 easypost_service.get_shipments_list(
-                    page_size=10, purchased=True  # Get last 10 purchased shipments
+                    page_size=10,
+                    purchased=True,  # Get last 10 purchased shipments
                 ),
                 timeout=15.0,
             )
@@ -43,4 +44,3 @@ def register_shipment_resources(mcp, easypost_service):
                 },
                 indent=2,
             )
-

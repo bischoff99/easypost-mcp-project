@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Package, TruckIcon, DollarSign, CheckCircle, Plus, Search, BarChart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Skeleton, SkeletonStats, SkeletonCard, SkeletonText } from '@/components/ui/Skeleton';
@@ -105,7 +106,7 @@ export default function DashboardPage() {
           }));
           setRecentActivity(transformedActivity);
         }
-      } catch (error) {
+      } catch {
         toast.error('Failed to Load Dashboard', { description: 'Using demo data instead' });
         // Fallback to mock data if API fails
         setStats([
@@ -212,7 +213,7 @@ export default function DashboardPage() {
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
         <p className="text-muted-foreground">
-          Welcome back! Here's an overview of your shipping operations.
+          Welcome back! Here&apos;s an overview of your shipping operations.
         </p>
       </div>
 

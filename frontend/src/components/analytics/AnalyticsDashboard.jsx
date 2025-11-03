@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { TrendingUp, Package, DollarSign, TruckIcon } from 'lucide-react';
 import { Card } from '../ui/Card';
@@ -24,11 +24,7 @@ export default function AnalyticsDashboard({ days = 30 }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    fetchAnalytics();
-  }, [days]);
-
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = React.useCallback(async () => {
     setLoading(true);
     setError('');
 
@@ -47,7 +43,11 @@ export default function AnalyticsDashboard({ days = 30 }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [days]);
+
+  React.useEffect(() => {
+    fetchAnalytics();
+  }, [fetchAnalytics]);
 
   if (loading) {
     return (

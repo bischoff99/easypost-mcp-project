@@ -8,9 +8,7 @@ def register_tracking_prompts(mcp):
     def track_and_notify(tracking_number: str, recipient_email: str = None) -> str:
         """Track a shipment and format notification message."""
         email_part = (
-            f" and prepare an email notification for {recipient_email}"
-            if recipient_email
-            else ""
+            f" and prepare an email notification for {recipient_email}" if recipient_email else ""
         )
         return f"""Track shipment {tracking_number}{email_part}.
 
@@ -26,4 +24,3 @@ Please:
    - Subject line
    - Body with tracking details
    - Next steps for recipient''' if recipient_email else ''}"""
-

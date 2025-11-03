@@ -48,29 +48,47 @@ Auto-fix visible errors using AI reasoning and MCP tools.
 
 **Stage 1 - Detect Error**:
 - Server: Desktop Commander
-- Action: `read_process_output` from last command
-- Parse: Extract error message and location
+- Tool: `read_process_output` from last command
+- Action: Parse error message, extract location and context
+- Output: Error type, file path, line number, message
 
 **Stage 2 - Analyze Root Cause**:
 - Server: Sequential-thinking
-- Action: `sequentialthinking` with error context
-- Output: Step-by-step cause analysis
+- Tool: `sequentialthinking` with error context
+- Method: 6-12 thought analysis of root cause
+- Output: Step-by-step diagnosis and solution approach
 
-**Stage 3 - Get Fix Pattern**:
+**Stage 3 - Get Fix Pattern** (Optional, cached):
 - Server: Context7
-- Library: Auto-detect from error (`/fastapi/fastapi`, `/websites/react_dev`)
+- Tool: `get-library-docs`
+- Library: Auto-detect from error (`/fastapi/fastapi`, `/react/react`)
 - Topic: Specific error type (e.g., "import error resolution")
 - Tokens: 2000
+- Cache: 24h for common patterns
 
-**Stage 4 - Apply Fix**:
+**Stage 4 - Apply Fix** (Desktop Commander):
 - Server: Desktop Commander
-- Action: `edit_block` or `write_file`
-- Backup: Creates snapshot before changes
+- Tool: `edit_block` for surgical code editing
+- Method: 
+  ```python
+  edit_block(
+    file_path="path/to/file.py",
+    old_string="exact code to replace (3-5 lines context)",
+    new_string="corrected code with fix applied"
+  )
+  ```
+- Safety Features:
+  - Validates unique match before applying
+  - Character-level diff on close matches
+  - Creates backup before changes
+  - Shows what would change in dry-run mode
 
-**Stage 5 - Verify**:
+**Stage 5 - Verify Fix**:
 - Server: Desktop Commander
-- Action: Run relevant tests
-- Rollback: If tests fail, restore snapshot
+- Tool: `start_process` to run tests
+- Action: Run relevant tests (pytest, vitest, go test)
+- Success: Fix complete
+- Failure: Rollback using backup, try alternative fix
 
 ## Smart Detection Examples
 
@@ -167,12 +185,26 @@ Result: ✅ All tests passed
 
 ## Performance
 
-- Error detection: <1s
-- AI analysis: 3-5s
-- Context7 lookup: 2-4s (cached after first use)
-- Fix application: 1-2s
-- Test verification: 3-6s (parallel)
+- Error detection: <1s (Desktop Commander read_process_output)
+- AI analysis: 3-5s (Sequential-thinking with 6-12 thoughts)
+- Context7 lookup: 2-4s (cached after first use, optional)
+- Fix application: 1-2s (Desktop Commander edit_block)
+- Test verification: 3-6s (Desktop Commander start_process, parallel)
 - **Total: 10-18s** for complete fix cycle
+
+## Desktop Commander Tools Used
+
+**Primary Tool: `edit_block`**
+- Surgical code replacement with minimal context (3-5 lines)
+- Validates unique match before applying
+- Character-level diff shown for near matches
+- Safe and precise edits
+
+**Supporting Tools:**
+- `read_process_output` - Detect errors from terminal
+- `start_process` - Run test verification  
+- `read_file` - Gather context for analysis
+- `list_sessions` - Check running processes
 
 ## Safety Features
 

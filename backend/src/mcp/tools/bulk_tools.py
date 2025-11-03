@@ -32,10 +32,42 @@ class ShipmentLine(BaseModel):
     contents: str
 
 
-# Realistic retail store addresses by state
-STORE_ADDRESSES = {
+# Product category detection patterns
+PRODUCT_CATEGORIES = {
+    "bedding": ["pillow", "mattress", "sheet", "blanket", "comforter", "duvet"],
+    "sporting": ["fishing", "reel", "rod", "tackle", "outdoor", "camping", "hunting"],
+    "beauty": ["cosmetic", "skincare", "makeup", "lotion", "cream", "serum"],
+    "electronics": ["phone", "computer", "tablet", "headphone", "speaker", "camera"],
+}
+
+# Warehouse addresses by product category
+WAREHOUSE_BY_CATEGORY = {
     "California": {
-        "Los Angeles": {
+        "bedding": {
+            "name": "LA Home Goods Warehouse",
+            "company": "Premium Bedding Distribution",
+            "street1": "8500 Beverly Blvd",
+            "street2": "Suite 120",
+            "city": "Los Angeles",
+            "state": "CA",
+            "zip": "90048",
+            "country": "US",
+            "phone": "310-555-0199",
+            "email": "bedding@lahomegoods.com",
+        },
+        "sporting": {
+            "name": "LA Outdoor Gear Hub",
+            "company": "California Outdoor Supply",
+            "street1": "1200 S Broadway",
+            "street2": "",
+            "city": "Los Angeles",
+            "state": "CA",
+            "zip": "90015",
+            "country": "US",
+            "phone": "323-555-0155",
+            "email": "sporting@laoutdoor.com",
+        },
+        "beauty": {
             "name": "Beauty & Wellness LA",
             "company": "Natural Essentials Store",
             "street1": "8500 Beverly Blvd",
@@ -47,55 +79,38 @@ STORE_ADDRESSES = {
             "phone": "310-555-0199",
             "email": "shipping@beautywellnessla.com",
         },
-        "San Francisco": {
-            "name": "Pacific Beauty Supply",
-            "company": "Pacific Beauty Supply Co",
-            "street1": "2200 Market St",
+        "default": {
+            "name": "LA General Warehouse",
+            "company": "California Distribution Center",
+            "street1": "1500 E Olympic Blvd",
             "street2": "",
-            "city": "San Francisco",
+            "city": "Los Angeles",
             "state": "CA",
-            "zip": "94114",
+            "zip": "90021",
             "country": "US",
-            "phone": "415-555-0142",
-            "email": "orders@pacificbeauty.com",
+            "phone": "213-555-0100",
+            "email": "shipping@ladistribution.com",
         },
-        "San Diego": {
-            "name": "Coastal Wellness",
-            "company": "Coastal Wellness & Spa Supplies",
-            "street1": "1025 Garnet Ave",
-            "street2": "",
-            "city": "San Diego",
-            "state": "CA",
-            "zip": "92109",
-            "country": "US",
-            "phone": "619-555-0188",
-            "email": "ship@coastalwellness.com",
-        },
+    },
+}
+
+# Legacy format for backward compatibility
+STORE_ADDRESSES = {
+    "California": {
+        "Los Angeles": WAREHOUSE_BY_CATEGORY["California"]["default"],
     },
     "Nevada": {
         "Las Vegas": {
-            "name": "Desert Essentials",
-            "company": "Desert Essentials Distribution",
-            "street1": "3500 S Las Vegas Blvd",
-            "street2": "Suite 210",
+            "name": "Las Vegas Distribution Center",
+            "company": "Nevada Logistics Hub",
+            "street1": "3900 Paradise Rd",
+            "street2": "Suite 200",
             "city": "Las Vegas",
             "state": "NV",
-            "zip": "89109",
+            "zip": "89169",
             "country": "US",
-            "phone": "702-555-0177",
-            "email": "ship@desertessentials.com",
-        },
-        "Reno": {
-            "name": "Sierra Outdoor Outfitters",
-            "company": "Sierra Outdoor Supply Co",
-            "street1": "255 N Sierra St",
-            "street2": "",
-            "city": "Reno",
-            "state": "NV",
-            "zip": "89501",
-            "country": "US",
-            "phone": "775-555-0163",
-            "email": "orders@sierraoutdoor.com",
+            "phone": "702-555-0188",
+            "email": "shipping@lasvegasdistro.com",
         },
     },
 }
@@ -146,6 +161,48 @@ def parse_weight(weight_str: str) -> float:
     return 16.0  # Default 1 lb
 
 
+def detect_product_category(contents: str) -> str:
+    """
+    Detect product category from contents string.
+
+    Args:
+        contents: Item description/contents string
+
+    Returns:
+        Category name (bedding, sporting, beauty, electronics, default)
+    """
+    contents_lower = contents.lower()
+
+    for category, keywords in PRODUCT_CATEGORIES.items():
+        for keyword in keywords:
+            if keyword in contents_lower:
+                return category
+
+    return "default"
+
+
+def get_warehouse_address(state: str, category: str) -> dict:
+    """
+    Get warehouse address based on state and product category.
+
+    Args:
+        state: Origin state (e.g., "California")
+        category: Product category
+
+    Returns:
+        Warehouse address dictionary
+    """
+    if state not in WAREHOUSE_BY_CATEGORY:
+        state = "California"  # Default fallback
+
+    state_warehouses = WAREHOUSE_BY_CATEGORY[state]
+
+    if category in state_warehouses:
+        return state_warehouses[category]
+
+    return state_warehouses.get("default", state_warehouses[list(state_warehouses.keys())[0]])
+
+
 def parse_spreadsheet_line(line: str) -> Dict[str, Any]:
     """
     Parse a tab-separated line from spreadsheet.
@@ -193,14 +250,19 @@ def register_bulk_tools(mcp, easypost_service):
         """
         Parse spreadsheet data and get shipping rates for multiple shipments.
 
+        Automatically detects product category from contents and uses appropriate warehouse:
+        - Bedding items (pillows, mattresses) → Home Goods Warehouse
+        - Sporting goods (fishing, outdoor) → Outdoor Gear Hub
+        - Beauty products → Beauty & Wellness
+        - Default → General Warehouse
+
         Args:
             spreadsheet_data: Tab-separated shipment data (paste from spreadsheet)
-            from_city: Override city (e.g., "Los Angeles", "Las Vegas").
-                      If None, auto-detects from origin_state column
+            from_city: DEPRECATED - Now auto-detects warehouse per item
             ctx: MCP context for progress reporting
 
         Returns:
-            Rates for all shipments with recommendations
+            Rates for all shipments with warehouse assignments
         """
         try:
             if ctx:
@@ -217,34 +279,9 @@ def register_bulk_tools(mcp, easypost_service):
                     "timestamp": datetime.now(timezone.utc).isoformat(),
                 }
 
-            # Auto-detect origin state from first line if not specified
-            if from_city is None:
-                first_line_data = parse_spreadsheet_line(lines[0])
-                origin_state = first_line_data["origin_state"]
-
-                # Map state to default city
-                state_defaults = {
-                    "California": "Los Angeles",
-                    "Nevada": "Las Vegas",
-                }
-                from_city = state_defaults.get(origin_state, "Los Angeles")
-
-                if ctx:
-                    await ctx.info(f"Auto-detected origin: {from_city} (from {origin_state})")
-
-            # Get origin address - check both state structures
-            from_address = None
-            for state_stores in STORE_ADDRESSES.values():
-                if from_city in state_stores:
-                    from_address = state_stores[from_city]
-                    break
-
-            # Fallback to LA if city not found
-            if from_address is None:
-                from_address = STORE_ADDRESSES["California"]["Los Angeles"]
-
             results = []
             total_lines = len(lines)
+            used_warehouses = set()  # Track which warehouses are used
 
             for idx, line in enumerate(lines):
                 try:
@@ -253,6 +290,19 @@ def register_bulk_tools(mcp, easypost_service):
 
                     # Parse line
                     data = parse_spreadsheet_line(line)
+
+                    # Detect product category from contents
+                    category = detect_product_category(data["contents"])
+
+                    # Get appropriate warehouse address
+                    from_address = get_warehouse_address(data["origin_state"], category)
+                    warehouse_key = f"{from_address['company']}"
+                    used_warehouses.add(warehouse_key)
+
+                    if ctx:
+                        await ctx.info(
+                            f"Shipment {idx + 1}: {category} → {from_address['company']}"
+                        )
 
                     # Parse dimensions and weight
                     length, width, height = parse_dimensions(data["dimensions"])
@@ -296,12 +346,19 @@ def register_bulk_tools(mcp, easypost_service):
                             "weight_oz": round(weight_oz, 2),
                             "dimensions": f"{length} x {width} x {height} in",
                             "contents": data["contents"][:100],
-                            "rates": rates_result.get("data", [])
-                            if rates_result.get("status") == "success"
-                            else [],
-                            "error": rates_result.get("message")
-                            if rates_result.get("status") == "error"
-                            else None,
+                            "category": category,
+                            "from_warehouse": from_address["company"],
+                            "from_city": from_address["city"],
+                            "rates": (
+                                rates_result.get("data", [])
+                                if rates_result.get("status") == "success"
+                                else []
+                            ),
+                            "error": (
+                                rates_result.get("message")
+                                if rates_result.get("status") == "error"
+                                else None
+                            ),
                         }
                     )
 
@@ -316,7 +373,9 @@ def register_bulk_tools(mcp, easypost_service):
 
             if ctx:
                 await ctx.report_progress(total_lines, total_lines)
-                await ctx.info(f"Processed {len(results)} shipments")
+                await ctx.info(
+                    f"Processed {len(results)} shipments from {len(used_warehouses)} warehouses"
+                )
 
             # Calculate summary
             successful = len([r for r in results if not r.get("error")])
@@ -325,15 +384,19 @@ def register_bulk_tools(mcp, easypost_service):
             return {
                 "status": "success",
                 "data": {
-                    "from_address": from_address,
                     "shipments": results,
+                    "warehouses_used": sorted(used_warehouses),
                     "summary": {
                         "total": len(results),
                         "successful": successful,
                         "failed": failed,
+                        "warehouses": len(used_warehouses),
                     },
                 },
-                "message": f"Processed {len(results)} shipments ({successful} successful, {failed} failed)",
+                "message": (
+                    f"Processed {len(results)} shipments from {len(used_warehouses)} warehouses "
+                    f"({successful} successful, {failed} failed)"
+                ),
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 

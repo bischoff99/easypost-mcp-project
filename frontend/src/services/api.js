@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 const api = axios.create({
-  baseURL: `${API_URL}/api`,
+  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -67,7 +67,7 @@ export const shipmentAPI = {
 
   getRecentShipments: async (limit = 10) => {
     try {
-      const response = await api.get(`/shipments/recent?limit=${limit}`);
+      const response = await api.get(`/shipments?page_size=${limit}`);
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to get recent shipments');
@@ -76,7 +76,7 @@ export const shipmentAPI = {
 
   getStats: async () => {
     try {
-      const response = await api.get('/stats/overview');
+      const response = await api.get('/analytics');
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to get statistics');
@@ -97,7 +97,7 @@ export const shipmentAPI = {
       const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
       const response = await axios.get(`${baseURL}/health`, { timeout: 5000 });
       return response.data;
-    } catch (error) {
+    } catch {
       throw new Error('Backend server is not running');
     }
   },

@@ -86,13 +86,14 @@ class TestBulkToolsParsing:
     def test_ca_store_addresses_exist(self):
         """Test that California store addresses are defined."""
         assert "Los Angeles" in CA_STORE_ADDRESSES
-        assert "San Francisco" in CA_STORE_ADDRESSES
-        assert "San Diego" in CA_STORE_ADDRESSES
 
         # Verify LA store has required fields
         la_store = CA_STORE_ADDRESSES["Los Angeles"]
-        assert la_store["name"] == "Beauty & Wellness LA"
+        assert la_store["name"] == "LA General Warehouse"
+        assert la_store["company"] == "California Distribution Center"
         assert la_store["city"] == "Los Angeles"
         assert la_store["state"] == "CA"
-        assert la_store["zip"] == "90048"
-        assert "Beverly Blvd" in la_store["street1"]
+        assert la_store["zip"] == "90021"
+        assert la_store["country"] == "US"
+        assert "Olympic Blvd" in la_store["street1"]
+        assert la_store["phone"] == "213-555-0100"

@@ -3,7 +3,7 @@ import { TrendingUp, TrendingDown } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { cn } from '@/lib/utils';
 
-export default function MetricCard({ title, value, change, trend, icon: Icon, color = 'primary', delay = 0 }) {
+export default function MetricCard({ title, value, change, trend: _trend, icon: Icon, color = 'primary', delay = 0 }) {
   const isPositive = parseFloat(change) > 0;
   
   const colorClasses = {

@@ -22,9 +22,7 @@ def register_optimization_prompts(mcp):
         if max_days:
             constraints.append(f"- Delivery: {max_days} days maximum")
 
-        constraints_text = (
-            "\n".join(constraints) if constraints else "- No constraints specified"
-        )
+        constraints_text = "\n".join(constraints) if constraints else "- No constraints specified"
 
         return f"""Find the most cost-effective shipping option from {origin} to {destination}.
 
@@ -41,4 +39,3 @@ Please:
 3. Rank by cost (lowest to highest)
 4. Show top 3 options with pros/cons
 5. Recommend the best value option with justification"""
-

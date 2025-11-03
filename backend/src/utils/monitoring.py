@@ -14,6 +14,42 @@ logger = logging.getLogger(__name__)
 class HealthCheck:
     """Health check utilities for monitoring application status."""
 
+    async def check(self, easypost_service) -> Dict[str, Any]:
+        """
+        Comprehensive health check combining EasyPost and system checks.
+
+        Args:
+            easypost_service: EasyPostService instance
+
+        Returns:
+            Dict with overall health status
+        """
+        try:
+            # Check system health
+            system_health = self.check_system()
+
+            # Check EasyPost API connectivity
+            easypost_health = await self.check_easypost(easypost_service.api_key)
+
+            # Determine overall status
+            is_healthy = (
+                system_health["status"] == "healthy" and easypost_health["status"] == "healthy"
+            )
+
+            return {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "system": system_health,
+                "easypost": easypost_health,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+        except Exception as e:
+            logger.error(f"Health check failed: {str(e)}")
+            return {
+                "status": "unhealthy",
+                "error": str(e),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+
     @staticmethod
     async def check_easypost(api_key: str) -> Dict[str, Any]:
         """Check EasyPost API connectivity."""
@@ -58,6 +94,7 @@ class MetricsCollector:
         self.error_count = 0
         self.shipment_count = 0
         self.tracking_count = 0
+        self.api_calls = {}  # Track calls per endpoint
 
     def record_request(self):
         """Record an API request."""
@@ -74,6 +111,23 @@ class MetricsCollector:
     def record_tracking(self):
         """Record a tracking lookup."""
         self.tracking_count += 1
+
+    def track_api_call(self, endpoint: str, success: bool):
+        """
+        Track API call success/failure by endpoint.
+
+        Args:
+            endpoint: API endpoint name
+            success: Whether the call succeeded
+        """
+        if endpoint not in self.api_calls:
+            self.api_calls[endpoint] = {"success": 0, "failure": 0}
+
+        if success:
+            self.api_calls[endpoint]["success"] += 1
+        else:
+            self.api_calls[endpoint]["failure"] += 1
+            self.record_error()
 
     def get_metrics(self) -> Dict[str, Any]:
         """Get current metrics."""

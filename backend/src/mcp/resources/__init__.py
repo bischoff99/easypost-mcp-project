@@ -8,4 +8,3 @@ def register_resources(mcp, easypost_service):
     """Register all MCP resources with the server."""
     register_shipment_resources(mcp, easypost_service)
     register_stats_resources(mcp, easypost_service)
-

@@ -162,7 +162,7 @@ export default function SettingsPage() {
             <div>
               <p className="font-medium">Shipping Exceptions</p>
               <p className="text-sm text-muted-foreground">
-                Get notified when there's a shipping exception
+                Get notified when there&apos;s a shipping exception
               </p>
             </div>
             <input

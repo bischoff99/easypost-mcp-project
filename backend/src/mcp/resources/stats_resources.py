@@ -43,18 +43,14 @@ def register_stats_resources(mcp, easypost_service):
                     total_cost += float(shipment["selected_rate"]["rate"])
 
                 # Track carriers used
-                if shipment.get("selected_rate") and shipment["selected_rate"].get(
-                    "carrier"
-                ):
+                if shipment.get("selected_rate") and shipment["selected_rate"].get("carrier"):
                     carriers_used_set.add(shipment["selected_rate"]["carrier"])
 
                 # Track delivery success
                 if shipment.get("status") == "delivered":
                     delivered_count += 1
 
-            average_cost = (
-                round(total_cost / total_shipments, 2) if total_shipments > 0 else 0
-            )
+            average_cost = round(total_cost / total_shipments, 2) if total_shipments > 0 else 0
             delivery_success_rate = (
                 round(delivered_count / total_shipments, 2) if total_shipments > 0 else 0
             )
@@ -93,4 +89,3 @@ def register_stats_resources(mcp, easypost_service):
                 },
                 indent=2,
             )
-

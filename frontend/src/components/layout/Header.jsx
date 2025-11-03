@@ -6,7 +6,7 @@ import useUIStore from '@/stores/useUIStore';
 import { cn } from '@/lib/utils';
 
 export default function Header() {
-  const { theme, toggleTheme, sidebarCollapsed } = useUIStore();
+  const { sidebarCollapsed } = useUIStore();
 
   return (
     <header

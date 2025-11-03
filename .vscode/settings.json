@@ -1,243 +1,71 @@
 {
-  // Python Configuration
+  // Python settings
+  "python.defaultInterpreterPath": "${workspaceFolder}/backend/venv/bin/python",
+  "python.testing.pytestPath": "${workspaceFolder}/backend/venv/bin/pytest",
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true,
+  "python.linting.enabled": true,
+  "python.linting.ruffEnabled": true,
+  "python.formatting.provider": "none",
   "[python]": {
-    "editor.defaultFormatter": "ms-python.black-formatter",
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
       "source.organizeImports": "explicit"
-    }
+    },
+    "editor.defaultFormatter": "charliermarsh.ruff"
   },
-  "python.linting.enabled": true,
-  "python.linting.pylintEnabled": false,
-  "python.linting.ruffEnabled": true,
-  "python.testing.pytestEnabled": true,
-  "python.testing.pytestArgs": [
-    "tests"
-  ],
-  // JavaScript/React Configuration
+
+  // JavaScript/TypeScript settings
   "[javascript]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.formatOnSave": true
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "[javascriptreact]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.formatOnSave": true
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
-  "eslint.validate": [
-    "javascript",
-    "javascriptreact"
-  ],
-  // Editor Configuration
-  "editor.rulers": [
-    80,
-    100
-  ],
+  "[json]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+
+  // Editor settings
   "editor.tabSize": 2,
   "editor.insertSpaces": true,
-  "editor.wordWrap": "on",
-  "editor.minimap.enabled": true,
-  "editor.bracketPairColorization.enabled": true,
-  "editor.guides.bracketPairs": true,
-  "editor.inlineSuggest.enabled": true,
-  // Files Configuration
+  "editor.rulers": [80, 100, 120],
   "files.trimTrailingWhitespace": true,
   "files.insertFinalNewline": true,
-  "files.autoSave": "onFocusChange",
-  // Git Configuration
-  "git.ignoreLimitWarning": true,
-  "git.autofetch": true,
-  // Cursor IDE Specific Settings
-  "cursor.aiChat.enabled": true,
-  "cursor.cpp.disabledLanguages": [],
-  "cursor.general.enableShadowWorkspace": true,
-  // ===== M3 MAX PERFORMANCE OPTIMIZATIONS =====
-  // TypeScript/JavaScript Performance (M3 Max)
-  "typescript.tsserver.maxTsServerMemory": 8192, // 8GB for TypeScript server
-  "typescript.preferences.includePackageJsonAutoImports": "off", // Faster IntelliSense
-  "typescript.suggest.autoImports": true,
-  "typescript.preferences.preferTypeOnlyAutoImports": true,
-  // ESLint Performance (Separate core from TypeScript)
-  "eslint.runtime": "node",
-  "eslint.workingDirectories": [
-    "./frontend"
-  ],
-  // File Watching (Native macOS file watching)
-  "files.watcherExclude": {
-    "**/node_modules/**": true,
-    "**/.git/**": true,
-    "**/dist/**": true,
-    "**/build/**": true,
-    "**/.pytest_cache/**": true,
-    "**/__pycache__/**": true,
-    "**/.mypy_cache/**": true,
-    "**/.ruff_cache/**": true,
-    "**/.next/**": true,
-    "**/.nuxt/**": true
-  },
-  // Search Performance (M3 Max cores)
-  "search.followSymlinks": false,
-  "search.useIgnoreFiles": true,
-  "search.maxResults": 10000,
-  // Python Performance
-  "python.analysis.memory.keepLibraryAst": true,
-  "python.analysis.memory.keepLibraryLocalVariables": false,
-  "python.analysis.indexing": true,
-  // Editor Performance
-  "editor.largeFileOptimizations": true,
-  "editor.formatOnPaste": false, // Faster editing
-  "editor.formatOnType": false, // Faster editing
-  "editor.suggest.showStatusBar": false,
-  // Git Performance (Parallel operations)
-  "git.fetchJobs": 8,
-  "git.pushJobs": 4,
-  // Terminal Configuration
-  "terminal.integrated.defaultProfile.osx": "zsh",
-  "terminal.integrated.profiles.osx": {
-    "zsh": {
-      "path": "/bin/zsh",
-      "args": [
-        "-l"
-      ]
-    },
-    "bash": {
-      "path": "/bin/bash",
-      "args": [
-        "-l"
-      ]
-    }
-  },
-  "terminal.integrated.fontSize": 13,
-  "terminal.integrated.fontFamily": "Menlo, Monaco, 'Courier New', monospace",
-  "terminal.integrated.cursorBlinking": true,
-  "terminal.integrated.cursorStyle": "line",
-  "terminal.integrated.scrollback": 10000,
-  "terminal.integrated.env.osx": {
-    "PYTHONPATH": "${workspaceFolder}/backend"
-  },
-  // Search Configuration
-  "search.exclude": {
-    "**/node_modules": true,
-    "**/venv": true,
+  "files.eol": "\n",
+
+  // File exclusions
+  "files.exclude": {
     "**/__pycache__": true,
-    "**/dist": true,
     "**/.pytest_cache": true,
-    "**/.mypy_cache": true,
-    "**/.ruff_cache": true
+    "**/.DS_Store": true,
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/.venv": true,
+    "**/venv": true
   },
-  // ===== NEW EXTENSION CONFIGURATIONS =====
-  // Error Lens - Inline error display
-  "errorLens.enabled": true,
-  "errorLens.enabledDiagnosticLevels": [
-    "error",
-    "warning",
-    "info"
-  ],
-  "errorLens.followCursor": "activeLine",
-  "errorLens.fontWeight": "bold",
-  "errorLens.fontSize": "0.9em",
-  // Todo Tree - Aggregate TODOs
-  "todo-tree.general.tags": [
-    "TODO",
-    "FIXME",
-    "HACK",
-    "NOTE",
-    "BUG",
-    "XXX"
-  ],
-  "todo-tree.highlights.defaultHighlight": {
-    "foreground": "black",
-    "type": "text-and-comment"
+
+  // Terminal environment
+  "terminal.integrated.env.osx": {
+    "PYTHONPATH": "${workspaceFolder}/backend",
+    "ENVIRONMENT": "development"
   },
-  "todo-tree.highlights.customHighlight": {
-    "TODO": {
-      "icon": "check",
-      "iconColour": "#FF8C00",
-      "foreground": "#FF8C00",
-      "type": "text"
-    },
-    "FIXME": {
-      "icon": "alert",
-      "iconColour": "#FF2D00",
-      "foreground": "#FF2D00"
-    },
-    "HACK": {
-      "icon": "tools",
-      "iconColour": "#9B59B6"
-    },
-    "BUG": {
-      "icon": "bug",
-      "iconColour": "#E84393"
+
+  // Environment indicator in status bar
+  "workbench.colorCustomizations": {
+    "[Default Dark+]": {
+      "statusBar.background": "#007ACC",
+      "statusBar.foreground": "#ffffff"
     }
   },
-  "todo-tree.general.showActivityBarBadge": true,
-  // Better Comments - Color-coded comments
-  "better-comments.tags": [
-    {
-      "tag": "!",
-      "color": "#FF2D00",
-      "strikethrough": false,
-      "bold": true,
-      "backgroundColor": "transparent"
-    },
-    {
-      "tag": "?",
-      "color": "#3498DB",
-      "italic": true,
-      "backgroundColor": "transparent"
-    },
-    {
-      "tag": "TODO",
-      "color": "#FF8C00",
-      "bold": true,
-      "backgroundColor": "transparent"
-    },
-    {
-      "tag": "FIXME",
-      "color": "#FF2D00",
-      "bold": true,
-      "underline": true,
-      "backgroundColor": "transparent"
-    },
-    {
-      "tag": "*",
-      "color": "#98C379",
-      "backgroundColor": "transparent"
-    },
-    {
-      "tag": "NOTE",
-      "color": "#3498DB",
-      "backgroundColor": "transparent"
-    }
-  ],
-  // Import Cost - Bundle size warnings
-  "importCost.smallPackageSize": 50,
-  "importCost.mediumPackageSize": 100,
-  "importCost.largePackageSize": 200,
-  "importCost.showCalculatingDecoration": true,
-  // Auto Docstring - Google style
-  "autoDocstring.docstringFormat": "google",
-  "autoDocstring.startOnNewLine": false,
-  "autoDocstring.includeExtendedSummary": true,
-  "autoDocstring.includeName": true,
-  "autoDocstring.guessTypes": true,
-  // Code Spell Checker
-  "cSpell.enabled": true,
-  "cSpell.language": "en-GB",
-  "cSpell.words": [
-    "easypost",
-    "fastmcp",
-    "fastapi",
-    "pydantic",
-    "uvicorn",
-    "pytest",
-    "asyncio",
-    "zustand",
-    "vite"
-  ],
-  // Path Intellisense
-  "path-intellisense.autoSlashAfterDirectory": true,
-  "path-intellisense.extensionOnImport": true,
-  // Console Ninja - Inline console output
-  "console-ninja.featureSet": "Community",
-  "console-ninja.captureFunctions": true
+
+  // File associations
+  "files.associations": {
+    "*.code-workspace": "jsonc",
+    ".cursorrules": "markdown",
+    ".env*": "properties"
+  }
 }

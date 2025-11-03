@@ -76,7 +76,10 @@ export default function TrackingPage() {
         setTrackingData(mockTrackingData);
       }
     } catch (error) {
-      // Fallback to mock data on error
+      // Log error in development only
+      if (import.meta.env.DEV) {
+        console.error('Tracking error:', error);
+      }
       toast.info('Using Demo Data', { description: 'Showing sample tracking for demonstration' });
       setTrackingData(mockTrackingData);
     } finally {

@@ -23,9 +23,9 @@ def sample_address_domestic():
     return {
         "name": "Test User",
         "street1": "123 Main St",
-        "city": "San Francisco",
+        "city": "Los Angeles",
         "state": "CA",
-        "zip": "94105",
+        "zip": "90021",
         "country": "US",
     }
 

@@ -41,9 +41,7 @@ def register_rate_tools(mcp, easypost_service):
 
             # Add timeout to prevent SSE timeout errors
             result = await asyncio.wait_for(
-                easypost_service.get_rates(
-                    to_addr.dict(), from_addr.dict(), parcel_obj.dict()
-                ),
+                easypost_service.get_rates(to_addr.dict(), from_addr.dict(), parcel_obj.dict()),
                 timeout=20.0,
             )
 
@@ -75,4 +73,3 @@ def register_rate_tools(mcp, easypost_service):
                 "message": "Failed to retrieve rates",
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
-

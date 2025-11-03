@@ -52,4 +52,3 @@ def register_tracking_tools(mcp, easypost_service):
                 "message": "Failed to retrieve tracking information",
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
-

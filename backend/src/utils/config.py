@@ -1,8 +1,23 @@
+import logging
 import os
+from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv()
+# Configure logger
+logger = logging.getLogger(__name__)
+
+# Determine which .env file to load based on ENVIRONMENT variable
+env = os.getenv("ENVIRONMENT", "development")
+env_file = Path(__file__).parent.parent.parent / f".env.{env}"
+
+# Load environment-specific file if it exists, otherwise use .env
+if env_file.exists():
+    load_dotenv(env_file)
+    logger.info(f"Loaded environment from: {env_file}")
+else:
+    load_dotenv()
+    logger.info("Loaded environment from: .env")
 
 
 class Settings:
