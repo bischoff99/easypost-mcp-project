@@ -1,26 +1,26 @@
-# Cursor IDE Configuration
+# Cursor Project Documentation
 
-This directory contains Cursor IDE-specific configuration:
+This directory contains essential project documentation and rules.
 
-- `rules/` - Project-specific rules for the AI agent
-- `PROJECT_PROGRESS.md` - Development progress tracking (auto-generated)
+## Contents
 
-## Rules Structure
+- **PROJECT_PROGRESS.md** - Current project status and feature summary
+- **TEST_REPORT.md** - Comprehensive test results and coverage
+- **EXTENSION_INTEGRATION.md** - VS Code extension setup and configuration
+- **EXTENSION_REVIEW.md** - Detailed extension usage guide
+- **rules/** - Cursor AI rules for code standards and conventions
 
-1. `01-code-standards.mdc` - Python/React coding standards
-2. `02-file-structure.mdc` - Project organization
-3. `03-naming-conventions.mdc` - Naming patterns
-4. `04-error-handling.mdc` - Error handling patterns
-5. `05-logging.mdc` - Logging standards
-6. `06-testing.mdc` - Testing requirements
-7. `07-git-version-control.mdc` - Git workflow
-8. `08-security.mdc` - Security checklist
-9. `09-api-format.mdc` - API response format
-10. `10-documentation.mdc` - Documentation standards
-11. `11-performance.mdc` - Performance optimization
-12. `12-deployment.mdc` - Deployment checklist
-13. `13-code-review.mdc` - Code review requirements
-14. `14-quick-reference.mdc` - Quick lookup
+## Project Rules
 
-All rules are automatically applied by Cursor AI agent during development.
+The `rules/` directory contains 14 rule files covering:
+- Code standards
+- File structure
+- Naming conventions
+- Error handling
+- Testing strategies
+- Git workflow
+- Security practices
+- API design
+- And more...
 
+These rules ensure consistent code quality and development practices across the project.
