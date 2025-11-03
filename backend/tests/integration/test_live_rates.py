@@ -2,13 +2,15 @@
 """Live test with real EasyPost API to verify actual rates are returned."""
 
 import asyncio
-import sys
-import os
 import json
+import os
+import sys
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Add backend root to path (we're in tests/integration/)
+backend_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, backend_root)
 
-from src.mcp import mcp, easypost_service
+from src.mcp import easypost_service
 
 
 async def test_live_rates():
@@ -26,21 +28,25 @@ Nevada	UPS	Osman	Kocakafa	+491635002688	hermanito040@protonmail.com	Memelerstras
     print("\n⏳ Calling EasyPost API (this may take 10-30 seconds)...\n")
 
     # Import and call the actual tool
-    from src.mcp.tools.bulk_tools import register_bulk_tools
 
     # Get the tool from MCP server
     # The tool is already registered, we can test it directly
-    from src.mcp.tools.bulk_tools import parse_spreadsheet_line, parse_weight, parse_dimensions, STORE_ADDRESSES
+    from src.mcp.tools.bulk_tools import (
+        STORE_ADDRESSES,
+        parse_dimensions,
+        parse_spreadsheet_line,
+        parse_weight,
+    )
 
     # Parse manually and call get_rates for first shipment
-    lines = [l.strip() for l in test_data.split('\n') if l.strip()]
+    lines = [l.strip() for l in test_data.split("\n") if l.strip()]
 
     print("🧪 TEST 1: California Shipment")
     print("-" * 80)
     line1 = lines[0]
     data1 = parse_spreadsheet_line(line1)
-    weight_oz = parse_weight(data1['weight'])
-    length, width, height = parse_dimensions(data1['dimensions'])
+    weight_oz = parse_weight(data1["weight"])
+    length, width, height = parse_dimensions(data1["dimensions"])
 
     to_addr = {
         "name": f"{data1['recipient_name']} {data1['recipient_last_name']}",
@@ -66,39 +72,39 @@ Nevada	UPS	Osman	Kocakafa	+491635002688	hermanito040@protonmail.com	Memelerstras
     print(f"From: {from_addr['name']}, {from_addr['city']}, {from_addr['state']}")
     print(f"To: {to_addr['name']}, {to_addr['city']}, {to_addr['country']}")
     print(f"Parcel: {length}×{width}×{height} in, {weight_oz} oz")
-    print(f"\n⏳ Getting real rates from EasyPost...")
+    print("\n⏳ Getting real rates from EasyPost...")
 
     try:
         result = await easypost_service.get_rates(to_addr, from_addr, parcel)
 
-        if result['status'] == 'success':
-            rates = result.get('data', [])
+        if result["status"] == "success":
+            rates = result.get("data", [])
             print(f"\n✅ SUCCESS! Received {len(rates)} rates:\n")
 
             for rate in rates[:5]:  # Show first 5
-                carrier = rate.get('carrier', 'Unknown')
-                service = rate.get('service', 'Unknown')
-                price = rate.get('rate', 'N/A')
-                days = rate.get('delivery_days', 'N/A')
+                carrier = rate.get("carrier", "Unknown")
+                service = rate.get("service", "Unknown")
+                price = rate.get("rate", "N/A")
+                days = rate.get("delivery_days", "N/A")
                 print(f"  • {carrier:12s} {service:30s} ${price:8s} ({days} days)")
 
             if len(rates) > 5:
                 print(f"  ... and {len(rates) - 5} more options")
 
             print(f"\n💰 Cheapest: {rates[0]['carrier']} - ${rates[0]['rate']}")
-            print(f"⚡ Fastest: Check delivery_days in full results")
+            print("⚡ Fastest: Check delivery_days in full results")
 
         else:
             print(f"\n❌ Error: {result.get('message')}")
-            print(f"\n📋 Full response:")
+            print("\n📋 Full response:")
             print(json.dumps(result, indent=2))
 
     except Exception as e:
         print(f"\n❌ Exception: {str(e)}")
-        print(f"\n💡 This might be expected if:")
-        print(f"   - EasyPost API key not configured")
-        print(f"   - API key doesn't support international shipping")
-        print(f"   - Network issues")
+        print("\n💡 This might be expected if:")
+        print("   - EasyPost API key not configured")
+        print("   - API key doesn't support international shipping")
+        print("   - Network issues")
 
     print("\n" + "=" * 80)
     print("✅ Live API test complete!")
@@ -109,4 +115,3 @@ Nevada	UPS	Osman	Kocakafa	+491635002688	hermanito040@protonmail.com	Memelerstras
 
 if __name__ == "__main__":
     asyncio.run(test_live_rates())
-

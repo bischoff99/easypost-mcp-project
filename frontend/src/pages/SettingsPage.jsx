@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Save, Bell, Eye, Globe, Shield, User } from 'lucide-react';
+import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import api from '@/services/api';
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState({
@@ -17,14 +19,22 @@ export default function SettingsPage() {
     language: 'en',
     timezone: 'America/Los_Angeles',
   });
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async () => {
+    setIsSaving(true);
     try {
-      // TODO: Implement actual API call
-      // await api.post('/settings', settings);
-      alert('Settings saved successfully!');
+      // Save to backend API
+      await api.post('/settings', settings);
+      toast.success('Settings saved!', { 
+        description: 'Your preferences have been updated successfully.' 
+      });
     } catch (error) {
-      alert('Failed to save settings');
+      toast.error('Failed to save settings', {
+        description: error.message || 'Please try again later.'
+      });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -221,9 +231,9 @@ export default function SettingsPage() {
 
       {/* Save Button */}
       <div className="flex justify-end">
-        <Button onClick={handleSave} className="gap-2">
+        <Button onClick={handleSave} disabled={isSaving} className="gap-2">
           <Save className="h-4 w-4" />
-          Save Changes
+          {isSaving ? 'Saving...' : 'Save Changes'}
         </Button>
       </div>
     </div>

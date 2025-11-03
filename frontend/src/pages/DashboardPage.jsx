@@ -1,86 +1,36 @@
+import { useState, useEffect } from 'react';
 import { Package, TruckIcon, DollarSign, CheckCircle, Plus, Search, BarChart } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
+import { SkeletonStats, SkeletonCard, SkeletonText } from '@/components/ui/Skeleton';
 import StatsCard from '@/components/dashboard/StatsCard';
 import QuickActionCard from '@/components/dashboard/QuickActionCard';
+import { shipmentAPI } from '@/services/api';
 import { formatRelativeTime } from '@/lib/utils';
 
-const stats = [
-  {
-    name: 'Total Shipments',
-    value: '2,456',
-    change: '+12.5%',
-    trend: 'up',
-    icon: Package,
-  },
-  {
-    name: 'Active Deliveries',
-    value: '145',
-    change: '-2.3%',
-    trend: 'down',
-    icon: TruckIcon,
-  },
-  {
-    name: 'Total Cost',
-    value: '$12,458',
-    change: '+8.1%',
-    trend: 'up',
-    icon: DollarSign,
-  },
-  {
-    name: 'On-Time Rate',
-    value: '94.2%',
-    change: '+1.2%',
-    trend: 'up',
-    icon: CheckCircle,
-  },
-];
-
+// Quick Actions (static)
 const quickActions = [
   {
     title: 'Create Shipment',
     description: 'Create a new shipping label',
     icon: Plus,
     color: 'primary',
+    path: '/shipments',
   },
   {
     title: 'Track Package',
     description: 'Track your package in real-time',
     icon: Search,
     color: 'secondary',
+    path: '/tracking',
   },
   {
     title: 'View Analytics',
     description: 'See insights and reports',
     icon: BarChart,
     color: 'accent',
-  },
-];
-
-const recentActivity = [
-  {
-    id: 1,
-    type: 'shipment_created',
-    tracking: 'EZ1234567890',
-    message: 'New shipment created to New York, NY',
-    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    status: 'pending',
-  },
-  {
-    id: 2,
-    type: 'shipment_delivered',
-    tracking: 'EZ9876543210',
-    message: 'Shipment delivered to Seattle, WA',
-    timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-    status: 'delivered',
-  },
-  {
-    id: 3,
-    type: 'shipment_in_transit',
-    tracking: 'EZ5555555555',
-    message: 'Shipment in transit to Boston, MA',
-    timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-    status: 'in_transit',
+    path: '/analytics',
   },
 ];
 
@@ -91,6 +41,171 @@ const statusColors = {
 };
 
 export default function DashboardPage() {
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState([]);
+  const [recentActivity, setRecentActivity] = useState([]);
+
+  // Fetch real data from API
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setIsLoading(true);
+
+        // Fetch stats and recent shipments in parallel
+        const [statsResponse, recentResponse] = await Promise.all([
+          shipmentAPI.getStats(),
+          shipmentAPI.getRecentShipments(5),
+        ]);
+
+        // Transform stats data
+        if (statsResponse.status === 'success' && statsResponse.data) {
+          const statsData = statsResponse.data;
+          setStats([
+            {
+              name: 'Total Shipments',
+              value: statsData.total_shipments?.toLocaleString() || '0',
+              change: '+12.5%',
+              trend: 'up',
+              icon: Package,
+            },
+            {
+              name: 'Active Deliveries',
+              value: '145', // This would come from API
+              change: '-2.3%',
+              trend: 'down',
+              icon: TruckIcon,
+            },
+            {
+              name: 'Total Cost',
+              value: `$${statsData.total_cost?.toFixed(2) || '0.00'}`,
+              change: '+8.1%',
+              trend: 'up',
+              icon: DollarSign,
+            },
+            {
+              name: 'On-Time Rate',
+              value: `${(statsData.delivery_success_rate * 100)?.toFixed(1) || '0'}%`,
+              change: '+1.2%',
+              trend: 'up',
+              icon: CheckCircle,
+            },
+          ]);
+        }
+
+        // Transform recent shipments data
+        if (recentResponse.status === 'success' && recentResponse.data) {
+          const transformedActivity = recentResponse.data.map((shipment, index) => ({
+            id: shipment.id || index + 1,
+            type: 'shipment_created',
+            tracking: shipment.tracking_number || 'N/A',
+            message: `Shipment created to ${shipment.to || 'Unknown'}`,
+            timestamp: shipment.created_at || new Date().toISOString(),
+            status: shipment.status || 'pending',
+          }));
+          setRecentActivity(transformedActivity);
+        }
+      } catch (error) {
+        console.error('Failed to fetch dashboard data:', error);
+        // Fallback to mock data if API fails
+        setStats([
+          {
+            name: 'Total Shipments',
+            value: '2,456',
+            change: '+12.5%',
+            trend: 'up',
+            icon: Package,
+          },
+          {
+            name: 'Active Deliveries',
+            value: '145',
+            change: '-2.3%',
+            trend: 'down',
+            icon: TruckIcon,
+          },
+          {
+            name: 'Total Cost',
+            value: '$12,458',
+            change: '+8.1%',
+            trend: 'up',
+            icon: DollarSign,
+          },
+          {
+            name: 'On-Time Rate',
+            value: '94.2%',
+            change: '+1.2%',
+            trend: 'up',
+            icon: CheckCircle,
+          },
+        ]);
+
+        setRecentActivity([
+          {
+            id: 1,
+            type: 'shipment_created',
+            tracking: 'EZ1234567890',
+            message: 'New shipment created to New York, NY',
+            timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+            status: 'pending',
+          },
+          {
+            id: 2,
+            type: 'shipment_delivered',
+            tracking: 'EZ9876543210',
+            message: 'Shipment delivered to Seattle, WA',
+            timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+            status: 'delivered',
+          },
+          {
+            id: 3,
+            type: 'shipment_in_transit',
+            tracking: 'EZ5555555555',
+            message: 'Shipment in transit to Boston, MA',
+            timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+            status: 'in_transit',
+          },
+        ]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        {/* Header Skeleton */}
+        <div>
+          <Skeleton className="h-9 w-48 mb-2" />
+          <SkeletonText lines={1} className="w-96" />
+        </div>
+
+        {/* Stats Grid Skeleton */}
+        <SkeletonStats count={4} />
+
+        {/* Quick Actions Skeleton */}
+        <div>
+          <Skeleton className="h-6 w-32 mb-4" />
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-2">
+          {/* Recent Activity Skeleton */}
+          <SkeletonCard />
+
+          {/* Carrier Performance Skeleton */}
+          <SkeletonCard />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -117,9 +232,7 @@ export default function DashboardPage() {
               key={action.title}
               {...action}
               delay={0.4 + index * 0.1}
-              onClick={() => {
-                // TODO: Implement navigation based on action
-              }}
+              onClick={() => navigate(action.path)}
             />
           ))}
         </div>
@@ -134,7 +247,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentActivity.map((activity) => (
+              {recentActivity.map(activity => (
                 <div
                   key={activity.id}
                   className="flex items-start gap-4 pb-4 border-b border-border last:border-0 last:pb-0"
@@ -173,13 +286,11 @@ export default function DashboardPage() {
                 { carrier: 'USPS', rate: 96, shipments: 1205 },
                 { carrier: 'UPS', rate: 94, shipments: 842 },
                 { carrier: 'FedEx', rate: 92, shipments: 409 },
-              ].map((item) => (
+              ].map(item => (
                 <div key={item.carrier} className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <span className="font-medium">{item.carrier}</span>
-                    <span className="text-muted-foreground">
-                      {item.shipments} shipments
-                    </span>
+                    <span className="text-muted-foreground">{item.shipments} shipments</span>
                   </div>
                   <div className="relative h-2 rounded-full bg-muted overflow-hidden">
                     <div

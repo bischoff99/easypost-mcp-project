@@ -1,11 +1,19 @@
 #!/usr/bin/env python3
 """Test full batch of 19 shipments with auto-detection."""
 
-import sys
 import os
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import sys
 
-from src.mcp.tools.bulk_tools import parse_spreadsheet_line, parse_weight, parse_dimensions, STORE_ADDRESSES
+# Add backend root to path (we're in tests/integration/)
+backend_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, backend_root)
+
+from src.mcp.tools.bulk_tools import (
+    STORE_ADDRESSES,
+    parse_dimensions,
+    parse_spreadsheet_line,
+    parse_weight,
+)
 
 # Your full 19 shipments
 test_data = """California	FEDEX- Priority	Barra 	Odeamar	+639612109875	justinenganga@gmail.com	Blk 6 Lot 48 Camella Vera, Bignay		Valenzuela City	Metron Manila	1440	Philippines	TRUE	13 x 12 x 2	1.8 lbs	 1.5 lbs Dead Sea Mineral Bath Salts HTS Code: 3307.30.1000 ($27)
@@ -33,74 +41,75 @@ Nevada	FEDEX	Peter	Brozek	+4915236665941	mattmiller404@gmail.com	Antoninuskirchs
 print("🧪 Testing FULL BATCH: 19 Shipments")
 print("=" * 80)
 
-lines = [l.strip() for l in test_data.split('\n') if l.strip()]
+lines = [l.strip() for l in test_data.split("\n") if l.strip()]
 print(f"\n📋 Total Shipments: {len(lines)}")
 
 # Group by state
 by_state = {}
 for line in lines:
     data = parse_spreadsheet_line(line)
-    state = data['origin_state']
+    state = data["origin_state"]
     if state not in by_state:
         by_state[state] = []
     by_state[state].append(data)
 
-print(f"\n📍 Breakdown by Origin State:")
+print("\n📍 Breakdown by Origin State:")
 for state, shipments in by_state.items():
     print(f"  {state}: {len(shipments)} shipments")
 
 # Show auto-detection logic
-print(f"\n🤖 AUTO-DETECTION LOGIC:")
-print(f"  California → Los Angeles (Beauty & Wellness LA)")
-print(f"  Nevada → Las Vegas (Desert Essentials)")
+print("\n🤖 AUTO-DETECTION LOGIC:")
+print("  California → Los Angeles (Beauty & Wellness LA)")
+print("  Nevada → Las Vegas (Desert Essentials)")
 
 # Test parsing all shipments
-print(f"\n✅ PARSING ALL 19 SHIPMENTS:\n")
+print("\n✅ PARSING ALL 19 SHIPMENTS:\n")
 california_count = 0
 nevada_count = 0
 
 for idx, line in enumerate(lines, 1):
     try:
         data = parse_spreadsheet_line(line)
-        weight_oz = parse_weight(data['weight'])
-        length, width, height = parse_dimensions(data['dimensions'])
-        
-        state = data['origin_state']
+        weight_oz = parse_weight(data["weight"])
+        length, width, height = parse_dimensions(data["dimensions"])
+
+        state = data["origin_state"]
         if state == "California":
             california_count += 1
             origin_city = "Los Angeles"
         else:
             nevada_count += 1
             origin_city = "Las Vegas"
-        
-        print(f"#{idx:2d} | {state:10s} → {origin_city:12s} | {data['recipient_name']:12s} {data['recipient_last_name']:15s} | {data['country']:15s} | {weight_oz:5.1f} oz | {length}×{width}×{height}")
-        
+
+        print(
+            f"#{idx:2d} | {state:10s} → {origin_city:12s} | {data['recipient_name']:12s} {data['recipient_last_name']:15s} | {data['country']:15s} | {weight_oz:5.1f} oz | {length}×{width}×{height}"
+        )
+
     except Exception as e:
         print(f"#{idx:2d} | ERROR: {str(e)}")
 
-print(f"\n" + "=" * 80)
-print(f"✅ ALL 19 SHIPMENTS PARSED SUCCESSFULLY!")
-print(f"\n📊 SUMMARY:")
+print("\n" + "=" * 80)
+print("✅ ALL 19 SHIPMENTS PARSED SUCCESSFULLY!")
+print("\n📊 SUMMARY:")
 print(f"  California → Los Angeles: {california_count} shipments")
 print(f"  Nevada → Las Vegas: {nevada_count} shipments")
 
-print(f"\n📍 FROM ADDRESSES:")
-print(f"\n  California Shipments:")
+print("\n📍 FROM ADDRESSES:")
+print("\n  California Shipments:")
 la_store = STORE_ADDRESSES["California"]["Los Angeles"]
 print(f"    {la_store['name']}")
 print(f"    {la_store['street1']}, {la_store['street2']}")
 print(f"    {la_store['city']}, {la_store['state']} {la_store['zip']}")
 
-print(f"\n  Nevada Shipments:")
+print("\n  Nevada Shipments:")
 lv_store = STORE_ADDRESSES["Nevada"]["Las Vegas"]
 print(f"    {lv_store['name']}")
 print(f"    {lv_store['street1']}, {lv_store['street2']}")
 print(f"    {lv_store['city']}, {lv_store['state']} {lv_store['zip']}")
 
-print(f"\n🎯 TO GET RATES:")
-print(f"   Simply paste all 19 lines into parse_and_get_bulk_rates()")
-print(f"   Tool will auto-detect and use:")
-print(f"     - Los Angeles for California shipments")
-print(f"     - Las Vegas for Nevada shipments")
-print(f"\n✅ Ready to process your full batch!")
-
+print("\n🎯 TO GET RATES:")
+print("   Simply paste all 19 lines into parse_and_get_bulk_rates()")
+print("   Tool will auto-detect and use:")
+print("     - Los Angeles for California shipments")
+print("     - Las Vegas for Nevada shipments")
+print("\n✅ Ready to process your full batch!")

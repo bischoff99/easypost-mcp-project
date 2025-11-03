@@ -2,11 +2,12 @@
 """Test all 19 shipments with live EasyPost API."""
 
 import asyncio
-import sys
 import os
-import json
+import sys
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Add backend root to path (we're in tests/integration/)
+backend_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, backend_root)
 
 
 async def test_all_shipments():
@@ -39,17 +40,22 @@ Nevada	USPS	Pau	Summers	+441339883481	mattmiller4404@gmail.com	9 clark hill plac
     print("\nThis will take 2-5 minutes to get rates for all shipments...")
     print("⏳ Please wait...\n")
 
-    from src.mcp.tools.bulk_tools import parse_spreadsheet_line, parse_weight, parse_dimensions, STORE_ADDRESSES
     from src.mcp import easypost_service
+    from src.mcp.tools.bulk_tools import (
+        STORE_ADDRESSES,
+        parse_dimensions,
+        parse_spreadsheet_line,
+        parse_weight,
+    )
 
-    lines = [l.strip() for l in full_batch.split('\n') if l.strip()]
+    lines = [l.strip() for l in full_batch.split("\n") if l.strip()]
     print(f"📋 Total shipments: {len(lines)}\n")
 
     # Group by origin
     ca_lines = [l for l in lines if l.startswith("California")]
     nv_lines = [l for l in lines if l.startswith("Nevada")]
 
-    print(f"📍 Origin breakdown:")
+    print("📍 Origin breakdown:")
     print(f"  California (Los Angeles): {len(ca_lines)} shipments")
     print(f"  Nevada (Las Vegas): {len(nv_lines)} shipments\n")
 
@@ -58,11 +64,11 @@ Nevada	USPS	Pau	Summers	+441339883481	mattmiller4404@gmail.com	9 clark hill plac
     for idx, line in enumerate(lines, 1):
         try:
             data = parse_spreadsheet_line(line)
-            weight_oz = parse_weight(data['weight'])
-            length, width, height = parse_dimensions(data['dimensions'])
+            weight_oz = parse_weight(data["weight"])
+            length, width, height = parse_dimensions(data["dimensions"])
 
             # Determine origin
-            if data['origin_state'] == "California":
+            if data["origin_state"] == "California":
                 from_addr = STORE_ADDRESSES["California"]["Los Angeles"]
                 origin = "Los Angeles, CA"
             else:
@@ -88,26 +94,34 @@ Nevada	USPS	Pau	Summers	+441339883481	mattmiller4404@gmail.com	9 clark hill plac
                 "weight": weight_oz,
             }
 
-            print(f"#{idx:2d} | {origin:18s} → {data['city']:20s}, {data['country']:15s} | {weight_oz:5.1f} oz | ", end='', flush=True)
+            print(
+                f"#{idx:2d} | {origin:18s} → {data['city']:20s}, {data['country']:15s} | {weight_oz:5.1f} oz | ",
+                end="",
+                flush=True,
+            )
 
             # Get rates
             rates_result = await easypost_service.get_rates(to_addr, from_addr, parcel)
 
-            if rates_result['status'] == 'success':
-                rates = rates_result.get('data', [])
+            if rates_result["status"] == "success":
+                rates = rates_result.get("data", [])
                 if rates:
-                    cheapest = min(rates, key=lambda r: float(r.get('rate', 999)))
-                    print(f"✅ {len(rates):2d} rates | Cheapest: ${cheapest['rate']:7s} ({cheapest['carrier']})")
-                    results.append({
-                        'shipment': idx,
-                        'recipient': to_addr['name'],
-                        'destination': f"{data['city']}, {data['country']}",
-                        'rates_count': len(rates),
-                        'cheapest_rate': cheapest['rate'],
-                        'cheapest_carrier': cheapest['carrier'],
-                    })
+                    cheapest = min(rates, key=lambda r: float(r.get("rate", 999)))
+                    print(
+                        f"✅ {len(rates):2d} rates | Cheapest: ${cheapest['rate']:7s} ({cheapest['carrier']})"
+                    )
+                    results.append(
+                        {
+                            "shipment": idx,
+                            "recipient": to_addr["name"],
+                            "destination": f"{data['city']}, {data['country']}",
+                            "rates_count": len(rates),
+                            "cheapest_rate": cheapest["rate"],
+                            "cheapest_carrier": cheapest["carrier"],
+                        }
+                    )
                 else:
-                    print(f"⚠️  No rates available")
+                    print("⚠️  No rates available")
             else:
                 print(f"❌ Error: {rates_result.get('message', 'Unknown error')[:40]}")
 
@@ -119,21 +133,20 @@ Nevada	USPS	Pau	Summers	+441339883481	mattmiller4404@gmail.com	9 clark hill plac
 
     if results:
         print("💰 RATE SUMMARY:")
-        total_cheapest = sum(float(r['cheapest_rate']) for r in results)
+        total_cheapest = sum(float(r["cheapest_rate"]) for r in results)
         print(f"  Total (cheapest options): ${total_cheapest:.2f}")
         print(f"  Average per shipment: ${total_cheapest/len(results):.2f}")
 
         # Group by carrier
         carrier_counts = {}
         for r in results:
-            carrier = r['cheapest_carrier']
+            carrier = r["cheapest_carrier"]
             carrier_counts[carrier] = carrier_counts.get(carrier, 0) + 1
 
-        print(f"\n📊 Cheapest carrier breakdown:")
+        print("\n📊 Cheapest carrier breakdown:")
         for carrier, count in sorted(carrier_counts.items(), key=lambda x: -x[1]):
             print(f"  {carrier}: {count} shipments")
 
 
 if __name__ == "__main__":
     asyncio.run(test_all_shipments())
-

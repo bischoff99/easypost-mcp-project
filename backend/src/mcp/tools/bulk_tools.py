@@ -4,10 +4,10 @@ import asyncio
 import logging
 import re
 from datetime import datetime, timezone
-from typing import List, Dict, Any
+from typing import Any, Dict
 
 from fastmcp import Context
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -107,16 +107,16 @@ CA_STORE_ADDRESSES = STORE_ADDRESSES["California"]
 def parse_dimensions(dim_str: str) -> tuple:
     """
     Parse dimensions string like '13 x 12 x 2' into (length, width, height).
-    
+
     Args:
         dim_str: Dimension string with x separators
-        
+
     Returns:
         Tuple of (length, width, height) as floats
     """
     parts = [p.strip() for p in dim_str.lower().replace("x", " ").split()]
     numbers = [float(p) for p in parts if p.replace(".", "").isdigit()]
-    
+
     if len(numbers) >= 3:
         return (numbers[0], numbers[1], numbers[2])
     return (12.0, 9.0, 6.0)  # Default box dimensions
@@ -125,43 +125,43 @@ def parse_dimensions(dim_str: str) -> tuple:
 def parse_weight(weight_str: str) -> float:
     """
     Parse weight string like '1.8 lbs' into ounces.
-    
+
     Args:
         weight_str: Weight string with unit
-        
+
     Returns:
         Weight in ounces
     """
     # Extract number from string
-    match = re.search(r'([\d.]+)\s*(lbs?|oz|ounces?|pounds?)', weight_str.lower())
+    match = re.search(r"([\d.]+)\s*(lbs?|oz|ounces?|pounds?)", weight_str.lower())
     if match:
         value = float(match.group(1))
         unit = match.group(2)
-        
+
         # Convert to ounces
-        if 'lb' in unit or 'pound' in unit:
+        if "lb" in unit or "pound" in unit:
             return value * 16.0  # 1 lb = 16 oz
         return value  # Already in oz
-    
+
     return 16.0  # Default 1 lb
 
 
 def parse_spreadsheet_line(line: str) -> Dict[str, Any]:
     """
     Parse a tab-separated line from spreadsheet.
-    
+
     Args:
         line: Tab-separated data line
-        
+
     Returns:
         Parsed shipment dictionary
     """
     # Split by tabs
-    parts = line.split('\t')
-    
+    parts = line.split("\t")
+
     if len(parts) < 16:
         raise ValueError(f"Invalid line format: expected at least 16 columns, got {len(parts)}")
-    
+
     return {
         "origin_state": parts[0].strip(),
         "carrier_preference": parts[1].strip(),
@@ -195,7 +195,7 @@ def register_bulk_tools(mcp, easypost_service):
 
         Args:
             spreadsheet_data: Tab-separated shipment data (paste from spreadsheet)
-            from_city: Override city (e.g., "Los Angeles", "Las Vegas"). 
+            from_city: Override city (e.g., "Los Angeles", "Las Vegas").
                       If None, auto-detects from origin_state column
             ctx: MCP context for progress reporting
 
@@ -207,8 +207,8 @@ def register_bulk_tools(mcp, easypost_service):
                 await ctx.info("Parsing spreadsheet data...")
 
             # Split into lines and filter empty
-            lines = [l.strip() for l in spreadsheet_data.split('\n') if l.strip()]
-            
+            lines = [l.strip() for l in spreadsheet_data.split("\n") if l.strip()]
+
             if not lines:
                 return {
                     "status": "error",
@@ -221,14 +221,14 @@ def register_bulk_tools(mcp, easypost_service):
             if from_city is None:
                 first_line_data = parse_spreadsheet_line(lines[0])
                 origin_state = first_line_data["origin_state"]
-                
+
                 # Map state to default city
                 state_defaults = {
                     "California": "Los Angeles",
                     "Nevada": "Las Vegas",
                 }
                 from_city = state_defaults.get(origin_state, "Los Angeles")
-                
+
                 if ctx:
                     await ctx.info(f"Auto-detected origin: {from_city} (from {origin_state})")
 
@@ -238,7 +238,7 @@ def register_bulk_tools(mcp, easypost_service):
                 if from_city in state_stores:
                     from_address = state_stores[from_city]
                     break
-            
+
             # Fallback to LA if city not found
             if from_address is None:
                 from_address = STORE_ADDRESSES["California"]["Los Angeles"]
@@ -253,7 +253,7 @@ def register_bulk_tools(mcp, easypost_service):
 
                     # Parse line
                     data = parse_spreadsheet_line(line)
-                    
+
                     # Parse dimensions and weight
                     length, width, height = parse_dimensions(data["dimensions"])
                     weight_oz = parse_weight(data["weight"])
@@ -284,29 +284,35 @@ def register_bulk_tools(mcp, easypost_service):
 
                     # Get rates
                     rates_result = await asyncio.wait_for(
-                        easypost_service.get_rates(
-                            to_address, from_address, parcel
-                        ),
+                        easypost_service.get_rates(to_address, from_address, parcel),
                         timeout=20.0,
                     )
 
-                    results.append({
-                        "shipment_number": idx + 1,
-                        "recipient": to_address["name"],
-                        "destination": f"{data['city']}, {data['state']}, {data['country']}",
-                        "weight_oz": round(weight_oz, 2),
-                        "dimensions": f"{length} x {width} x {height} in",
-                        "contents": data["contents"][:100],
-                        "rates": rates_result.get("data", []) if rates_result.get("status") == "success" else [],
-                        "error": rates_result.get("message") if rates_result.get("status") == "error" else None,
-                    })
+                    results.append(
+                        {
+                            "shipment_number": idx + 1,
+                            "recipient": to_address["name"],
+                            "destination": f"{data['city']}, {data['state']}, {data['country']}",
+                            "weight_oz": round(weight_oz, 2),
+                            "dimensions": f"{length} x {width} x {height} in",
+                            "contents": data["contents"][:100],
+                            "rates": rates_result.get("data", [])
+                            if rates_result.get("status") == "success"
+                            else [],
+                            "error": rates_result.get("message")
+                            if rates_result.get("status") == "error"
+                            else None,
+                        }
+                    )
 
                 except Exception as e:
                     logger.error(f"Error processing line {idx + 1}: {str(e)}")
-                    results.append({
-                        "shipment_number": idx + 1,
-                        "error": f"Failed to process: {str(e)}",
-                    })
+                    results.append(
+                        {
+                            "shipment_number": idx + 1,
+                            "error": f"Failed to process: {str(e)}",
+                        }
+                    )
 
             if ctx:
                 await ctx.report_progress(total_lines, total_lines)
@@ -339,4 +345,3 @@ def register_bulk_tools(mcp, easypost_service):
                 "message": f"Failed to process bulk rates: {str(e)}",
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
-

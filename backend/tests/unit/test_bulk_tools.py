@@ -1,11 +1,12 @@
 """Tests for bulk shipment tools."""
 
 import pytest
+
 from src.mcp.tools.bulk_tools import (
-    parse_dimensions,
-    parse_weight,
-    parse_spreadsheet_line,
     CA_STORE_ADDRESSES,
+    parse_dimensions,
+    parse_spreadsheet_line,
+    parse_weight,
 )
 
 
@@ -56,9 +57,9 @@ class TestBulkToolsParsing:
     def test_parse_spreadsheet_line_valid(self):
         """Test parsing valid spreadsheet line."""
         line = "California\tFEDEX- Priority\tBarra\tOdeamar\t+639612109875\tjustinenganga@gmail.com\tBlk 6 Lot 48 Camella Vera, Bignay\t\tValenzuela City\tMetro Manila\t1440\tPhilippines\tTRUE\t13 x 12 x 2\t1.8 lbs\t1.5 lbs Dead Sea Mineral Bath Salts"
-        
+
         data = parse_spreadsheet_line(line)
-        
+
         assert data["origin_state"] == "California"
         assert data["carrier_preference"] == "FEDEX- Priority"
         assert data["recipient_name"] == "Barra"
@@ -78,7 +79,7 @@ class TestBulkToolsParsing:
     def test_parse_spreadsheet_line_invalid(self):
         """Test parsing invalid line with too few columns."""
         line = "California\tFEDEX\tBarra"  # Only 3 columns
-        
+
         with pytest.raises(ValueError, match="Invalid line format"):
             parse_spreadsheet_line(line)
 
@@ -87,7 +88,7 @@ class TestBulkToolsParsing:
         assert "Los Angeles" in CA_STORE_ADDRESSES
         assert "San Francisco" in CA_STORE_ADDRESSES
         assert "San Diego" in CA_STORE_ADDRESSES
-        
+
         # Verify LA store has required fields
         la_store = CA_STORE_ADDRESSES["Los Angeles"]
         assert la_store["name"] == "Beauty & Wellness LA"
@@ -95,4 +96,3 @@ class TestBulkToolsParsing:
         assert la_store["state"] == "CA"
         assert la_store["zip"] == "90048"
         assert "Beverly Blvd" in la_store["street1"]
-

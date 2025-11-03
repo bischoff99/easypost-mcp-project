@@ -1,0 +1,3 @@
+# Cursor configuration
+.cursorrules merge=ours
+.dev-config.json merge=ours

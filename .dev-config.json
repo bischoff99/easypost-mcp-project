@@ -1,0 +1,110 @@
+{
+  "project": {
+    "name": "EasyPost MCP",
+    "type": "fullstack",
+    "description": "Shipping and logistics automation with EasyPost API"
+  },
+  
+  "stack": {
+    "backend": {
+      "language": "python",
+      "framework": "fastapi",
+      "version": "3.12",
+      "orm": "none",
+      "features": ["async", "rest-api", "mcp-tools"]
+    },
+    "frontend": {
+      "language": "javascript",
+      "framework": "react",
+      "buildTool": "vite",
+      "stateManagement": "zustand",
+      "styling": "tailwindcss",
+      "components": "shadcn-ui"
+    }
+  },
+  
+  "hardware": {
+    "type": "M3 Max",
+    "cpuCores": 16,
+    "performanceCores": 12,
+    "efficiencyCores": 4,
+    "ramGB": 128,
+    "workers": {
+      "python": 32,
+      "uvicorn": 33,
+      "vitest": 20,
+      "pytest": 16
+    },
+    "optimization": {
+      "threadPoolMax": 40,
+      "batchSizeOptimal": 150,
+      "memoryPerWorker": "4GB",
+      "cacheSize": "32GB"
+    }
+  },
+  
+  "paths": {
+    "root": "/Users/andrejs/easypost-mcp-project",
+    "backend": "backend/src",
+    "frontend": "frontend/src",
+    "tests": {
+      "backend": "backend/tests",
+      "frontend": "frontend/src"
+    },
+    "components": "frontend/src/components",
+    "services": {
+      "backend": "backend/src/services",
+      "frontend": "frontend/src/services"
+    }
+  },
+  
+  "conventions": {
+    "python": {
+      "functions": "snake_case",
+      "classes": "PascalCase",
+      "constants": "UPPER_SNAKE_CASE",
+      "files": "snake_case.py"
+    },
+    "javascript": {
+      "functions": "camelCase",
+      "components": "PascalCase",
+      "constants": "UPPER_SNAKE_CASE",
+      "files": "PascalCase.jsx"
+    },
+    "commits": "conventional",
+    "branches": "feature/name, fix/name"
+  },
+  
+  "testing": {
+    "backend": {
+      "framework": "pytest",
+      "parallel": true,
+      "coverage": 80,
+      "mocking": ["easypost", "external-apis"]
+    },
+    "frontend": {
+      "framework": "vitest",
+      "library": "testing-library/react",
+      "parallel": true,
+      "coverage": 70
+    }
+  },
+  
+  "optimization": {
+    "enabled": true,
+    "features": {
+      "uvloop": true,
+      "threadPoolScaling": true,
+      "parallelTests": true,
+      "codeSplitting": true,
+      "lazyLoading": true
+    }
+  },
+  
+  "customization": {
+    "primaryDomain": "shipping",
+    "mainService": "EasyPostService",
+    "apiProvider": "EasyPost",
+    "keyFeatures": ["shipment-creation", "tracking", "rate-comparison", "bulk-processing"]
+  }
+}

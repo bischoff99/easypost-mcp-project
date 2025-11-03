@@ -8,12 +8,17 @@ services:
     container_name: easypost-backend
     ports:
       - "8000:8000"
+    # M3 Max optimizations: ACTUAL specs (16 cores, 128GB RAM)
+    cpus: '14'          # Leave 2 cores for system on 16-core M3 Max
+    mem_limit: 96g      # 96GB RAM allocation (75% of 128GB M3 Max)
     environment:
       - EASYPOST_API_KEY=${EASYPOST_API_KEY}
       - MCP_HOST=0.0.0.0
       - MCP_PORT=8000
       - MCP_LOG_LEVEL=INFO
       - CORS_ORIGINS=http://localhost,http://localhost:80,http://localhost:5173
+      - WORKERS=33        # (2 x 16 CPU cores) + 1 for M3 Max
+      - PYTHONOPTIMIZE=2  # Enable Python optimizations
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
@@ -31,6 +36,9 @@ services:
     container_name: easypost-frontend
     ports:
       - "80:80"
+    # M3 Max optimizations: Allocate cores and memory for frontend builds
+    cpus: '10'          # 10 cores for frontend (Vite builds are CPU intensive)
+    mem_limit: 16g      # 16GB RAM for frontend builds
     depends_on:
       backend:
         condition: service_healthy

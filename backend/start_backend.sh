@@ -22,7 +22,19 @@ fi
 # Export Python path
 export PYTHONPATH="${PYTHONPATH}:$(pwd)"
 
-# Run server
+# Calculate workers: (2 x CPU cores) + 1 for M3 Max optimization
+# M3 Max 14-core: 29 workers for maximum concurrency
+WORKERS=$(python -c "import multiprocessing; print((2 * multiprocessing.cpu_count()) + 1)")
+echo -e "${BLUE}Detected $(python -c "import multiprocessing; print(multiprocessing.cpu_count())") CPU cores, using ${WORKERS} workers${NC}"
+
+# Run server with multi-worker setup and uvloop
 echo -e "${GREEN}MCP Server running at http://localhost:8000${NC}"
 echo -e "${GREEN}Health check: http://localhost:8000/health${NC}"
-python src/server.py
+echo -e "${GREEN}Using ${WORKERS} workers with uvloop for optimal M3 Max performance${NC}"
+
+uvicorn src.server:app \
+  --host 0.0.0.0 \
+  --port 8000 \
+  --workers $WORKERS \
+  --loop uvloop \
+  --log-level info

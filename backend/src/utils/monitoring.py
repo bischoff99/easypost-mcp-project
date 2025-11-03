@@ -1,9 +1,11 @@
 """Monitoring utilities for health checks and metrics."""
+
 import asyncio
 import logging
 import time
 from datetime import datetime, timezone
-from typing import Dict, Any
+from typing import Any, Dict
+
 import psutil
 
 logger = logging.getLogger(__name__)
@@ -17,11 +19,10 @@ class HealthCheck:
         """Check EasyPost API connectivity."""
         try:
             import easypost
+
             client = easypost.EasyPostClient(api_key)
             # Simple API call to verify connectivity
-            await asyncio.get_event_loop().run_in_executor(
-                None, client.carrier_account.all
-            )
+            await asyncio.get_event_loop().run_in_executor(None, client.carrier_account.all)
             return {"status": "healthy", "latency_ms": 0}
         except Exception as e:
             logger.error(f"EasyPost health check failed: {str(e)}")
@@ -33,8 +34,8 @@ class HealthCheck:
         try:
             cpu_percent = psutil.cpu_percent(interval=0.1)
             memory = psutil.virtual_memory()
-            disk = psutil.disk_usage('/')
-            
+            disk = psutil.disk_usage("/")
+
             return {
                 "status": "healthy",
                 "cpu_percent": round(cpu_percent, 2),

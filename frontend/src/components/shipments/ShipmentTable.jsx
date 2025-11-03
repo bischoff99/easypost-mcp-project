@@ -1,5 +1,15 @@
 import { useState } from 'react';
-import { Package, TruckIcon, CheckCircle, Clock, AlertTriangle, ExternalLink, Printer, X } from 'lucide-react';
+import {
+  Package,
+  TruckIcon,
+  CheckCircle,
+  Clock,
+  AlertTriangle,
+  ExternalLink,
+  Printer,
+  X,
+  Download,
+} from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -10,6 +20,8 @@ import {
 } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { SkeletonTable } from '@/components/ui/Skeleton';
+import { exportShipmentsToCSV, exportSelectedShipmentsToCSV } from '@/lib/exportUtils';
 import { formatDate, formatCurrency, formatRelativeTime } from '@/lib/utils';
 
 const statusConfig = {
@@ -45,7 +57,7 @@ const mockShipments = [
     service: 'Priority Mail',
     from: 'San Francisco, CA',
     to: 'New York, NY',
-    cost: 12.50,
+    cost: 12.5,
     created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     label_url: '#',
   },
@@ -69,16 +81,35 @@ const mockShipments = [
     service: 'Express',
     from: 'Miami, FL',
     to: 'Boston, MA',
-    cost: 25.00,
+    cost: 25.0,
     created_at: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
     label_url: '#',
   },
 ];
 
-export default function ShipmentTable({ shipments = mockShipments }) {
+export default function ShipmentTable({ shipments: propShipments, isLoading = false }) {
+  // Use prop shipments if provided, otherwise fallback to mock data
+  const shipments = propShipments || mockShipments;
   const [selectedRows, setSelectedRows] = useState(new Set());
 
-  const toggleRow = (id) => {
+  if (isLoading) {
+    return <SkeletonTable rows={5} columns={8} />;
+  }
+
+  const handleExportAll = () => {
+    exportShipmentsToCSV(shipments, `all-shipments-${new Date().toISOString().split('T')[0]}`);
+  };
+
+  const handleExportSelected = () => {
+    if (selectedRows.size === 0) return;
+    exportSelectedShipmentsToCSV(
+      shipments,
+      selectedRows,
+      `selected-shipments-${new Date().toISOString().split('T')[0]}`
+    );
+  };
+
+  const toggleRow = id => {
     const newSelected = new Set(selectedRows);
     if (newSelected.has(id)) {
       newSelected.delete(id);
@@ -92,7 +123,7 @@ export default function ShipmentTable({ shipments = mockShipments }) {
     if (selectedRows.size === shipments.length) {
       setSelectedRows(new Set());
     } else {
-      setSelectedRows(new Set(shipments.map((s) => s.id)));
+      setSelectedRows(new Set(shipments.map(s => s.id)));
     }
   };
 
@@ -100,16 +131,15 @@ export default function ShipmentTable({ shipments = mockShipments }) {
     <div className="space-y-4">
       {selectedRows.size > 0 && (
         <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/50 px-4 py-2">
-          <span className="text-sm font-medium">
-            {selectedRows.size} selected
-          </span>
+          <span className="text-sm font-medium">{selectedRows.size} selected</span>
           <div className="flex gap-1 ml-4">
             <Button variant="outline" size="sm">
               <Printer className="h-4 w-4 mr-1" />
               Print Labels
             </Button>
-            <Button variant="outline" size="sm">
-              Export
+            <Button variant="outline" size="sm" onClick={handleExportSelected}>
+              <Download className="h-4 w-4 mr-1" />
+              Export Selected
             </Button>
             <Button variant="outline" size="sm">
               <X className="h-4 w-4 mr-1" />
@@ -142,7 +172,7 @@ export default function ShipmentTable({ shipments = mockShipments }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {shipments.map((shipment) => {
+            {shipments.map(shipment => {
               const statusInfo = statusConfig[shipment.status] || statusConfig.pending;
               const StatusIcon = statusInfo.icon;
 
@@ -167,9 +197,7 @@ export default function ShipmentTable({ shipments = mockShipments }) {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <span className="font-mono text-sm">
-                        {shipment.tracking_number}
-                      </span>
+                      <span className="font-mono text-sm">{shipment.tracking_number}</span>
                       <Button variant="ghost" size="icon" className="h-6 w-6">
                         <ExternalLink className="h-3 w-3" />
                       </Button>
@@ -189,14 +217,10 @@ export default function ShipmentTable({ shipments = mockShipments }) {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="text-sm text-muted-foreground">
-                      {shipment.service}
-                    </span>
+                    <span className="text-sm text-muted-foreground">{shipment.service}</span>
                   </TableCell>
                   <TableCell>
-                    <span className="font-medium">
-                      {formatCurrency(shipment.cost)}
-                    </span>
+                    <span className="font-medium">{formatCurrency(shipment.cost)}</span>
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col">
@@ -223,11 +247,17 @@ export default function ShipmentTable({ shipments = mockShipments }) {
         </Table>
       </div>
 
-      {/* Pagination */}
+      {/* Export and Pagination */}
       <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
-          Showing <span className="font-medium">{shipments.length}</span> of{' '}
-          <span className="font-medium">{shipments.length}</span> shipments
+        <div className="flex items-center gap-4">
+          <div className="text-sm text-muted-foreground">
+            Showing <span className="font-medium">{shipments.length}</span> of{' '}
+            <span className="font-medium">{shipments.length}</span> shipments
+          </div>
+          <Button variant="outline" size="sm" onClick={handleExportAll}>
+            <Download className="h-4 w-4 mr-1" />
+            Export All
+          </Button>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" disabled>
@@ -241,4 +271,3 @@ export default function ShipmentTable({ shipments = mockShipments }) {
     </div>
   );
 }
-

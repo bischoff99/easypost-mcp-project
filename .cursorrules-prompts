@@ -1,0 +1,205 @@
+# Quick AI Prompt Commands for EasyPost MCP Project
+
+## Project Context
+- **Backend**: Python 3.12, FastAPI, FastMCP, EasyPost SDK, Pydantic
+- **Frontend**: React 18, Vite, Tailwind CSS, shadcn/ui, Zustand
+- **Style**: Google docstrings, TypeScript JSDoc, snake_case (Python), camelCase (JS)
+- **Tests**: pytest with mocks (backend), Vitest with RTL (frontend)
+- **Location**: /Users/andrejs/easypost-mcp-project
+
+## Quick Commands (use in prompts)
+
+### `/api [path] [method]`
+Create FastAPI endpoint at path with method (GET/POST/PUT/DELETE).
+- Uses Pydantic models
+- Standard error handling
+- Includes logging
+- Returns status/data/message/timestamp format
+
+Example: `/api /webhooks POST`
+
+### `/tool [name]`
+Create FastMCP tool with name.
+- Context parameter for progress
+- Async implementation
+- Error handling
+- Standard response format
+
+Example: `/tool validate_address`
+
+### `/component [Name]`
+Create React component with Name.
+- Functional component with hooks
+- PropTypes validation
+- Loading/error states
+- Tailwind CSS styling
+
+Example: `/component WebhookCard`
+
+### `/page [Name]`
+Create full page component with routing.
+- Includes layout structure
+- Data fetching pattern
+- Navigation integration
+
+Example: `/page WebhooksPage`
+
+### `/hook [name]`
+Create custom React hook.
+- State management
+- Effect cleanup
+- Return object pattern
+
+Example: `/hook useWebhook`
+
+### `/test [file]`
+Generate tests for specified file.
+- Unit tests with mocks
+- Edge cases
+- Async handling
+- 80%+ coverage
+
+Example: `/test backend/src/services/webhook_service.py`
+
+### `/fix`
+Fix error in current context.
+- Analyzes error message
+- Provides solution
+- Updates code
+
+Example: `/fix` (when error is visible)
+
+### `/refactor`
+Refactor current selection/file.
+- DRY principles
+- Performance improvements
+- Type safety
+
+Example: `/refactor for performance`
+
+### `/docs`
+Add documentation to current file.
+- Docstrings/JSDoc
+- Type hints
+- Examples
+
+Example: `/docs add examples`
+
+### `/opt`
+Optimize code for M3 Max.
+- Multi-threading
+- Async operations
+- Memory efficiency
+
+Example: `/opt this service`
+
+### `/secure`
+Security audit and fixes.
+- Input validation
+- SQL injection prevention
+- XSS protection
+
+Example: `/secure this endpoint`
+
+## Standard Patterns
+
+### API Response Format
+```json
+{
+  "status": "success|error",
+  "data": {...},
+  "message": "Description",
+  "timestamp": "ISO8601"
+}
+```
+
+### Error Handling
+- Specific exception types
+- Pydantic validation
+- Sanitized error messages
+- Proper HTTP status codes
+
+### File Organization
+- Backend: `backend/src/{services,mcp,utils}/`
+- Frontend: `frontend/src/{pages,components,services,hooks}/`
+- Tests: Mirror source structure with `test_` prefix
+
+### Naming Conventions
+- Backend: snake_case functions, PascalCase classes
+- Frontend: camelCase functions/variables, PascalCase components
+- Files: match primary export (PascalCase.jsx or snake_case.py)
+
+## Development Workflow
+
+1. **Feature Development**:
+   ```
+   Create: `/api /feature POST` or `/component FeatureName`
+   Test: `/test path/to/file`
+   Review: `/secure` + `/opt`
+   Document: `/docs`
+   ```
+
+2. **Bug Fix**:
+   ```
+   Run test → Copy error → `/fix [error]`
+   Verify fix → Update test
+   ```
+
+3. **Refactoring**:
+   ```
+   `/refactor for {performance|readability|maintainability}`
+   Run tests → Verify no regressions
+   ```
+
+## Templates
+
+Reference templates in prompts:
+- `@.ai-templates/api-endpoint.py`
+- `@.ai-templates/react-component.jsx`
+- `@.ai-templates/mcp-tool.py`
+
+Example: "Use @.ai-templates/api-endpoint.py for create_webhook"
+
+## Speed Tips
+
+1. **Be directive**: "Add X" not "Can you add X?"
+2. **Use @ mentions**: "@file.py fix line 42"
+3. **Batch tasks**: "Add X, Y, Z to this file"
+4. **Open relevant files only**: Close unneeded tabs
+5. **Use templates**: Reference template patterns
+
+## Testing Strategy
+
+- Mock external APIs (EasyPost)
+- Test edge cases and errors
+- Aim for 80%+ coverage on business logic
+- Use fixtures for common test data
+
+## Common Tasks
+
+### Add new MCP tool:
+```
+"@backend/src/mcp/tools/ create {name}_tools.py using @.ai-templates/mcp-tool.py.
+Register in @backend/src/mcp/tools/__init__.py"
+```
+
+### Add new page:
+```
+"@frontend/src/pages/ create {Name}Page.jsx using @.ai-templates/react-page.jsx.
+Add route in @frontend/src/App.jsx"
+```
+
+### Add API endpoint:
+```
+"@backend/src/server.py add {METHOD} /{path} endpoint using @.ai-templates/api-endpoint.py"
+```
+
+## Remember
+
+- Always include type hints (Python) or JSDoc (JavaScript)
+- Follow existing code style in the file
+- Write tests for new features
+- Update documentation when changing APIs
+- Use async/await for I/O operations
+- Validate all inputs with Pydantic
+- Return standardized response formats

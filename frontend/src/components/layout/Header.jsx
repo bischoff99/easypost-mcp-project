@@ -1,6 +1,7 @@
-import { Moon, Sun, Bell, Search, Plus } from 'lucide-react';
+import { Bell, Search, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import ThemeToggle from '@/components/ui/ThemeToggle';
 import useUIStore from '@/stores/useUIStore';
 import { cn } from '@/lib/utils';
 
@@ -47,13 +48,7 @@ export default function Header() {
             </Badge>
           </Button>
 
-          <Button variant="ghost" size="icon" onClick={toggleTheme}>
-            {theme === 'light' ? (
-              <Moon className="h-5 w-5" />
-            ) : (
-              <Sun className="h-5 w-5" />
-            )}
-          </Button>
+          <ThemeToggle />
 
           <div className="ml-2 flex items-center gap-2">
             <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-medium text-sm">
@@ -65,4 +60,3 @@ export default function Header() {
     </header>
   );
 }
-

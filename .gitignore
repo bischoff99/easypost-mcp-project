@@ -20,10 +20,6 @@ wheels/
 .installed.cfg
 *.egg
 MANIFEST
-*.manifest
-*.spec
-pip-log.txt
-pip-delete-this-directory.txt
 
 # Virtual environments
 venv/
@@ -36,69 +32,35 @@ env/
 .coverage
 htmlcov/
 .tox/
-.nox/
-coverage.xml
-*.cover
-
-# Type checking
-.mypy_cache/
-.dmypy.json
-dmypy.json
-.pyre/
-.pytype/
-
-# Linting
-.ruff_cache/
+.hypothesis/
 
 # IDEs
-.vscode/*
-!.vscode/settings.json
-!.vscode/extensions.json
+.vscode/
 .idea/
 *.swp
 *.swo
 *~
+
+# OS
 .DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Build outputs
+dist/
+build/
+*.log
 
 # Environment variables
 .env
 .env.local
 .env.*.local
 
-# Node.js
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-package-lock.json
-
-# Frontend build
-frontend/dist/
-frontend/.vite/
-
-# Logs
-logs/
-*.log
-
-# Temporary files
-*.tmp
-*.temp
-temp/
-tmp/
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Project specific
-*.md.backup
-cursor_mcp_settings_backup.json
-claude_config_snippet.json
-mcp_servers_to_add.json
-ALL_READY.txt
-FIXES_COMPLETE.md
-PARALLEL_DEV_SUCCESS.md
-STATUS.md
-test_endpoints.py
-.cursorrules.backup
-.cursorrules_enhanced
+# Pre-commit
+.pre-commit-config.yaml.swp

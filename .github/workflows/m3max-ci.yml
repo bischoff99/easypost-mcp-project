@@ -1,0 +1,185 @@
+name: M3 Max CI/CD Pipeline
+
+# Trigger on push/PR to main branch
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+# Use M3 Max runners for maximum performance
+jobs:
+  test:
+    name: Parallel Tests (M3 Max)
+    runs-on: macos-latest # GitHub's M3 Max runners
+
+    strategy:
+      # Split tests across multiple jobs for parallelism
+      matrix:
+        test-group: [1, 2, 3, 4, 5, 6, 7, 8] # 8 parallel jobs
+        python-version: ['3.12'] # Use latest stable Python
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install Python dependencies
+        run: |
+          cd backend
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest-xdist  # Parallel test execution
+
+      - name: Run backend tests (parallel)
+        run: |
+          cd backend
+          # Split tests across 8 parallel jobs using M3 Max cores
+          pytest tests/ -n auto --tb=short --maxfail=5 \
+            --dist loadgroup \
+            -k "group_${{ matrix.test-group }}" || \
+          pytest tests/ -n auto --tb=short --maxfail=5
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ matrix.test-group }}
+          path: backend/test-results.xml
+
+  frontend-test:
+    name: Frontend Tests (M3 Max)
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: |
+          cd frontend
+          pnpm install --frozen-lockfile
+
+      - name: Run frontend tests (parallel)
+        run: |
+          cd frontend
+          pnpm test -- --run --reporter=verbose --maxThreads=16
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          pnpm build
+
+  build:
+    name: Build & Deploy
+    runs-on: macos-latest
+    needs: [test, frontend-test]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker images (parallel)
+        run: |
+          # Build backend and frontend in parallel using M3 Max cores
+          docker-compose build --parallel
+
+      - name: Run integration tests
+        run: |
+          docker-compose up -d
+          sleep 30  # Wait for services to start
+          curl -f http://localhost/health || exit 1
+          docker-compose down
+
+      - name: Deploy to staging
+        if: github.ref == 'refs/heads/main'
+        run: |
+          echo "Deploy to staging environment"
+          # Add your deployment commands here
+
+  performance-benchmark:
+    name: Performance Benchmark
+    runs-on: macos-latest
+    needs: [build]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run performance benchmark
+        run: |
+          ./benchmark.sh
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: benchmark-results.json
+
+  security-scan:
+    name: Security Scan
+    runs-on: macos-latest
+    needs: [test]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run security scan
+        uses: github/super-linter/slim@v5
+        env:
+          DEFAULT_BRANCH: main
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Dependency vulnerability scan
+        run: |
+          cd backend
+          pip install safety
+          safety check
+
+          cd ../frontend
+          pnpm audit --audit-level moderate
+
+  # Performance monitoring
+  notify:
+    name: Notification
+    runs-on: ubuntu-latest
+    needs: [test, frontend-test, build, performance-benchmark]
+    if: always()
+
+    steps:
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "Pipeline failed - check logs for details"
+
+      - name: Notify on success
+        if: success()
+        run: |
+          echo "✅ M3 Max CI/CD pipeline completed successfully"
+          echo "Performance benchmarks available in artifacts"

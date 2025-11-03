@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import multiprocessing
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
@@ -11,19 +12,27 @@ logger = logging.getLogger(__name__)
 
 
 class AddressModel(BaseModel):
-    name: str
-    street1: str
-    city: str
-    state: str
-    zip: str
-    country: str = "US"
+    """Address model with input validation and length limits."""
+
+    name: str = Field(..., max_length=100, description="Recipient name")
+    street1: str = Field(..., max_length=200, description="Street address line 1")
+    street2: Optional[str] = Field(None, max_length=200, description="Street address line 2")
+    city: str = Field(..., max_length=100, description="City name")
+    state: str = Field(..., max_length=50, description="State or province")
+    zip: str = Field(..., max_length=20, description="Postal/ZIP code")
+    country: str = Field(default="US", max_length=2, description="2-letter ISO country code")
+    phone: Optional[str] = Field(None, max_length=20, description="Contact phone")
+    email: Optional[str] = Field(None, max_length=100, description="Contact email")
+    company: Optional[str] = Field(None, max_length=100, description="Company name")
 
 
 class ParcelModel(BaseModel):
-    length: float = Field(..., gt=0)
-    width: float = Field(..., gt=0)
-    height: float = Field(..., gt=0)
-    weight: float = Field(..., gt=0)
+    """Parcel model with dimension and weight constraints."""
+
+    length: float = Field(..., gt=0, le=108, description="Length in inches (max 108)")
+    width: float = Field(..., gt=0, le=108, description="Width in inches (max 108)")
+    height: float = Field(..., gt=0, le=108, description="Height in inches (max 108)")
+    weight: float = Field(..., gt=0, le=2400, description="Weight in ounces (max 150 lbs)")
 
 
 class ShipmentResponse(BaseModel):
@@ -62,7 +71,16 @@ class EasyPostService:
         self.api_key = api_key
         self.client = easypost.EasyPostClient(api_key)
         self.logger = logging.getLogger(__name__)
-        self.executor = ThreadPoolExecutor(max_workers=10)
+
+        # Scale ThreadPoolExecutor with CPU cores (M3 Max: 16 cores, 128GB RAM)
+        cpu_count = multiprocessing.cpu_count()  # 16 cores
+        max_workers = min(40, cpu_count * 2)  # 32-40 workers for I/O-bound tasks
+        self.executor = ThreadPoolExecutor(max_workers=max_workers)
+        self.logger.info(
+            f"ThreadPoolExecutor initialized: {max_workers} workers on {cpu_count} cores"
+        )
+
+        self.logger.info(f"ThreadPoolExecutor initialized with {max_workers} workers")
 
     async def create_shipment(
         self,
