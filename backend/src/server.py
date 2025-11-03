@@ -123,6 +123,7 @@ async def create_shipment(request: Request, shipment_data: ShipmentRequest) -> D
 
         if result.status == "success":
             logger.info(f"[PROGRESS] Shipment created successfully: {result.shipment_id}")
+            metrics.record_shipment()
             return {
                 "status": result.status,
                 "data": result.dict(),
@@ -185,6 +186,7 @@ async def get_tracking(request: Request, tracking_number: str) -> Dict[str, Any]
         logger.info(f"[PROGRESS] Fetching tracking information for {tracking_number}...")
 
         result = await easypost_service.get_tracking(tracking_number.strip())
+        metrics.record_tracking()
         return result
     except HTTPException:
         raise
