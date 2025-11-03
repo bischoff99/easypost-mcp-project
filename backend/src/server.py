@@ -207,7 +207,7 @@ async def get_tracking(request: Request, tracking_number: str) -> Dict[str, Any]
             "status": "error",
             "data": None,
             "message": "Failed to retrieve tracking information",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
 

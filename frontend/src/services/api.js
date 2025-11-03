@@ -14,7 +14,10 @@ const api = axios.create({
 api.interceptors.response.use(
   response => response,
   error => {
-    console.error('API Error:', error.response?.data || error.message);
+    // Log to error tracking service in production
+    if (import.meta.env.DEV) {
+      console.warn('API Error:', error.response?.data || error.message);
+    }
     return Promise.reject(error);
   }
 );

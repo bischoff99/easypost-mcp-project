@@ -18,7 +18,13 @@ class Settings:
     CORS_ORIGINS: list = os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",")
     CORS_ALLOW_CREDENTIALS: bool = os.getenv("CORS_ALLOW_CREDENTIALS", "true").lower() == "true"
     CORS_ALLOW_METHODS: list = os.getenv("CORS_ALLOW_METHODS", "GET,POST,OPTIONS").split(",")
-    CORS_ALLOW_HEADERS: list = ["*"]
+    CORS_ALLOW_HEADERS: list = [
+        "Content-Type",
+        "Authorization",
+        "X-Request-ID",
+        "Accept",
+        "Origin",
+    ]
 
     # Environment
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")

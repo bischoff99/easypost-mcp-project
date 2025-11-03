@@ -18,9 +18,14 @@ export default function SettingsPage() {
     timezone: 'America/Los_Angeles',
   });
 
-  const handleSave = () => {
-    console.log('Saving settings:', settings);
-    alert('Settings saved successfully!');
+  const handleSave = async () => {
+    try {
+      // TODO: Implement actual API call
+      // await api.post('/settings', settings);
+      alert('Settings saved successfully!');
+    } catch (error) {
+      alert('Failed to save settings');
+    }
   };
 
   return (

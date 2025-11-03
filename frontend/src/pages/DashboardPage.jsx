@@ -117,7 +117,9 @@ export default function DashboardPage() {
               key={action.title}
               {...action}
               delay={0.4 + index * 0.1}
-              onClick={() => console.log(`Clicked: ${action.title}`)}
+              onClick={() => {
+                // TODO: Implement navigation based on action
+              }}
             />
           ))}
         </div>
