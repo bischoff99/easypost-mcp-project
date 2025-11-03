@@ -95,7 +95,13 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # ===== API ENDPOINTS =====
 
 
-@app.post("/api/shipments", status_code=status.HTTP_201_CREATED)
+@app.post(
+    "/api/shipments",
+    status_code=status.HTTP_201_CREATED,
+    tags=["shipments"],
+    summary="Create a new shipment",
+    response_description="Shipment created successfully with label URL",
+)
 @limiter.limit("10/minute")
 async def create_shipment(request: Request, shipment_data: ShipmentRequest) -> Dict[str, Any]:
     """
@@ -167,7 +173,12 @@ async def create_shipment(request: Request, shipment_data: ShipmentRequest) -> D
         ) from None
 
 
-@app.get("/api/tracking/{tracking_number}")
+@app.get(
+    "/api/tracking/{tracking_number}",
+    tags=["tracking"],
+    summary="Get package tracking information",
+    response_description="Current tracking status and history",
+)
 @limiter.limit("30/minute")
 async def get_tracking(request: Request, tracking_number: str) -> Dict[str, Any]:
     """
@@ -200,7 +211,12 @@ async def get_tracking(request: Request, tracking_number: str) -> Dict[str, Any]
         }
 
 
-@app.post("/api/rates")
+@app.post(
+    "/api/rates",
+    tags=["rates"],
+    summary="Get shipping rates",
+    response_description="Available rates from multiple carriers",
+)
 @limiter.limit("20/minute")
 async def get_rates(request: Request, rates_data: RatesRequest) -> Dict[str, Any]:
     """
@@ -252,7 +268,12 @@ async def get_rates(request: Request, rates_data: RatesRequest) -> Dict[str, Any
 # ===== RESOURCES (REST API Endpoints) =====
 
 
-@app.get("/api/shipments/recent")
+@app.get(
+    "/api/shipments/recent",
+    tags=["resources"],
+    summary="Get recent shipments",
+    response_description="List of recently created shipments",
+)
 async def get_recent_shipments(limit: int = 10) -> Dict[str, Any]:
     """
     Get recent shipments from EasyPost API.
@@ -300,7 +321,12 @@ async def get_recent_shipments(limit: int = 10) -> Dict[str, Any]:
         ) from None
 
 
-@app.get("/health")
+@app.get(
+    "/health",
+    tags=["monitoring"],
+    summary="Health check endpoint",
+    response_description="System and API health status",
+)
 async def health_check() -> Dict[str, Any]:
     """
     Health check endpoint for monitoring.
@@ -328,7 +354,12 @@ async def health_check() -> Dict[str, Any]:
     }
 
 
-@app.get("/metrics")
+@app.get(
+    "/metrics",
+    tags=["monitoring"],
+    summary="Application metrics",
+    response_description="Request counts, error rates, and performance metrics",
+)
 async def get_metrics() -> Dict[str, Any]:
     """
     Application metrics endpoint.
@@ -343,7 +374,12 @@ async def get_metrics() -> Dict[str, Any]:
     }
 
 
-@app.get("/api/stats/overview")
+@app.get(
+    "/api/stats/overview",
+    tags=["resources"],
+    summary="Get statistics overview",
+    response_description="Shipping statistics and overview",
+)
 async def get_stats() -> Dict[str, Any]:
     """
     Get shipping statistics overview.
