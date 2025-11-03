@@ -1,0 +1,429 @@
+# EasyPost MCP Project - Enhanced Cursor Rules
+# Based on best practices from CursorList.com
+
+## Project Context
+This is an EasyPost MCP (Model Context Protocol) server with React frontend for shipping/logistics operations.
+
+## Tech Stack
+- Backend: Python 3.12+, FastMCP, EasyPost SDK, Pydantic, FastAPI, Uvicorn
+- Frontend: React 18, Vite, Axios, React Router, Zustand
+- Testing: Pytest (backend), Vitest (frontend)
+- Formatting: Black (Python), Prettier (JS/React)
+- Linting: Ruff (Python), ESLint (JS/React)
+
+## General AI Guidelines
+- Cut the fluff. Code or detailed explanations only.
+- Answer first, explain later if needed.
+- Accuracy and depth matter.
+- Don't be lazy - write complete, working code for requested features.
+- For code changes, show minimal context (few lines before/after).
+- If uncertain, say so instead of guessing.
+- Anticipate needs and suggest solutions not asked for.
+- Treat user as an expert - skip obvious explanations.
+
+## Python Backend Standards
+
+### Code Style
+- Use type hints for ALL function parameters and return values
+- Max line length: 100 characters
+- Use Pydantic models for ALL data validation
+- Docstrings required for all public functions (Google style)
+- Prefer async/await over callbacks
+- Use dataclasses or Pydantic models over dicts for structured data
+
+### FastMCP Patterns
+- One tool per function - keep tools focused
+- Use Context parameter for logging and progress
+- Implement proper error responses with standardized format
+- Use @mcp.tool() decorator with clear descriptions
+- Return typed responses (Pydantic models preferred)
+
+### Python Best Practices
+- Use context managers (with statements) for resources
+- Implement proper exception handling with specific error types
+- Use ThreadPoolExecutor for sync-to-async wrappers
+- Sanitize error messages before logging
+- Use asyncio.get_running_loop() not get_event_loop()
+- Implement retry logic with exponential backoff for external APIs
+
+### FastAPI Integration
+- Use dependency injection for shared resources
+- Implement proper CORS middleware configuration
+- Use Pydantic models for request/response validation
+- Add proper HTTP status codes
+- Implement health check endpoints
+
+### Testing Requirements
+- Unit tests for all service methods
+- Mock external API calls (EasyPost)
+- Test both success and error paths
+- Use pytest fixtures for common setup
+- Aim for 80%+ coverage on critical paths
+- Test Pydantic model validation edge cases
+
+## React Frontend Standards
+
+### Component Structure
+- Functional components with hooks ONLY
+- One component per file
+- Use custom hooks for reusable logic
+- Implement ErrorBoundary for error handling
+- Use React.memo for expensive components
+
+### State Management
+- Use Zustand for global state
+- Keep component state local when possible
+- Avoid prop drilling - use context or Zustand
+- Implement proper loading/error states
+- Use useReducer for complex component state
+
+### Performance Optimization
+- Use React.memo, useMemo, useCallback appropriately
+- Implement code splitting with React.lazy
+- Use Vite's dynamic imports for route-based splitting
+- Optimize re-renders - profile with React DevTools
+- Implement virtual scrolling for long lists
+- Use skeleton screens for loading states
+
+### API Integration
+- Centralize API calls in services/api.js
+- Use Axios interceptors for error handling
+- Implement request cancellation for unmounted components
+- Cache API responses when appropriate
+- Use proper TypeScript types or JSDoc for API responses
+
+### UI Best Practices
+- Implement responsive design (mobile-first)
+- Use consistent spacing and typography
+- Provide clear loading indicators
+- Show meaningful error messages
+- Implement proper form validation
+- Use accessible HTML elements and ARIA attributes
+
+### Vite Optimization
+- Use import.meta.env for environment variables
+- Leverage Vite's HMR for fast development
+- Use @vitejs/plugin-react for React optimizations
+- Implement proper build optimization settings
+- Use Vite's asset handling for images/fonts
+
+## Error Handling Philosophy
+
+### Backend Errors
+- Never expose internal errors to API responses
+- Log full error details server-side
+- Return user-friendly error messages
+- Use custom exception classes for different error types
+- Implement error tracking (consider Sentry in production)
+
+### Frontend Errors
+- Use ErrorBoundary at app level
+- Implement per-route error boundaries for code splitting
+- Show user-friendly error messages
+- Log errors to console.error with context
+- Provide recovery actions when possible
+
+## Security Best Practices
+
+### Backend Security
+- Validate ALL inputs with Pydantic
+- Never log sensitive data (API keys, tokens, PII)
+- Use environment variables for secrets
+- Implement rate limiting on public endpoints
+- Sanitize error messages before returning
+- Use HTTPS only in production
+
+### Frontend Security
+- Never store sensitive data in localStorage
+- Sanitize user inputs before display
+- Use Content Security Policy headers
+- Implement CSRF protection
+- Validate data from backend before use
+
+## API Response Format (STRICT)
+ALL backend responses MUST follow this format:
+
+```json
+{
+  "status": "success|error|pending",
+  "data": {...},           // null on error
+  "message": "Description",
+  "timestamp": "ISO8601"
+}
+```
+
+### Status Codes
+- 200: Success
+- 400: Bad request (validation error)
+- 401: Unauthorized
+- 403: Forbidden
+- 404: Not found
+- 500: Internal server error
+
+## Naming Conventions
+
+### Python (snake_case)
+- Functions: `create_shipment()`, `get_tracking_info()`
+- Classes: `EasyPostService`, `ShipmentResponse`
+- Constants: `MAX_RETRIES`, `API_TIMEOUT`
+- Private: `_sanitize_error()`, `_create_shipment_sync()`
+- Files: `easypost_service.py`, `shipment_tools.py`
+
+### JavaScript/React (camelCase/PascalCase)
+- Components: `Dashboard.jsx`, `ShipmentForm.jsx`
+- Functions: `handleCreateShipment()`, `fetchShipmentData()`
+- Constants: `API_URL`, `MAX_FILE_SIZE`
+- Custom hooks: `useShipment()`, `useTracking()`
+- Files: 
+  - Components: `Dashboard.jsx`
+  - Utils: `apiService.js`
+  - Hooks: `useAuth.js`
+
+## File Structure Rules
+
+### Backend
+```
+backend/
+  src/
+    __init__.py
+    server.py              # FastMCP server entry point
+    services/              # Business logic
+      easypost_service.py
+    tools/                 # MCP tool definitions
+      shipment_tools.py
+    utils/                 # Utilities
+      config.py
+      logging.py
+      validators.py
+    models/                # Pydantic models
+      shipment.py
+      tracking.py
+  tests/
+    test_services/
+    test_tools/
+  run_mcp.py              # MCP stdio runner
+```
+
+### Frontend
+```
+frontend/
+  src/
+    components/           # React components
+      Dashboard.jsx
+      ShipmentForm.jsx
+    services/            # API clients
+      api.js
+    hooks/               # Custom hooks
+      useShipment.js
+    utils/               # Utilities
+      formatters.js
+    App.jsx
+    main.jsx
+```
+
+## Git Commit Standards
+
+### Format
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+### Types
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation changes
+- `style`: Code style (formatting, no logic change)
+- `refactor`: Code refactoring
+- `test`: Adding/updating tests
+- `chore`: Maintenance tasks
+
+### Examples
+```
+feat(backend): add rate limiting to shipment endpoints
+fix(frontend): resolve form validation on Safari
+docs(api): update shipment creation examples
+test(services): add integration tests for tracking
+```
+
+## Testing Philosophy
+
+### Backend Testing
+- Test business logic, not frameworks
+- Mock external dependencies (EasyPost API)
+- Test edge cases and error conditions
+- Use fixtures for common test data
+- Integration tests for critical paths
+
+### Frontend Testing
+- Test user interactions, not implementation
+- Mock API calls consistently
+- Test error states and loading states
+- Use React Testing Library best practices
+- Avoid snapshot tests (they break too easily)
+
+## Code Review Checklist
+
+### Before Committing
+- [ ] All tests pass
+- [ ] Linting passes (black, ruff, prettier, eslint)
+- [ ] No console.log or print() statements
+- [ ] Error handling implemented
+- [ ] Type hints/JSDoc added
+- [ ] Documentation updated if needed
+- [ ] No hardcoded secrets or sensitive data
+- [ ] Performance considerations addressed
+
+### Backend Specific
+- [ ] Pydantic models used for validation
+- [ ] Async/await used correctly
+- [ ] Error responses standardized
+- [ ] API key not exposed in logs
+- [ ] Proper HTTP status codes
+
+### Frontend Specific
+- [ ] No prop drilling
+- [ ] Loading states implemented
+- [ ] Error boundaries in place
+- [ ] Responsive design verified
+- [ ] Accessibility considered
+
+## Performance Guidelines
+
+### Backend
+- Use connection pooling for database/external APIs
+- Implement caching for frequently accessed data
+- Use async operations for I/O bound tasks
+- Profile slow endpoints with timing logs
+- Consider rate limiting to prevent abuse
+
+### Frontend
+- Lazy load routes and heavy components
+- Debounce user inputs for API calls
+- Use proper memoization (not everywhere)
+- Optimize bundle size with tree shaking
+- Implement virtual scrolling for large lists
+
+## Documentation Standards
+
+### Code Comments
+- Document WHY, not WHAT
+- Add comments for complex algorithms
+- Document assumptions and edge cases
+- Add TODO comments with ticket references
+- Keep comments up to date with code changes
+
+### API Documentation
+- Document all endpoints with examples
+- Include request/response schemas
+- Document error codes and messages
+- Provide authentication requirements
+- Include rate limiting information
+
+## Environment Configuration
+
+### Backend (.env)
+```bash
+EASYPOST_API_KEY=xxx
+MCP_HOST=0.0.0.0
+MCP_PORT=8000
+MCP_LOG_LEVEL=INFO
+ENVIRONMENT=development
+```
+
+### Frontend (.env)
+```bash
+VITE_API_URL=http://localhost:8000
+VITE_APP_TITLE=EasyPost MCP Dashboard
+VITE_ENVIRONMENT=development
+```
+
+## Quick Commands Reference
+
+### Backend
+```bash
+# Setup
+cd backend
+python3.12 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# Development
+python src/server.py                    # Start HTTP server
+python run_mcp.py                       # Start MCP stdio server
+
+# Testing
+pytest tests/ -v                        # Run tests
+pytest tests/ -v --cov=src             # With coverage
+
+# Code Quality
+black .                                 # Format code
+ruff check . --fix                     # Lint and fix
+mypy src/                              # Type checking
+```
+
+### Frontend
+```bash
+# Setup
+cd frontend
+npm install
+
+# Development
+npm run dev                            # Start dev server
+npm run build                          # Production build
+npm run preview                        # Preview build
+
+# Testing
+npm test                               # Run tests
+npm run test:coverage                  # With coverage
+
+# Code Quality
+npx prettier --write .                 # Format code
+npx eslint . --fix                    # Lint and fix
+```
+
+## Context-Aware Development
+
+### Always Consider
+- Existing project structure before adding new files
+- Current implementations before duplicating functionality
+- Previously discussed patterns for consistency
+- Integration points with existing code
+- Backward compatibility when refactoring
+
+### Code Output Rules
+- Output ENTIRE file content when modifying files
+- Include all imports and dependencies
+- Add comments explaining significant changes
+- If file is large, provide complete relevant section
+- Indicate where code fits in larger structure
+
+## MCP-Specific Guidelines
+
+### Tool Design
+- Keep tools focused and single-purpose
+- Use clear, descriptive names
+- Provide detailed descriptions
+- Return standardized response format
+- Handle all error cases gracefully
+
+### Resource Patterns
+- Use URI-based resource identifiers
+- Implement caching when appropriate
+- Handle missing resources gracefully
+- Return consistent data structures
+
+### Prompt Engineering
+- Create helpful workflow prompts
+- Provide clear examples in prompts
+- Make prompts conversational
+- Guide users through complex operations
+
+## Additional Resources
+- FastMCP Docs: https://gofastmcp.com
+- Cursor IDE: https://cursor.sh
+- CursorList: https://cursorlist.com
+- Project Repo: /Users/andrejs/easypost-mcp-project

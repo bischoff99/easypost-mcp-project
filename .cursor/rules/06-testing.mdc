@@ -1,0 +1,46 @@
+# Testing
+
+## Backend
+```python
+import pytest
+
+@pytest.mark.asyncio
+async def test_function_success():
+    """Test success case."""
+    result = await function_call()
+    assert result.status == "success"
+    assert result.data is not None
+
+@pytest.mark.asyncio
+async def test_function_error():
+    """Test error handling."""
+    result = await function_call({})
+    assert result.status == "error"
+
+# Run: pytest tests/ -v --cov=src
+```
+
+## Frontend
+```javascript
+import { render, screen, fireEvent } from '@testing-library/react';
+
+test('renders component', () => {
+  render(<Component />);
+  expect(screen.getByText('Title')).toBeInTheDocument();
+});
+
+test('handles action', async () => {
+  render(<Component />);
+  fireEvent.click(screen.getByText('Button'));
+  // Assertions
+});
+
+// Run: npm test
+```
+
+## Requirements
+- **Unit tests** for all new features
+- **80%+ coverage** on critical paths
+- **Mock** external dependencies
+- **Test** success + error paths
+- **Run** before committing

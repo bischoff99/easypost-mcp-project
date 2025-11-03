@@ -1,0 +1,40 @@
+# API Response Format
+
+## Standard Format
+```json
+// Success
+{
+  "status": "success",
+  "data": {...},
+  "message": "Description",
+  "timestamp": "ISO8601"
+}
+
+// Error
+{
+  "status": "error",
+  "message": "Description",
+  "error_code": "CODE",
+  "timestamp": "ISO8601"
+}
+```
+
+## Required Fields
+- `status`: success | error | pending
+- `message`: Human-readable description
+- `data`: Response data (success only)
+- `error_code`: Machine code (error only)
+- `timestamp`: ISO 8601
+
+## Implementation
+```python
+def create_response(status: str, data: dict = None, message: str = ""):
+    response = {
+        "status": status,
+        "message": message,
+        "timestamp": datetime.utcnow().isoformat() + "Z"
+    }
+    if data:
+        response["data"] = data
+    return response
+```

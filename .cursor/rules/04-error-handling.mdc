@@ -1,0 +1,41 @@
+# Error Handling
+
+## Backend
+- **Try-catch** all async operations
+- **Validate** inputs before processing
+- **Log** errors with context
+- **Never** expose internal details to users
+- **Return** consistent format: `{"status": "error", "message": "..."}`
+
+```python
+try:
+    if not required_params:
+        raise ValueError("Missing required params")
+    result = await service.call()
+    return {"status": "success", "data": result}
+except ValueError as e:
+    logger.warning(f"Validation: {str(e)}")
+    return {"status": "error", "message": str(e)}
+except Exception as e:
+    logger.error(f"Error: {str(e)}", exc_info=True)
+    return {"status": "error", "message": "Internal error"}
+```
+
+## Frontend
+- **Try-catch** all API calls
+- **User-friendly** messages
+- **Log** errors to console
+- **Loading + error states** always
+
+```javascript
+try {
+  const result = await api.call();
+  setData(result);
+} catch (err) {
+  const msg = err.response?.data?.message || 'Operation failed';
+  setError(msg);
+  console.error('Error:', err);
+} finally {
+  setLoading(false);
+}
+```

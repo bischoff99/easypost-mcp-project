@@ -1,0 +1,38 @@
+# Security
+
+## Backend
+```python
+# Use env vars, not hardcoded
+from src.utils.config import settings
+api_key = settings.EASYPOST_API_KEY
+
+# Validate inputs
+from pydantic import BaseModel, Field
+class Model(BaseModel):
+    weight: float = Field(..., gt=0)
+
+# Don't expose details
+except Exception as e:
+    logger.error(f"Details: {str(e)}")
+    return {"status": "error", "message": "Internal error"}
+```
+
+## Frontend
+```javascript
+// Never expose API keys - use backend proxy
+// Use env vars
+const API_URL = process.env.REACT_APP_API_URL;
+
+// Sanitize input
+const sanitized = input.trim();
+
+// HTTPS in production
+```
+
+## Checklist
+- [ ] No hardcoded credentials
+- [ ] All inputs validated
+- [ ] Environment variables used
+- [ ] Errors not exposed to users
+- [ ] HTTPS in production
+- [ ] CORS configured

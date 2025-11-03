@@ -1,0 +1,44 @@
+# Documentation
+
+## Python Docstrings
+```python
+def function_name(param: dict, option: str = "default") -> dict:
+    """Brief description.
+
+    Args:
+        param: Parameter description
+        option: Option description (default: "default")
+
+    Returns:
+        dict: Response with status and data
+
+    Raises:
+        ValueError: If validation fails
+    """
+    pass
+```
+
+## React JSDoc
+```javascript
+/**
+ * Component description
+ *
+ * @component
+ * @returns {JSX.Element}
+ */
+export default function Component() {}
+
+/**
+ * Handler description
+ *
+ * @async
+ * @throws {Error} When API fails
+ */
+const handleAction = async () => {};
+```
+
+## Requirements
+- **Docstrings** for all public functions
+- **Type hints** on all Python functions
+- **Inline comments** for non-obvious logic
+- Document **why**, not **what**

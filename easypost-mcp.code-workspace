@@ -1,0 +1,15 @@
+{
+  "folders": [
+    {
+      "path": ".",
+      "name": "EasyPost MCP Project"
+    }
+  ],
+  "settings": {
+    "python.defaultInterpreterPath": "${workspaceFolder}/backend/venv/bin/python",
+    "python.testing.pytestPath": "${workspaceFolder}/backend/venv/bin/pytest",
+    "cursor.aiChat.enabled": true,
+    "cursor.general.enableShadowWorkspace": true
+  }
+}
+

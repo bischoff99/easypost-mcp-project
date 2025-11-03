@@ -1,0 +1,71 @@
+---
+alwaysApply: true
+---
+
+# Naming Conventions
+
+## Python Backend
+
+```python
+# Classes: PascalCase
+class EasyPostService:
+    pass
+
+class ShipmentResponse:
+    pass
+
+# Functions/Methods: snake_case
+def create_shipment():
+    pass
+
+async def get_tracking():
+    pass
+
+# Constants: UPPER_SNAKE_CASE
+MAX_FILE_SIZE = 10 * 1024 * 1024
+DEFAULT_TIMEOUT = 30
+
+# Private methods: _leading_underscore
+def _create_shipment_sync():
+    pass
+
+# Files: snake_case
+easypost_service.py
+shipment_tools.py
+```
+
+## React Frontend
+
+```javascript
+// Components: PascalCase, .jsx extension
+Dashboard.jsx
+ShipmentForm.jsx
+TrackingList.jsx
+
+// Functions/Hooks: camelCase
+function handleCreateShipment() {}
+function useShipment() {}
+
+// Constants: UPPER_SNAKE_CASE
+const API_URL = 'http://localhost:8000/mcp';
+const DEFAULT_TIMEOUT = 30000;
+
+// Files:
+// - Components: PascalCase.jsx
+// - Utils: camelCase.js
+// - Styles: PascalCase.css
+Dashboard.jsx
+Dashboard.css
+apiService.js
+```
+
+## Quick Reference
+
+| Element | Convention | Example |
+|---------|-----------|---------|
+| Python Functions | snake_case | `create_shipment()` |
+| Python Classes | PascalCase | `EasyPostService` |
+| Python Constants | UPPER_SNAKE_CASE | `MAX_SIZE` |
+| React Components | PascalCase.jsx | `Dashboard.jsx` |
+| React Functions | camelCase | `handleClick()` |
+| React Constants | UPPER_SNAKE_CASE | `API_URL` |

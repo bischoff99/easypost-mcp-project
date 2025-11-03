@@ -1,0 +1,39 @@
+# Performance
+
+## Backend
+```python
+# Async for I/O
+async def get_data() -> dict:
+    return await async_call()
+
+# Cache frequently accessed data
+from functools import lru_cache
+@lru_cache(maxsize=128)
+def get_carriers():
+    return ["USPS", "UPS", "FedEx"]
+
+# Connection pooling
+http_client = httpx.AsyncClient()
+```
+
+## Frontend
+```javascript
+// Memoize expensive components
+const Card = React.memo(({ data }) => <div>{data}</div>);
+
+// Memoize callbacks
+const handleClick = useCallback(() => {}, [deps]);
+
+// Lazy load
+const Dashboard = lazy(() => import('./Dashboard'));
+```
+
+## Checklist
+**Backend:** Async I/O, caching, connection pooling
+**Frontend:** Memoization, lazy loading, code splitting
+
+## Rules
+- Profile before optimizing
+- Async for network/DB
+- Cache static data
+- Lazy load routes

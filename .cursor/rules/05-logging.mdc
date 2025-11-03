@@ -1,0 +1,35 @@
+# Logging
+
+## Backend
+```python
+import logging
+logger = logging.getLogger(__name__)
+
+# Include context, use correct levels
+logger.debug(f"API response: {data}")
+logger.info(f"Creating shipment: {carrier}")
+logger.warning(f"Retry {attempt} for {tracking_number}")
+logger.error(f"Failed: {str(e)}")
+
+# NEVER log: API keys, passwords, PII
+# Use logger, NOT print()
+```
+
+## Frontend
+```javascript
+// Dev only
+if (process.env.NODE_ENV === 'development') {
+  console.log('Debug:', data);
+}
+
+// Always log errors
+console.error('Error:', err);
+
+// NEVER log sensitive data
+```
+
+## Levels
+- **DEBUG:** Detailed diagnostics
+- **INFO:** General operations
+- **WARNING:** Recoverable issues
+- **ERROR:** Failures needing attention
