@@ -1,0 +1,37 @@
+{
+  "recommendations": [
+    // Python/Backend (existing)
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "ms-python.debugpy",
+    "ms-python.black-formatter",
+    "charliermarsh.ruff",
+    
+    // Python/Backend (new - high priority)
+    "njpwerner.autodocstring",
+    "usernamehw.errorlens",
+    
+    // React/Frontend (existing)
+    "dsznajder.es7-react-js-snippets",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss",
+    
+    // React/Frontend (new - high priority)
+    "formulahendry.auto-rename-tag",
+    "formulahendry.auto-close-tag",
+    "wix.vscode-import-cost",
+    "wallabyjs.console-ninja",
+    
+    // Full-Stack/Productivity (existing)
+    "eamodio.gitlens",
+    "thunder-client.thunder-client",
+    
+    // Full-Stack/Productivity (new - high value)
+    "christian-kohler.path-intellisense",
+    "aaron-bond.better-comments",
+    "gruntfuggly.todo-tree",
+    "streetsidesoftware.code-spell-checker"
+  ]
+}
+

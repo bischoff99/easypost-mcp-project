@@ -51,7 +51,9 @@ dmypy.json
 .ruff_cache/
 
 # IDEs
-.vscode/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
 .idea/
 *.swp
 *.swo

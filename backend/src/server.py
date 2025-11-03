@@ -1,11 +1,16 @@
 import logging
+import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Any, Dict
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, Request, status
 from pydantic import ValidationError
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
+from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.cors import CORSMiddleware
 
 from src.models.requests import RatesRequest, ShipmentRequest
@@ -32,6 +37,30 @@ except ValueError as e:
 # Initialize EasyPost service (global)
 easypost_service = EasyPostService(api_key=settings.EASYPOST_API_KEY)
 
+# Initialize rate limiter
+limiter = Limiter(key_func=get_remote_address)
+
+
+# ===== MIDDLEWARE =====
+
+
+class RequestIDMiddleware(BaseHTTPMiddleware):
+    """Middleware to add unique request ID to each request for tracing."""
+
+    async def dispatch(self, request: Request, call_next):
+        request_id = str(uuid.uuid4())
+        request.state.request_id = request_id
+
+        logger.info(f"[{request_id}] {request.method} {request.url.path}")
+
+        try:
+            response = await call_next(request)
+            response.headers["X-Request-ID"] = request_id
+            return response
+        except Exception as e:
+            logger.error(f"[{request_id}] Request failed: {str(e)}")
+            raise
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -53,17 +82,23 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Configure rate limiter
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 
 # ===== API ENDPOINTS =====
 
 
 @app.post("/api/shipments", status_code=status.HTTP_201_CREATED)
-async def create_shipment(request: ShipmentRequest) -> Dict[str, Any]:
+@limiter.limit("10/minute")
+async def create_shipment(request: Request, shipment_data: ShipmentRequest) -> Dict[str, Any]:
     """
     Create a new shipment and purchase a label.
 
     Args:
-        request: Shipment request with to_address, from_address, parcel, carrier
+        request: FastAPI Request object (for rate limiting)
+        shipment_data: Shipment request with to_address, from_address, parcel, carrier
 
     Returns:
         Standardized response with status, data, message, timestamp
@@ -72,13 +107,13 @@ async def create_shipment(request: ShipmentRequest) -> Dict[str, Any]:
         HTTPException: On validation or processing errors
     """
     try:
-        logger.info(f"[PROGRESS] Creating shipment with {request.carrier}...")
+        logger.info(f"[PROGRESS] Creating shipment with {shipment_data.carrier}...")
 
         result = await easypost_service.create_shipment(
-            request.to_address.dict(),
-            request.from_address.dict(),
-            request.parcel.dict(),
-            request.carrier,
+            shipment_data.to_address.dict(),
+            shipment_data.from_address.dict(),
+            shipment_data.parcel.dict(),
+            shipment_data.carrier,
         )
 
         if result.status == "success":
@@ -127,7 +162,8 @@ async def create_shipment(request: ShipmentRequest) -> Dict[str, Any]:
 
 
 @app.get("/api/tracking/{tracking_number}")
-async def get_tracking(tracking_number: str) -> Dict[str, Any]:
+@limiter.limit("30/minute")
+async def get_tracking(request: Request, tracking_number: str) -> Dict[str, Any]:
     """
     Get real-time tracking information for a shipment.
 
@@ -158,12 +194,14 @@ async def get_tracking(tracking_number: str) -> Dict[str, Any]:
 
 
 @app.post("/api/rates")
-async def get_rates(request: RatesRequest) -> Dict[str, Any]:
+@limiter.limit("20/minute")
+async def get_rates(request: Request, rates_data: RatesRequest) -> Dict[str, Any]:
     """
     Get available shipping rates from multiple carriers.
 
     Args:
-        request: Rates request with to_address, from_address, parcel
+        request: FastAPI Request object (for rate limiting)
+        rates_data: Rates request with to_address, from_address, parcel
 
     Returns:
         Standardized response with available rates
@@ -175,7 +213,7 @@ async def get_rates(request: RatesRequest) -> Dict[str, Any]:
         logger.info("[PROGRESS] Calculating shipping rates...")
 
         result = await easypost_service.get_rates(
-            request.to_address.dict(), request.from_address.dict(), request.parcel.dict()
+            rates_data.to_address.dict(), rates_data.from_address.dict(), rates_data.parcel.dict()
         )
 
         logger.info("[PROGRESS] Rates calculation completed")
@@ -340,7 +378,11 @@ async def get_shipment(shipment_id: str) -> Dict[str, Any]:
         }
 
 
-# Add CORS middleware to the FastAPI app
+# Add middlewares to the FastAPI app (executed in reverse order)
+# RequestIDMiddleware executes first (added last in chain)
+app.add_middleware(RequestIDMiddleware)
+
+# CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
