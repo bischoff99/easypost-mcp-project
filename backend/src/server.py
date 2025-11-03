@@ -16,6 +16,7 @@ from starlette.middleware.cors import CORSMiddleware
 from src.models.requests import RatesRequest, ShipmentRequest
 from src.services.easypost_service import EasyPostService
 from src.utils.config import settings
+from src.utils.monitoring import HealthCheck, metrics
 
 # Constants
 MAX_RECENT_SHIPMENTS = 10
@@ -50,6 +51,9 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         request_id = str(uuid.uuid4())
         request.state.request_id = request_id
+        
+        # Record request metric
+        metrics.record_request()
 
         logger.info(f"[{request_id}] {request.method} {request.url.path}")
 
@@ -58,6 +62,7 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
             response.headers["X-Request-ID"] = request_id
             return response
         except Exception as e:
+            metrics.record_error()
             logger.error(f"[{request_id}] Request failed: {str(e)}")
             raise
 
@@ -293,6 +298,49 @@ async def get_recent_shipments(limit: int = 10) -> Dict[str, Any]:
         ) from None
 
 
+@app.get("/health")
+async def health_check() -> Dict[str, Any]:
+    """
+    Health check endpoint for monitoring.
+    
+    Returns comprehensive health status including:
+    - Application status
+    - EasyPost API connectivity
+    - System resources (CPU, memory, disk)
+    """
+    system_health = HealthCheck.check_system()
+    easypost_health = await HealthCheck.check_easypost(settings.EASYPOST_API_KEY)
+    
+    overall_healthy = (
+        system_health["status"] == "healthy" and
+        easypost_health["status"] == "healthy"
+    )
+    
+    return {
+        "status": "healthy" if overall_healthy else "degraded",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "checks": {
+            "system": system_health,
+            "easypost": easypost_health,
+        },
+    }
+
+
+@app.get("/metrics")
+async def get_metrics() -> Dict[str, Any]:
+    """
+    Application metrics endpoint.
+    
+    Returns:
+        Current application metrics including request counts, error rates, etc.
+    """
+    return {
+        "status": "success",
+        "data": metrics.get_metrics(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
 @app.get("/api/stats/overview")
 async def get_stats() -> Dict[str, Any]:
     """
@@ -391,12 +439,6 @@ app.add_middleware(
     allow_headers=settings.CORS_ALLOW_HEADERS,
     max_age=CORS_MAX_AGE_SECONDS,
 )
-
-
-# Health check endpoint
-@app.get("/health")
-async def health_check():
-    return {"status": "healthy", "service": "EasyPost API Server"}
 
 
 if __name__ == "__main__":
