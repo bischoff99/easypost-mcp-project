@@ -59,9 +59,7 @@ def register_shipment_tools(mcp, easypost_service):
                 "status": result.status,
                 "data": result.dict() if result.status == "success" else None,
                 "message": (
-                    "Shipment created successfully"
-                    if result.status == "success"
-                    else result.error
+                    "Shipment created successfully" if result.status == "success" else result.error
                 ),
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
@@ -89,4 +87,3 @@ def register_shipment_tools(mcp, easypost_service):
                 "message": "An unexpected error occurred",
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
-
