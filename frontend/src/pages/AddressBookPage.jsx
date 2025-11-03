@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Plus, Search, Edit2, Trash2, MapPin } from 'lucide-react';
+import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -62,9 +63,24 @@ export default function AddressBookPage() {
   );
 
   const handleDelete = (id) => {
-    if (confirm('Are you sure you want to delete this address?')) {
-      setAddresses(addresses.filter((addr) => addr.id !== id));
-    }
+    const address = addresses.find((addr) => addr.id === id);
+    if (!address) return;
+
+    // Use toast confirmation instead of browser confirm
+    toast.info(`Delete ${address.name}?`, {
+      description: 'This action cannot be undone',
+      action: {
+        label: 'Delete',
+        onClick: () => {
+          setAddresses(addresses.filter((addr) => addr.id !== id));
+          toast.success('Address deleted');
+        },
+      },
+      cancel: {
+        label: 'Cancel',
+        onClick: () => {},
+      },
+    });
   };
 
   return (

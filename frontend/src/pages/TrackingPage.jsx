@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Search, Package, MapPin, CheckCircle, Clock, TruckIcon } from 'lucide-react';
+import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { formatDate } from '@/lib/utils';
+import { shipmentAPI } from '@/services/api';
 
 const mockTrackingData = {
   tracking_number: 'EZ1234567890',
@@ -54,13 +56,32 @@ export default function TrackingPage() {
   const [trackingData, setTrackingData] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const handleTrack = () => {
+  const handleTrack = async () => {
+    if (!trackingNumber.trim()) {
+      toast.error('Please enter a tracking number');
+      return;
+    }
+
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      // Call real tracking API
+      const response = await shipmentAPI.getTracking(trackingNumber.trim());
+
+      if (response.status === 'success' && response.data) {
+        setTrackingData(response.data);
+        toast.success('Tracking information retrieved');
+      } else {
+        // Fallback to mock data for demo
+        toast.info('Using Demo Data', { description: 'Showing sample tracking for demonstration' });
+        setTrackingData(mockTrackingData);
+      }
+    } catch (error) {
+      // Fallback to mock data on error
+      toast.info('Using Demo Data', { description: 'Showing sample tracking for demonstration' });
       setTrackingData(mockTrackingData);
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -68,9 +89,7 @@ export default function TrackingPage() {
       {/* Header */}
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Track Package</h2>
-        <p className="text-muted-foreground">
-          Track your shipments in real-time
-        </p>
+        <p className="text-muted-foreground">Track your shipments in real-time</p>
       </div>
 
       {/* Search */}
@@ -183,14 +202,10 @@ export default function TrackingPage() {
                             <p className={`font-medium ${isFirst ? 'text-primary' : ''}`}>
                               {event.message}
                             </p>
-                            <p className="text-sm text-muted-foreground mt-1">
-                              {event.location}
-                            </p>
+                            <p className="text-sm text-muted-foreground mt-1">{event.location}</p>
                           </div>
                           <div className="text-right">
-                            <p className="text-sm font-medium">
-                              {formatDate(event.timestamp)}
-                            </p>
+                            <p className="text-sm font-medium">{formatDate(event.timestamp)}</p>
                             <p className="text-xs text-muted-foreground">
                               {new Date(event.timestamp).toLocaleTimeString()}
                             </p>
@@ -212,9 +227,7 @@ export default function TrackingPage() {
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Package className="h-12 w-12 text-muted-foreground mb-4" />
             <p className="text-lg font-medium">No tracking data</p>
-            <p className="text-sm text-muted-foreground">
-              Enter a tracking number to get started
-            </p>
+            <p className="text-sm text-muted-foreground">Enter a tracking number to get started</p>
           </CardContent>
         </Card>
       )}

@@ -3,7 +3,7 @@ import { Package, TruckIcon, DollarSign, CheckCircle, Plus, Search, BarChart } f
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
-import { SkeletonStats, SkeletonCard, SkeletonText } from '@/components/ui/Skeleton';
+import { Skeleton, SkeletonStats, SkeletonCard, SkeletonText } from '@/components/ui/Skeleton';
 import StatsCard from '@/components/dashboard/StatsCard';
 import QuickActionCard from '@/components/dashboard/QuickActionCard';
 import { shipmentAPI } from '@/services/api';
@@ -106,7 +106,7 @@ export default function DashboardPage() {
           setRecentActivity(transformedActivity);
         }
       } catch (error) {
-        console.error('Failed to fetch dashboard data:', error);
+        toast.error('Failed to Load Dashboard', { description: 'Using demo data instead' });
         // Fallback to mock data if API fails
         setStats([
           {

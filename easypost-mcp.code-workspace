@@ -6,10 +6,93 @@
     }
   ],
   "settings": {
+    // Python settings
     "python.defaultInterpreterPath": "${workspaceFolder}/backend/venv/bin/python",
     "python.testing.pytestPath": "${workspaceFolder}/backend/venv/bin/pytest",
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
+    "python.linting.enabled": true,
+    "python.linting.ruffEnabled": true,
+    "python.formatting.provider": "none",
+    "[python]": {
+      "editor.formatOnSave": true,
+      "editor.codeActionsOnSave": {
+        "source.organizeImports": "explicit"
+      },
+      "editor.defaultFormatter": "charliermarsh.ruff"
+    },
+
+    // JavaScript/TypeScript settings
+    "[javascript]": {
+      "editor.formatOnSave": true,
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[javascriptreact]": {
+      "editor.formatOnSave": true,
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[json]": {
+      "editor.formatOnSave": true,
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[markdown]": {
+      "editor.formatOnSave": false
+    },
+
+    // Editor settings
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "editor.detectIndentation": true,
+    "editor.rulers": [80, 100, 120],
+    "editor.trimAutoWhitespace": true,
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true,
+    "files.eol": "\n",
+
+    // File exclusions
+    "files.exclude": {
+      "**/__pycache__": true,
+      "**/.pytest_cache": true,
+      "**/.DS_Store": true,
+      "**/node_modules": true,
+      "**/dist": true,
+      "**/.venv": true,
+      "**/venv": true
+    },
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/venv": true,
+      "**/.venv": true,
+      "**/dist": true,
+      "**/__pycache__": true
+    },
+
+    // Cursor AI settings
     "cursor.aiChat.enabled": true,
-    "cursor.general.enableShadowWorkspace": true
+    "cursor.general.enableShadowWorkspace": true,
+
+    // Terminal settings
+    "terminal.integrated.env.osx": {
+      "PYTHONPATH": "${workspaceFolder}/backend"
+    },
+
+    // File associations
+    "files.associations": {
+      "*.code-workspace": "jsonc",
+      ".cursorrules": "markdown",
+      ".dev-config.json": "jsonc"
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "charliermarsh.ruff",
+      "esbenp.prettier-vscode",
+      "ms-python.python",
+      "ms-python.vscode-pylance",
+      "dbaeumer.vscode-eslint",
+      "bradlc.vscode-tailwindcss",
+      "EditorConfig.EditorConfig"
+    ]
   }
 }
 

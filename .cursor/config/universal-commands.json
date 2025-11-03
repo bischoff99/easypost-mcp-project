@@ -1,0 +1,529 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "version": "1.0.0",
+  "description": "Universal Slash Commands - Works across ANY project with M3 Max optimization",
+
+  "config": {
+    "variableSource": ".dev-config.json",
+    "mcpIntegration": true,
+    "parallelProcessing": true,
+    "intelligentCaching": true
+  },
+
+  "hardware": {
+    "detection": "auto",
+    "tiers": {
+      "light": {
+        "cores": "1-4",
+        "ram": "< 2GB",
+        "examples": ["lint", "format", "doc"]
+      },
+      "medium": {
+        "cores": "4-8",
+        "ram": "2-8GB",
+        "examples": ["api", "component", "test"]
+      },
+      "heavy": {
+        "cores": "8-16",
+        "ram": "> 8GB",
+        "examples": ["test-all", "build", "bench", "deploy"]
+      }
+    }
+  },
+
+  "commands": {
+    "test": {
+      "description": "Run tests with parallel execution",
+      "tier": "medium",
+      "aliases": ["/test", "/t"],
+      "syntax": "/test [path]",
+      "example": "/test backend/tests/",
+
+      "variables": {
+        "path": "{{paths.tests}}",
+        "workers": "{{workers.{{testing.backend.framework}}}}",
+        "framework": "{{testing.backend.framework}}",
+        "coverage": "{{testing.backend.coverage}}"
+      },
+
+      "adapters": {
+        "pytest": {
+          "command": "pytest",
+          "args": ["-n", "{{workers}}", "-v", "--tb=short", "{{path}}"],
+          "parallel": true
+        },
+        "jest": {
+          "command": "jest",
+          "args": ["--maxWorkers={{workers}}", "--verbose", "{{path}}"],
+          "parallel": true
+        },
+        "vitest": {
+          "command": "vitest",
+          "args": ["--threads", "{{workers}}", "{{path}}"],
+          "parallel": true
+        },
+        "go": {
+          "command": "go",
+          "args": ["test", "-parallel", "{{workers}}", "{{path}}/..."],
+          "parallel": true
+        }
+      },
+
+      "mcpIntegration": {
+        "enhance": {
+          "server": "context7",
+          "action": "get-library-docs",
+          "params": {
+            "library": "/{{stack.backend.framework}}/{{stack.backend.framework}}",
+            "topic": "testing parallel execution",
+            "tokens": 2000
+          },
+          "cache": true,
+          "cacheDuration": "24h"
+        },
+        "execute": {
+          "server": "Desktop Commander",
+          "action": "start_process",
+          "timeout_ms": 180000,
+          "verbose_timing": true
+        }
+      },
+
+      "performance": {
+        "m3Max": {
+          "expected": "4-6s for full suite",
+          "workers": 16,
+          "speedup": "15x vs sequential"
+        },
+        "standard": {
+          "expected": "30-60s for full suite",
+          "workers": 4,
+          "speedup": "4x vs sequential"
+        }
+      },
+
+      "output": {
+        "format": "standardized",
+        "metrics": ["duration", "passed", "failed", "skipped", "workers_used", "cpu_usage"]
+      }
+    },
+
+    "api": {
+      "description": "Generate API endpoint with best practices",
+      "tier": "medium",
+      "aliases": ["/api", "/endpoint"],
+      "syntax": "/api [path] [method]",
+      "example": "/api /users POST",
+
+      "variables": {
+        "backend": "{{stack.backend.framework}}",
+        "language": "{{stack.backend.language}}",
+        "servicesPath": "{{paths.services.backend}}",
+        "testPath": "{{paths.tests.backend}}",
+        "conventions": "{{conventions.{{stack.backend.language}}}}"
+      },
+
+      "mcpIntegration": {
+        "enhance": {
+          "server": "context7",
+          "action": "get-library-docs",
+          "params": {
+            "library": "/{{stack.backend.framework}}/{{stack.backend.framework}}",
+            "topic": "REST API endpoints validation async",
+            "tokens": 5000
+          },
+          "cache": true
+        },
+        "think": {
+          "server": "sequential-thinking",
+          "action": "sequentialthinking",
+          "purpose": "Design optimal API structure"
+        },
+        "execute": {
+          "server": "Desktop Commander",
+          "action": "write_file",
+          "parallel": false
+        }
+      },
+
+      "generates": [
+        "{{servicesPath}}/{{path}}_service.{{ext}}",
+        "{{testPath}}/test_{{path}}.{{ext}}",
+        "Pydantic models or TypeScript interfaces",
+        "Error handling",
+        "Logging with request_id",
+        "Rate limiting configuration"
+      ],
+
+      "performance": {
+        "m3Max": {
+          "expected": "10-15s",
+          "workers": 4
+        }
+      }
+    },
+
+    "component": {
+      "description": "Generate frontend component with best practices",
+      "tier": "medium",
+      "aliases": ["/component", "/comp", "/c"],
+      "syntax": "/component [Name]",
+      "example": "/component UserCard",
+
+      "variables": {
+        "frontend": "{{stack.frontend.framework}}",
+        "language": "{{stack.frontend.language}}",
+        "styling": "{{stack.frontend.styling}}",
+        "components": "{{paths.components}}",
+        "conventions": "{{conventions.{{stack.frontend.language}}}}"
+      },
+
+      "mcpIntegration": {
+        "enhance": {
+          "server": "context7",
+          "action": "get-library-docs",
+          "params": {
+            "library": "/{{stack.frontend.framework}}",
+            "topic": "component hooks state management",
+            "tokens": 5000
+          },
+          "cache": true
+        },
+        "execute": {
+          "server": "Desktop Commander",
+          "action": "write_file",
+          "parallel": false
+        }
+      },
+
+      "generates": [
+        "{{components}}/{{Name}}.{{ext}}",
+        "PropTypes or TypeScript interfaces",
+        "Loading and error states",
+        "Responsive styling",
+        "Accessibility attributes",
+        "Unit tests"
+      ],
+
+      "performance": {
+        "m3Max": {
+          "expected": "8-12s",
+          "workers": 4
+        }
+      }
+    },
+
+    "optimize": {
+      "description": "Apply M3 Max hardware-specific optimizations",
+      "tier": "heavy",
+      "aliases": ["/optimize", "/opt"],
+      "syntax": "/optimize [file]",
+      "example": "/optimize backend/src/services/processor.py",
+
+      "variables": {
+        "cpuCores": "{{hardware.cpuCores}}",
+        "ramGB": "{{hardware.ramGB}}",
+        "workers": "{{hardware.workers}}",
+        "optimization": "{{hardware.optimization}}"
+      },
+
+      "mcpIntegration": {
+        "analyze": {
+          "server": "Desktop Commander",
+          "action": "read_file",
+          "purpose": "Read current implementation"
+        },
+        "enhance": {
+          "server": "context7",
+          "action": "get-library-docs",
+          "params": {
+            "library": "/{{stack.backend.framework}}/{{stack.backend.framework}}",
+            "topic": "async performance optimization parallel processing",
+            "tokens": 5000
+          }
+        },
+        "think": {
+          "server": "sequential-thinking",
+          "action": "sequentialthinking",
+          "purpose": "Analyze bottlenecks and design optimizations"
+        },
+        "execute": {
+          "server": "Desktop Commander",
+          "action": "edit_block",
+          "parallel": false
+        }
+      },
+
+      "applies": [
+        "ThreadPoolExecutor: min({{workers.python}}, cpu_count * 2)",
+        "Async/await patterns for I/O operations",
+        "Batch processing with optimal batch size",
+        "Memory-efficient data structures",
+        "Connection pooling configuration",
+        "Parallel test configuration"
+      ],
+
+      "performance": {
+        "m3Max": {
+          "expected": "15-30s analysis + implementation",
+          "workers": 8,
+          "speedupTarget": "2-5x for target code"
+        }
+      }
+    },
+
+    "bench": {
+      "description": "Comprehensive performance benchmarking",
+      "tier": "heavy",
+      "aliases": ["/bench", "/benchmark"],
+      "syntax": "/bench [function]",
+      "example": "/bench process_batch",
+
+      "variables": {
+        "cpuCores": "{{hardware.cpuCores}}",
+        "workers": "{{hardware.workers}}"
+      },
+
+      "mcpIntegration": {
+        "execute": {
+          "server": "Desktop Commander",
+          "action": "start_process",
+          "command": "python -m cProfile -s cumtime",
+          "timeout_ms": 60000,
+          "verbose_timing": true
+        },
+        "analyze": {
+          "server": "sequential-thinking",
+          "action": "sequentialthinking",
+          "purpose": "Analyze performance data and suggest optimizations"
+        }
+      },
+
+      "metrics": [
+        "Total execution time",
+        "CPU usage per core",
+        "Memory efficiency",
+        "Throughput (operations/second)",
+        "Latency percentiles (P50, P95, P99)",
+        "Worker utilization",
+        "Bottleneck identification"
+      ],
+
+      "performance": {
+        "m3Max": {
+          "expected": "30-60s comprehensive benchmark",
+          "workers": 16
+        }
+      }
+    },
+
+    "bulk-ship": {
+      "description": "Process bulk shipments with parallel execution",
+      "tier": "heavy",
+      "aliases": ["/bulk-ship", "/bulk"],
+      "syntax": "/bulk-ship [spreadsheet_data]",
+      "example": "/bulk-ship [paste data]",
+      "projectSpecific": true,
+
+      "variables": {
+        "workers": "{{hardware.workers.python}}",
+        "batchSize": "{{hardware.optimization.batchSizeOptimal}}"
+      },
+
+      "mcpIntegration": {
+        "execute": {
+          "server": "easypost-shipping",
+          "tool": "parse_and_get_bulk_rates",
+          "parallel": true,
+          "workers": 16
+        },
+        "monitor": {
+          "server": "Desktop Commander",
+          "action": "read_process_output",
+          "realtime": true
+        }
+      },
+
+      "performance": {
+        "m3Max": {
+          "expected": "5 shipments/second",
+          "workers": 16,
+          "throughput": "150 shipments in 30s"
+        }
+      }
+    },
+
+    "deploy": {
+      "description": "Full deployment pipeline with parallel optimization",
+      "tier": "heavy",
+      "aliases": ["/deploy", "/ship"],
+      "syntax": "/deploy [environment]",
+      "example": "/deploy staging",
+
+      "variables": {
+        "workers": "{{hardware.workers}}",
+        "environment": "{{customization.environments}}"
+      },
+
+      "pipeline": [
+        {
+          "stage": "test",
+          "command": "/test-all",
+          "parallel": true,
+          "workers": 16,
+          "required": true
+        },
+        {
+          "stage": "build",
+          "command": "build",
+          "parallel": true,
+          "workers": 8,
+          "required": true
+        },
+        {
+          "stage": "security",
+          "command": "/secure .",
+          "parallel": false,
+          "required": true
+        },
+        {
+          "stage": "deploy",
+          "mcp": "github",
+          "action": "push",
+          "parallel": false,
+          "required": true
+        }
+      ],
+
+      "mcpIntegration": {
+        "test": {
+          "server": "Desktop Commander",
+          "action": "start_process",
+          "parallel": true
+        },
+        "deploy": {
+          "server": "github",
+          "action": "git_push",
+          "parallel": false
+        },
+        "monitor": {
+          "server": "Desktop Commander",
+          "action": "read_process_output",
+          "realtime": true
+        }
+      },
+
+      "performance": {
+        "m3Max": {
+          "expected": "60-90s full pipeline",
+          "workers": 16,
+          "stages": "parallelized where possible"
+        }
+      }
+    },
+
+    "lint": {
+      "description": "Lint code with auto-fix",
+      "tier": "light",
+      "aliases": ["/lint", "/l"],
+      "syntax": "/lint [path]",
+      "example": "/lint backend/src/",
+
+      "variables": {
+        "language": "{{stack.backend.language}}",
+        "path": "{{paths.backend}}"
+      },
+
+      "adapters": {
+        "python": {
+          "command": "ruff",
+          "args": ["check", "{{path}}", "--fix", "--select", "F,E,W,I,B,C4"]
+        },
+        "javascript": {
+          "command": "eslint",
+          "args": ["{{path}}", "--fix", "--ext", ".js,.jsx,.ts,.tsx"]
+        },
+        "go": {
+          "command": "golangci-lint",
+          "args": ["run", "{{path}}"]
+        }
+      },
+
+      "mcpIntegration": {
+        "execute": {
+          "server": "Desktop Commander",
+          "action": "start_process",
+          "timeout_ms": 30000
+        }
+      },
+
+      "performance": {
+        "m3Max": {
+          "expected": "2-5s",
+          "workers": 4
+        }
+      }
+    },
+
+    "explain": {
+      "description": "Explain code using AI reasoning",
+      "tier": "light",
+      "aliases": ["/explain", "/e"],
+      "syntax": "/explain [selection or open file]",
+      "example": "/explain",
+
+      "mcpIntegration": {
+        "think": {
+          "server": "sequential-thinking",
+          "action": "sequentialthinking",
+          "purpose": "Break down code logic step by step"
+        },
+        "enhance": {
+          "server": "context7",
+          "action": "get-library-docs",
+          "params": {
+            "library": "auto-detect",
+            "topic": "auto-detect from code",
+            "tokens": 3000
+          }
+        }
+      },
+
+      "provides": [
+        "What the code does",
+        "How it fits in project architecture",
+        "Performance implications",
+        "Related code references",
+        "Improvement suggestions",
+        "M3 Max optimization opportunities"
+      ],
+
+      "performance": {
+        "expected": "5-10s",
+        "workers": 1
+      }
+    }
+  },
+
+  "templates": {
+    "description": "Reusable command templates for quick customization",
+    "newCommand": {
+      "name": "",
+      "description": "",
+      "tier": "medium",
+      "aliases": [],
+      "syntax": "",
+      "variables": {},
+      "mcpIntegration": {},
+      "performance": {}
+    }
+  },
+
+  "metadata": {
+    "author": "Universal Slash Command System",
+    "license": "MIT",
+    "compatibility": "Any project with .dev-config.json",
+    "hardware": "Optimized for M3 Max, works on any hardware"
+  }
+}
+

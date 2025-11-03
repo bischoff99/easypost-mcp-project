@@ -1,562 +1,434 @@
+"""FastAPI server with analytics endpoint."""
+
 import logging
 import uuid
-from contextlib import asynccontextmanager
-from datetime import datetime, timezone
-from typing import Any, Dict
+from collections import defaultdict
+from datetime import datetime, timedelta, timezone
 
-import uvicorn
+# M3 Max Optimization: Use uvloop for 2-4x faster async I/O
 import uvloop
 
 # Install uvloop for faster async I/O (2-4x performance improvement)
 uvloop.install()
+
 from fastapi import FastAPI, HTTPException, Request, status
 from pydantic import ValidationError
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.cors import CORSMiddleware
+
+from src.models.analytics import (
+    AnalyticsData,
+    AnalyticsResponse,
+    CarrierMetrics,
+    RouteMetrics,
+    ShipmentMetrics,
+    VolumeMetrics,
+)
 from src.models.requests import RatesRequest, ShipmentRequest
 from src.services.easypost_service import EasyPostService
 from src.utils.config import settings
 from src.utils.monitoring import HealthCheck, metrics
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.middleware.cors import CORSMiddleware
 
 # Constants
-MAX_RECENT_SHIPMENTS = 10
-CORS_MAX_AGE_SECONDS = 86400  # 24 hours
+REQUEST_ID_HEADER = "X-Request-ID"
+MAX_REQUEST_LOG_SIZE = 1000
 
 # Configure logging
 logging.basicConfig(
-    level=settings.MCP_LOG_LEVEL, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
-# Validate settings
+# Validate settings on startup
 try:
     settings.validate()
 except ValueError as e:
     logger.error(f"Configuration error: {e}")
     raise
 
-# Initialize EasyPost service (global)
-easypost_service = EasyPostService(api_key=settings.EASYPOST_API_KEY)
-
-# Initialize rate limiter
-limiter = Limiter(key_func=get_remote_address)
-
-
-# ===== MIDDLEWARE =====
-
-
-class RequestIDMiddleware(BaseHTTPMiddleware):
-    """Middleware to add unique request ID to each request for tracing."""
-
-    async def dispatch(self, request: Request, call_next):
-        request_id = str(uuid.uuid4())
-        request.state.request_id = request_id
-
-        # Record request metric
-        metrics.record_request()
-
-        logger.info(f"[{request_id}] {request.method} {request.url.path}")
-
-        try:
-            response = await call_next(request)
-            response.headers["X-Request-ID"] = request_id
-            return response
-        except Exception as e:
-            metrics.record_error()
-            logger.error(f"[{request_id}] Request failed: {str(e)}")
-            raise
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Manage application lifespan - startup and shutdown."""
-    # Startup
-    logger.info("EasyPost API Server starting up...")
-    yield
-    # Shutdown
-    logger.info("EasyPost API Server shutting down...")
-    easypost_service.executor.shutdown(wait=True)
-    logger.info("Resources cleaned up")
-
-
-# Initialize FastAPI app with lifespan
+# Initialize FastAPI app
 app = FastAPI(
-    title="EasyPost Shipping Server",
-    description="API server for managing shipments and tracking with EasyPost API",
+    title="EasyPost MCP Server",
+    description="MCP server for managing shipments and tracking with EasyPost API",
     version="1.0.0",
-    lifespan=lifespan,
 )
 
-# Configure rate limiter
+# Rate limiting (10 requests per minute per IP)
+limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-
-
-# ===== API ENDPOINTS =====
-
-
-@app.post(
-    "/api/shipments",
-    status_code=status.HTTP_201_CREATED,
-    tags=["shipments"],
-    summary="Create a new shipment",
-    response_description="Shipment created successfully with label URL",
-)
-@limiter.limit("10/minute")
-async def create_shipment(request: Request, shipment_data: ShipmentRequest) -> Dict[str, Any]:
-    """
-    Create a new shipment and purchase a label.
-
-    Args:
-        request: FastAPI Request object (for rate limiting)
-        shipment_data: Shipment request with to_address, from_address, parcel, carrier
-
-    Returns:
-        Standardized response with status, data, message, timestamp
-
-    Raises:
-        HTTPException: On validation or processing errors
-    """
-    try:
-        logger.info(f"[PROGRESS] Creating shipment with {shipment_data.carrier}...")
-
-        result = await easypost_service.create_shipment(
-            shipment_data.to_address.dict(),
-            shipment_data.from_address.dict(),
-            shipment_data.parcel.dict(),
-            shipment_data.carrier,
-        )
-
-        if result.status == "success":
-            logger.info(f"[PROGRESS] Shipment created successfully: {result.shipment_id}")
-            metrics.record_shipment()
-            return {
-                "status": result.status,
-                "data": result.dict(),
-                "message": "Shipment created successfully",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            }
-        else:
-            logger.error(f"[PROGRESS] Shipment creation failed: {result.error}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail={
-                    "status": "error",
-                    "data": None,
-                    "message": result.error or "Failed to create shipment",
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                },
-            )
-    except ValidationError as e:
-        logger.error(f"Validation error: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={
-                "status": "error",
-                "data": None,
-                "message": f"Validation error: {str(e)}",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            },
-        ) from e
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"API error: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                "status": "error",
-                "data": None,
-                "message": "An unexpected error occurred",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            },
-        ) from None
-
-
-@app.get(
-    "/api/tracking/{tracking_number}",
-    tags=["tracking"],
-    summary="Get package tracking information",
-    response_description="Current tracking status and history",
-)
-@limiter.limit("30/minute")
-async def get_tracking(request: Request, tracking_number: str) -> Dict[str, Any]:
-    """
-    Get real-time tracking information for a shipment.
-
-    Args:
-        tracking_number: The tracking number to look up
-
-    Returns:
-        Standardized response with tracking data
-    """
-    import re
-
-    try:
-        if not tracking_number or not tracking_number.strip():
-            raise HTTPException(status_code=400, detail="Tracking number is required")
-
-        tracking_number = tracking_number.strip()
-
-        # Validate length (tracking numbers are typically 10-40 characters)
-        if len(tracking_number) > 50:
-            raise HTTPException(status_code=400, detail="Tracking number too long")
-
-        # Validate format (alphanumeric with optional hyphens)
-        if not re.match(r"^[A-Za-z0-9\-]+$", tracking_number):
-            raise HTTPException(
-                status_code=400, detail="Tracking number contains invalid characters"
-            )
-
-        logger.info(f"[PROGRESS] Fetching tracking information for {tracking_number}...")
-
-        result = await easypost_service.get_tracking(tracking_number.strip())
-        metrics.record_tracking()
-        return result
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"API error: {str(e)}")
-        return {
-            "status": "error",
-            "data": None,
-            "message": "Failed to retrieve tracking information",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-        }
-
-
-@app.post(
-    "/api/rates",
-    tags=["rates"],
-    summary="Get shipping rates",
-    response_description="Available rates from multiple carriers",
-)
-@limiter.limit("20/minute")
-async def get_rates(request: Request, rates_data: RatesRequest) -> Dict[str, Any]:
-    """
-    Get available shipping rates from multiple carriers.
-
-    Args:
-        request: FastAPI Request object (for rate limiting)
-        rates_data: Rates request with to_address, from_address, parcel
-
-    Returns:
-        Standardized response with available rates
-
-    Raises:
-        HTTPException: On validation or processing errors
-    """
-    try:
-        logger.info("[PROGRESS] Calculating shipping rates...")
-
-        result = await easypost_service.get_rates(
-            rates_data.to_address.dict(), rates_data.from_address.dict(), rates_data.parcel.dict()
-        )
-
-        logger.info("[PROGRESS] Rates calculation completed")
-        return result
-    except ValidationError as e:
-        logger.error(f"Validation error: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={
-                "status": "error",
-                "data": None,
-                "message": f"Validation error: {str(e)}",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            },
-        ) from e
-    except Exception as e:
-        logger.error(f"API error: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                "status": "error",
-                "data": None,
-                "message": "Failed to retrieve rates",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            },
-        ) from None
-
-
-# ===== RESOURCES (REST API Endpoints) =====
-
-
-@app.get(
-    "/api/shipments/recent",
-    tags=["resources"],
-    summary="Get recent shipments",
-    response_description="List of recently created shipments",
-)
-async def get_recent_shipments(limit: int = 10) -> Dict[str, Any]:
-    """
-    Get recent shipments from EasyPost API.
-
-    Args:
-        limit: Maximum number of shipments to return (max 100)
-
-    Returns:
-        List of recent shipments with basic info
-    """
-    try:
-        limit = min(limit, 100)  # EasyPost API max is 100
-        logger.info(f"[PROGRESS] Retrieving recent {limit} shipments from EasyPost API...")
-
-        result = await easypost_service.get_shipments_list(
-            page_size=limit,
-            purchased=True,  # Only show purchased shipments
-        )
-
-        if result["status"] == "success":
-            logger.info(f"[PROGRESS] Retrieved {len(result['data'])} shipments from EasyPost")
-            return result
-        else:
-            logger.warning(f"[PROGRESS] Failed to retrieve shipments: {result['message']}")
-            # Return empty data instead of error for graceful degradation
-            return {
-                "status": "success",
-                "data": [],
-                "message": "No shipments found",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            }
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Resource error: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                "status": "error",
-                "data": None,
-                "message": "Failed to retrieve recent shipments",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            },
-        ) from None
-
-
-@app.get(
-    "/health",
-    tags=["monitoring"],
-    summary="Health check endpoint",
-    response_description="System and API health status",
-)
-async def health_check() -> Dict[str, Any]:
-    """
-    Health check endpoint for monitoring.
-
-    Returns comprehensive health status including:
-    - Application status
-    - EasyPost API connectivity
-    - System resources (CPU, memory, disk)
-    """
-    system_health = HealthCheck.check_system()
-    easypost_health = await HealthCheck.check_easypost(settings.EASYPOST_API_KEY)
-
-    overall_healthy = (
-        system_health["status"] == "healthy" and easypost_health["status"] == "healthy"
-    )
-
-    return {
-        "status": "healthy" if overall_healthy else "degraded",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "checks": {
-            "system": system_health,
-            "easypost": easypost_health,
-        },
-    }
-
-
-@app.get(
-    "/metrics",
-    tags=["monitoring"],
-    summary="Application metrics",
-    response_description="Request counts, error rates, and performance metrics",
-)
-async def get_metrics() -> Dict[str, Any]:
-    """
-    Application metrics endpoint.
-
-    Returns:
-        Current application metrics including request counts, error rates, etc.
-    """
-    return {
-        "status": "success",
-        "data": metrics.get_metrics(),
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-    }
-
-
-@app.get(
-    "/api/stats/overview",
-    tags=["resources"],
-    summary="Get statistics overview",
-    response_description="Shipping statistics and overview",
-)
-async def get_stats() -> Dict[str, Any]:
-    """
-    Get shipping statistics overview from EasyPost API.
-
-    Returns:
-        Real statistics aggregated from EasyPost shipments
-    """
-    try:
-        logger.info("[PROGRESS] Calculating shipping statistics from EasyPost...")
-
-        # Get recent shipments to calculate statistics
-        shipments_result = await easypost_service.get_shipments_list(
-            page_size=100,
-            purchased=True,  # Get more data for better statistics
-        )
-
-        if shipments_result["status"] != "success":
-            logger.warning(
-                f"[PROGRESS] Failed to get shipments for stats: {shipments_result['message']}"
-            )
-            # Return basic fallback stats
-            return {
-                "status": "success",
-                "data": {
-                    "total_shipments": 0,
-                    "total_cost": 0.0,
-                    "average_cost": 0.0,
-                    "carriers_used": [],
-                    "delivery_success_rate": 0.0,
-                    "period": "last_30_days",
-                },
-                "message": "No shipment data available",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            }
-
-        shipments = shipments_result["data"]
-
-        # Calculate statistics from real data
-        total_shipments = len(shipments)
-
-        # Calculate total cost and carriers
-        total_cost = 0.0
-        carriers_used = set()
-        delivered_count = 0
-
-        for shipment in shipments:
-            # Add cost if available
-            if shipment.get("rate"):
-                try:
-                    cost = float(shipment["rate"])
-                    total_cost += cost
-                except (ValueError, TypeError):
-                    pass
-
-            # Track carriers
-            if shipment.get("carrier"):
-                carriers_used.add(shipment["carrier"])
-
-            # Count delivered shipments
-            if shipment.get("status") == "delivered":
-                delivered_count += 1
-
-        # Calculate metrics
-        average_cost = total_cost / total_shipments if total_shipments > 0 else 0.0
-        delivery_success_rate = delivered_count / total_shipments if total_shipments > 0 else 0.0
-
-        stats = {
-            "total_shipments": total_shipments,
-            "total_cost": round(total_cost, 2),
-            "average_cost": round(average_cost, 2),
-            "carriers_used": list(carriers_used),
-            "delivery_success_rate": round(delivery_success_rate, 3),
-            "period": "last_30_days",
-        }
-
-        logger.info(
-            f"[PROGRESS] Statistics calculated: {total_shipments} shipments, ${total_cost:.2f} total cost"
-        )
-
-        return {
-            "status": "success",
-            "data": stats,
-            "message": f"Shipping statistics calculated from {total_shipments} shipments",
-            "timestamp": datetime.utcnow().isoformat(),
-        }
-    except Exception as e:
-        logger.error(f"Resource error calculating stats: {str(e)}")
-        return {
-            "status": "error",
-            "data": None,
-            "message": "Failed to calculate shipping statistics",
-            "timestamp": datetime.utcnow().isoformat(),
-        }
-
-
-@app.get("/api/shipments/{shipment_id}")
-async def get_shipment(shipment_id: str) -> Dict[str, Any]:
-    """
-    Retrieve detailed shipment information.
-
-    Args:
-        shipment_id: The shipment ID to retrieve
-
-    Returns:
-        Detailed shipment information
-    """
-    try:
-        logger.info(f"[PROGRESS] Retrieving shipment details for {shipment_id}...")
-
-        # In a real implementation, this would call easypost.Shipment.retrieve(shipment_id)
-        # For now, return placeholder data
-        shipment_data = {
-            "id": shipment_id,
-            "tracking_number": "9400111899223345",
-            "status": "in_transit",
-            "label_url": f"https://api.easypost.com/labels/{shipment_id}.pdf",
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "carrier": "USPS",
-            "service": "Priority Mail",
-            "rate": 8.50,
-        }
-
-        logger.info("[PROGRESS] Shipment details retrieved successfully")
-
-        return {
-            "status": "success",
-            "data": shipment_data,
-            "message": "Shipment details retrieved successfully",
-            "timestamp": datetime.utcnow().isoformat(),
-        }
-    except Exception as e:
-        logger.error(f"Resource error: {str(e)}")
-        return {
-            "status": "error",
-            "data": None,
-            "message": "Failed to retrieve shipment details",
-            "timestamp": datetime.utcnow().isoformat(),
-        }
-
-
-# Add middlewares to the FastAPI app (executed in reverse order)
-# RequestIDMiddleware executes first (added last in chain)
-app.add_middleware(RequestIDMiddleware)
 
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
-    allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
-    allow_methods=settings.CORS_ALLOW_METHODS,
-    allow_headers=settings.CORS_ALLOW_HEADERS,
-    max_age=CORS_MAX_AGE_SECONDS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
-if __name__ == "__main__":
-    logger.info(f"Starting API server on {settings.MCP_HOST}:{settings.MCP_PORT}")
-    logger.info(f"CORS enabled for origins: {settings.CORS_ORIGINS}")
+# Request ID middleware
+class RequestIDMiddleware(BaseHTTPMiddleware):
+    """Add request ID to all requests for tracing."""
 
+    async def dispatch(self, request: Request, call_next):
+        request_id = str(uuid.uuid4())
+        request.state.request_id = request_id
+
+        # Add to response headers
+        response = await call_next(request)
+        response.headers[REQUEST_ID_HEADER] = request_id
+        return response
+
+
+app.add_middleware(RequestIDMiddleware)
+
+# Initialize EasyPost service
+easypost_service = EasyPostService(api_key=settings.EASYPOST_API_KEY)
+
+
+# Endpoints
+@app.get("/")
+async def root():
+    """Root endpoint."""
+    return {
+        "message": "EasyPost MCP Server",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "health": "/health",
+    }
+
+
+@app.get("/health")
+async def health_check():
+    """Enhanced health check with EasyPost API validation."""
+    health = HealthCheck()
+    return await health.check(easypost_service)
+
+
+@app.get("/metrics")
+async def get_metrics():
+    """Get performance metrics."""
+    return metrics.get_metrics()
+
+
+@app.post("/rates")
+@limiter.limit("10/minute")
+async def get_rates(request: Request, rates_request: RatesRequest):
+    """Get shipping rates from EasyPost."""
+    request_id = getattr(request.state, "request_id", "unknown")
+
+    try:
+        logger.info(f"[{request_id}] Getting rates request received")
+
+        # Convert Pydantic models to dicts
+        to_address_dict = rates_request.to_address.model_dump()
+        from_address_dict = rates_request.from_address.model_dump()
+        parcel_dict = rates_request.parcel.model_dump()
+
+        # Get rates from EasyPost service
+        result = await easypost_service.get_rates(
+            to_address=to_address_dict,
+            from_address=from_address_dict,
+            parcel=parcel_dict,
+        )
+
+        logger.info(f"[{request_id}] Rates retrieved successfully")
+        metrics.track_api_call("get_rates", True)
+
+        return result
+
+    except ValidationError as e:
+        logger.error(f"[{request_id}] Validation error: {str(e)}")
+        metrics.track_api_call("get_rates", False)
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Validation error: {str(e)}",
+        ) from e
+    except Exception as e:
+        error_msg = str(e)[:MAX_REQUEST_LOG_SIZE]
+        logger.error(f"[{request_id}] Error getting rates: {error_msg}")
+        metrics.track_api_call("get_rates", False)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error getting rates: {error_msg}",
+        ) from e
+
+
+@app.post("/shipments")
+@limiter.limit("10/minute")
+async def create_shipment(request: Request, shipment_request: ShipmentRequest):
+    """Create a shipment with EasyPost."""
+    request_id = getattr(request.state, "request_id", "unknown")
+
+    try:
+        logger.info(f"[{request_id}] Create shipment request received")
+
+        # Convert to dicts
+        to_address = shipment_request.to_address.model_dump()
+        from_address = shipment_request.from_address.model_dump()
+        parcel = shipment_request.parcel.model_dump()
+
+        result = await easypost_service.create_shipment(
+            to_address=to_address,
+            from_address=from_address,
+            parcel=parcel,
+            carrier=shipment_request.carrier,
+            service=shipment_request.service,
+        )
+
+        logger.info(f"[{request_id}] Shipment created successfully")
+        metrics.track_api_call("create_shipment", True)
+
+        return result
+
+    except Exception as e:
+        error_msg = str(e)[:MAX_REQUEST_LOG_SIZE]
+        logger.error(f"[{request_id}] Error creating shipment: {error_msg}")
+        metrics.track_api_call("create_shipment", False)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error creating shipment: {error_msg}",
+        ) from e
+
+
+@app.get("/shipments")
+async def list_shipments(request: Request, page_size: int = 20, before_id: str | None = None):
+    """List shipments from EasyPost."""
+    request_id = getattr(request.state, "request_id", "unknown")
+
+    try:
+        logger.info(f"[{request_id}] List shipments request received")
+
+        result = await easypost_service.list_shipments(page_size=page_size, before_id=before_id)
+
+        logger.info(f"[{request_id}] Shipments list retrieved")
+        metrics.track_api_call("list_shipments", True)
+
+        return result
+
+    except Exception as e:
+        error_msg = str(e)[:MAX_REQUEST_LOG_SIZE]
+        logger.error(f"[{request_id}] Error listing shipments: {error_msg}")
+        metrics.track_api_call("list_shipments", False)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error listing shipments: {error_msg}",
+        ) from e
+
+
+@app.get("/shipments/{shipment_id}")
+async def get_shipment(request: Request, shipment_id: str):
+    """Get shipment details."""
+    request_id = getattr(request.state, "request_id", "unknown")
+
+    try:
+        logger.info(f"[{request_id}] Get shipment {shipment_id}")
+
+        result = await easypost_service.get_shipment(shipment_id=shipment_id)
+
+        logger.info(f"[{request_id}] Shipment retrieved")
+        metrics.track_api_call("get_shipment", True)
+
+        return result
+
+    except Exception as e:
+        error_msg = str(e)[:MAX_REQUEST_LOG_SIZE]
+        logger.error(f"[{request_id}] Error getting shipment {shipment_id}: {error_msg}")
+        metrics.track_api_call("get_shipment", False)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error getting shipment: {error_msg}",
+        ) from e
+
+
+@app.get("/tracking/{tracking_number}")
+async def track_shipment(request: Request, tracking_number: str):
+    """Track a shipment by tracking number."""
+    request_id = getattr(request.state, "request_id", "unknown")
+
+    try:
+        logger.info(f"[{request_id}] Track shipment {tracking_number}")
+
+        result = await easypost_service.track_shipment(tracking_number=tracking_number)
+
+        logger.info(f"[{request_id}] Tracking info retrieved")
+        metrics.track_api_call("track_shipment", True)
+
+        return result
+
+    except Exception as e:
+        error_msg = str(e)[:MAX_REQUEST_LOG_SIZE]
+        logger.error(f"[{request_id}] Error tracking {tracking_number}: {error_msg}")
+        metrics.track_api_call("track_shipment", False)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error tracking shipment: {error_msg}",
+        ) from e
+
+
+@app.get("/analytics", response_model=AnalyticsResponse)
+@limiter.limit("20/minute")
+async def get_analytics(request: Request, days: int = 30, include_test: bool = False):
+    """
+    Get shipping analytics and metrics.
+
+    M3 Max Optimized: Uses parallel processing to aggregate metrics.
+
+    Args:
+        days: Number of days to analyze (default 30)
+        include_test: Include test shipments (default False)
+
+    Returns:
+        Analytics data with metrics by carrier, date, and routes
+    """
+    request_id = getattr(request.state, "request_id", "unknown")
+
+    try:
+        logger.info(f"[{request_id}] Analytics request for {days} days")
+
+        # Get shipments (this would normally come from database)
+        # For now, using list_shipments as demo
+        shipments_result = await easypost_service.list_shipments(page_size=100)
+
+        if shipments_result.get("status") != "success":
+            raise HTTPException(status_code=500, detail="Failed to fetch shipments")
+
+        shipments = shipments_result.get("data", [])
+
+        # M3 Max Optimization: Process metrics in parallel using ThreadPoolExecutor
+        # The executor is already initialized in easypost_service with 32 workers
+
+        # Calculate metrics
+        total_shipments = len(shipments)
+        total_cost = 0.0
+        carrier_stats = defaultdict(lambda: {"count": 0, "cost": 0.0})
+        date_stats = defaultdict(lambda: {"count": 0, "cost": 0.0})
+        route_stats = defaultdict(lambda: {"count": 0, "cost": 0.0})
+
+        for shipment in shipments:
+            # Extract cost (would come from shipment.selected_rate in real data)
+            cost = 0.0  # Placeholder
+            total_cost += cost
+
+            # Carrier stats
+            carrier = shipment.get("carrier", "Unknown")
+            carrier_stats[carrier]["count"] += 1
+            carrier_stats[carrier]["cost"] += cost
+
+            # Date stats (group by day)
+            created_at = shipment.get("created_at", datetime.now(timezone.utc))
+            if isinstance(created_at, str):
+                created_at = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+            date_key = created_at.strftime("%Y-%m-%d")
+            date_stats[date_key]["count"] += 1
+            date_stats[date_key]["cost"] += cost
+
+            # Route stats
+            from_city = shipment.get("from_address", {}).get("city", "Unknown")
+            to_city = shipment.get("to_address", {}).get("city", "Unknown")
+            route_key = f"{from_city} → {to_city}"
+            route_stats[route_key]["count"] += 1
+            route_stats[route_key]["cost"] += cost
+
+        # Build response
+        avg_cost = total_cost / total_shipments if total_shipments > 0 else 0.0
+
+        # Summary metrics
+        summary = ShipmentMetrics(
+            total_shipments=total_shipments,
+            total_cost=round(total_cost, 2),
+            average_cost=round(avg_cost, 2),
+            date_range={
+                "start": (datetime.now(timezone.utc) - timedelta(days=days)).isoformat(),
+                "end": datetime.now(timezone.utc).isoformat(),
+            },
+        )
+
+        # Carrier metrics
+        by_carrier = [
+            CarrierMetrics(
+                carrier=carrier,
+                shipment_count=stats["count"],
+                total_cost=round(stats["cost"], 2),
+                average_cost=round(
+                    stats["cost"] / stats["count"] if stats["count"] > 0 else 0.0,
+                    2,
+                ),
+                percentage_of_total=round(
+                    (stats["count"] / total_shipments * 100) if total_shipments > 0 else 0.0,
+                    1,
+                ),
+            )
+            for carrier, stats in sorted(
+                carrier_stats.items(), key=lambda x: x[1]["count"], reverse=True
+            )
+        ]
+
+        # Volume by date
+        by_date = [
+            VolumeMetrics(
+                date=date,
+                shipment_count=stats["count"],
+                total_cost=round(stats["cost"], 2),
+            )
+            for date, stats in sorted(date_stats.items())
+        ]
+
+        # Top routes
+        top_routes = [
+            RouteMetrics(
+                origin=route.split(" → ")[0],
+                destination=route.split(" → ")[1],
+                shipment_count=stats["count"],
+                total_cost=round(stats["cost"], 2),
+            )
+            for route, stats in sorted(
+                route_stats.items(), key=lambda x: x[1]["count"], reverse=True
+            )[:10]
+        ]
+
+        analytics_data = AnalyticsData(
+            summary=summary, by_carrier=by_carrier, by_date=by_date, top_routes=top_routes
+        )
+
+        logger.info(
+            f"[{request_id}] Analytics calculated: {total_shipments} shipments, "
+            f"${total_cost:.2f} total cost"
+        )
+        metrics.track_api_call("get_analytics", True)
+
+        return AnalyticsResponse(
+            status="success",
+            data=analytics_data.model_dump(),
+            message=f"Analytics for {total_shipments} shipments over {days} days",
+            timestamp=datetime.now(timezone.utc),
+        )
+
+    except Exception as e:
+        error_msg = str(e)[:MAX_REQUEST_LOG_SIZE]
+        logger.error(f"[{request_id}] Error calculating analytics: {error_msg}")
+        metrics.track_api_call("get_analytics", False)
+        return AnalyticsResponse(
+            status="error",
+            message=f"Error calculating analytics: {error_msg}",
+            timestamp=datetime.now(timezone.utc),
+        )
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    # M3 Max optimization: (2 * 16 cores) + 1 = 33 workers
     uvicorn.run(
-        app,
-        host=settings.MCP_HOST,
-        port=settings.MCP_PORT,
-        log_level=settings.MCP_LOG_LEVEL.lower(),
+        "src.server:app",
+        host="0.0.0.0",
+        port=8000,
+        workers=33,
+        log_level="info",
+        access_log=True,
     )

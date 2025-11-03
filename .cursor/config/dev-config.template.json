@@ -1,0 +1,275 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "version": "1.0.0",
+  "description": "Universal Project Configuration Template - Works with ANY project",
+  "_instructions": "Copy this to .dev-config.json and fill in your project details",
+
+  "project": {
+    "name": "YOUR_PROJECT_NAME",
+    "type": "fullstack|backend|frontend|cli|library",
+    "description": "Brief description of your project"
+  },
+
+  "stack": {
+    "backend": {
+      "language": "python|javascript|typescript|go|rust|java",
+      "framework": "fastapi|django|express|nest|gin|actix",
+      "version": "3.12",
+      "orm": "sqlalchemy|prisma|sequelize|gorm|none",
+      "features": ["async", "rest-api", "graphql", "websockets", "mcp-tools"]
+    },
+    "frontend": {
+      "language": "javascript|typescript",
+      "framework": "react|vue|svelte|solid|angular",
+      "buildTool": "vite|webpack|parcel|rollup",
+      "stateManagement": "zustand|redux|pinia|jotai|recoil",
+      "styling": "tailwindcss|css-modules|styled-components|emotion",
+      "components": "shadcn-ui|material-ui|ant-design|chakra-ui"
+    },
+    "database": {
+      "type": "postgresql|mysql|mongodb|redis|sqlite",
+      "version": "16.0",
+      "orm": "sqlalchemy|prisma|mongoose|none"
+    }
+  },
+
+  "hardware": {
+    "_comment": "Auto-detected if not specified. M3 Max values shown as example.",
+    "type": "M3 Max|M2|M1|Intel|AMD",
+    "cpuCores": 16,
+    "performanceCores": 12,
+    "efficiencyCores": 4,
+    "ramGB": 128,
+    "workers": {
+      "_comment": "Optimal worker counts for parallel processing",
+      "python": 32,
+      "node": 16,
+      "go": 16,
+      "rust": 16,
+      "uvicorn": 4,
+      "vitest": 20,
+      "jest": 16,
+      "pytest": 16
+    },
+    "optimization": {
+      "threadPoolMax": 40,
+      "batchSizeOptimal": 150,
+      "memoryPerWorker": "4GB",
+      "cacheSize": "32GB"
+    }
+  },
+
+  "paths": {
+    "root": "/absolute/path/to/project",
+    "backend": "backend/src|src|app",
+    "frontend": "frontend/src|client/src|web/src",
+    "tests": {
+      "backend": "backend/tests|tests|__tests__",
+      "frontend": "frontend/src/test|src/__tests__"
+    },
+    "components": "frontend/src/components|src/components",
+    "services": {
+      "backend": "backend/src/services|src/services",
+      "frontend": "frontend/src/services|src/api"
+    },
+    "models": "backend/src/models|src/models",
+    "routes": "backend/src/routes|src/routes",
+    "utils": "backend/src/utils|src/utils"
+  },
+
+  "conventions": {
+    "python": {
+      "functions": "snake_case",
+      "classes": "PascalCase",
+      "constants": "UPPER_SNAKE_CASE",
+      "files": "snake_case.py",
+      "modules": "snake_case"
+    },
+    "javascript": {
+      "functions": "camelCase",
+      "components": "PascalCase",
+      "constants": "UPPER_SNAKE_CASE",
+      "files": "PascalCase.jsx|camelCase.js",
+      "modules": "camelCase"
+    },
+    "typescript": {
+      "functions": "camelCase",
+      "classes": "PascalCase",
+      "interfaces": "PascalCase",
+      "types": "PascalCase",
+      "constants": "UPPER_SNAKE_CASE",
+      "files": "PascalCase.tsx|camelCase.ts"
+    },
+    "go": {
+      "functions": "PascalCase|camelCase",
+      "structs": "PascalCase",
+      "constants": "PascalCase",
+      "files": "snake_case.go"
+    },
+    "commits": "conventional|semantic",
+    "branches": "feature/name|fix/name|refactor/name"
+  },
+
+  "testing": {
+    "backend": {
+      "framework": "pytest|jest|go-test|cargo-test",
+      "parallel": true,
+      "coverage": 80,
+      "mocking": ["external-apis", "database", "third-party-services"]
+    },
+    "frontend": {
+      "framework": "vitest|jest|testing-library",
+      "library": "testing-library/react|testing-library/vue",
+      "parallel": true,
+      "coverage": 70
+    },
+    "e2e": {
+      "framework": "playwright|cypress|selenium",
+      "parallel": true,
+      "browsers": ["chromium", "firefox", "webkit"]
+    }
+  },
+
+  "optimization": {
+    "enabled": true,
+    "features": {
+      "uvloop": true,
+      "threadPoolScaling": true,
+      "parallelTests": true,
+      "codeSplitting": true,
+      "lazyLoading": true,
+      "caching": true,
+      "connectionPooling": true,
+      "asyncPatterns": true
+    },
+    "build": {
+      "minify": true,
+      "sourcemaps": false,
+      "treeshaking": true,
+      "compression": true
+    }
+  },
+
+  "customization": {
+    "_comment": "Project-specific settings",
+    "primaryDomain": "ecommerce|saas|shipping|analytics|social",
+    "mainService": "YourMainService",
+    "apiProvider": "stripe|aws|gcp|azure|custom",
+    "keyFeatures": [
+      "feature-1",
+      "feature-2",
+      "feature-3"
+    ],
+    "environments": {
+      "development": {
+        "apiUrl": "http://localhost:8000",
+        "debug": true
+      },
+      "staging": {
+        "apiUrl": "https://staging.example.com",
+        "debug": false
+      },
+      "production": {
+        "apiUrl": "https://api.example.com",
+        "debug": false
+      }
+    }
+  },
+
+  "mcpServers": {
+    "_comment": "MCP servers available for slash commands",
+    "available": [
+      "Desktop Commander",
+      "github",
+      "context7",
+      "sequential-thinking",
+      "exa",
+      "playwright",
+      "custom-project-mcp"
+    ],
+    "primary": "Desktop Commander",
+    "aiReasoning": "sequential-thinking",
+    "documentation": "context7",
+    "versionControl": "github"
+  },
+
+  "slashCommands": {
+    "_comment": "Enable/disable specific slash commands",
+    "enabled": true,
+    "commands": {
+      "test": true,
+      "api": true,
+      "component": true,
+      "optimize": true,
+      "bench": true,
+      "deploy": true,
+      "lint": true,
+      "explain": true
+    },
+    "customCommands": {
+      "_example": {
+        "description": "Example custom command",
+        "enabled": false
+      }
+    }
+  },
+
+  "_examples": {
+    "_comment": "Configuration examples for common project types",
+
+    "fastapi-react": {
+      "stack": {
+        "backend": {
+          "language": "python",
+          "framework": "fastapi",
+          "version": "3.12"
+        },
+        "frontend": {
+          "language": "javascript",
+          "framework": "react",
+          "buildTool": "vite"
+        }
+      }
+    },
+
+    "django-vue": {
+      "stack": {
+        "backend": {
+          "language": "python",
+          "framework": "django",
+          "version": "3.11"
+        },
+        "frontend": {
+          "language": "javascript",
+          "framework": "vue",
+          "buildTool": "vite"
+        }
+      }
+    },
+
+    "express-react": {
+      "stack": {
+        "backend": {
+          "language": "javascript",
+          "framework": "express",
+          "version": "20.0"
+        },
+        "frontend": {
+          "language": "typescript",
+          "framework": "react",
+          "buildTool": "vite"
+        }
+      }
+    },
+
+    "go-api": {
+      "stack": {
+        "backend": {
+          "language": "go",
+          "framework": "gin",
+          "version": "1.21"
+        }
+      }
+    }
+  }
+}

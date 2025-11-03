@@ -4,7 +4,7 @@
     "type": "fullstack",
     "description": "Shipping and logistics automation with EasyPost API"
   },
-  
+
   "stack": {
     "backend": {
       "language": "python",
@@ -20,9 +20,40 @@
       "stateManagement": "zustand",
       "styling": "tailwindcss",
       "components": "shadcn-ui"
+    },
+    "detection": {
+      "backend": {
+        "fastapi": ["from fastapi import", "FastAPI()", "uvicorn.run"],
+        "django": ["from django import", "INSTALLED_APPS", "django.contrib"],
+        "flask": ["from flask import", "Flask(__name__)"],
+        "express": ["const express =", "app.listen", "require('express')"],
+        "nest": ["@Module", "@Controller", "NestFactory"],
+        "gin": ["gin.Default()", "import \"github.com/gin-gonic/gin\""],
+        "actix": ["actix_web::", "HttpServer::new"]
+      },
+      "frontend": {
+        "react": ["import React", "from 'react'", "useState", "useEffect"],
+        "vue": ["import { ref", "from 'vue'", "<template>", "defineComponent"],
+        "svelte": ["<script>", "$:", "export let"],
+        "solid": ["import { createSignal", "from 'solid-js'"],
+        "angular": ["@Component", "import { Component", "from '@angular"]
+      },
+      "testing": {
+        "pytest": ["pytest.ini", "import pytest", "conftest.py", "@pytest"],
+        "vitest": ["vitest.config", "import { describe", "from 'vitest'"],
+        "jest": ["jest.config", "describe(", "test(", "from '@testing-library"],
+        "go-test": ["_test.go", "func Test", "t *testing.T"],
+        "cargo-test": ["#[test]", "#[cfg(test)]", "cargo test"]
+      },
+      "build": {
+        "vite": ["vite.config", "import { defineConfig"],
+        "webpack": ["webpack.config", "module.exports"],
+        "rollup": ["rollup.config", "export default"],
+        "esbuild": ["esbuild.config", "require('esbuild')"]
+      }
     }
   },
-  
+
   "hardware": {
     "type": "M3 Max",
     "cpuCores": 16,
@@ -42,7 +73,7 @@
       "cacheSize": "32GB"
     }
   },
-  
+
   "paths": {
     "root": "/Users/andrejs/easypost-mcp-project",
     "backend": "backend/src",
@@ -57,7 +88,7 @@
       "frontend": "frontend/src/services"
     }
   },
-  
+
   "conventions": {
     "python": {
       "functions": "snake_case",
@@ -74,7 +105,7 @@
     "commits": "conventional",
     "branches": "feature/name, fix/name"
   },
-  
+
   "testing": {
     "backend": {
       "framework": "pytest",
@@ -89,7 +120,7 @@
       "coverage": 70
     }
   },
-  
+
   "optimization": {
     "enabled": true,
     "features": {
@@ -100,7 +131,7 @@
       "lazyLoading": true
     }
   },
-  
+
   "customization": {
     "primaryDomain": "shipping",
     "mainService": "EasyPostService",

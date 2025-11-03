@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
+import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { SkeletonCard } from '@/components/ui/Skeleton';
@@ -38,7 +39,7 @@ export default function ShipmentsPage() {
           setShipments(transformedShipments);
         } else {
           // Fallback to mock data if API fails
-          console.warn('Failed to fetch shipments from API, using fallback data');
+          toast.info('Using Demo Data', { description: 'Showing sample shipments for demonstration' });
           setShipments([
             {
               id: '1',
@@ -76,7 +77,7 @@ export default function ShipmentsPage() {
           ]);
         }
       } catch (error) {
-        console.error('Failed to fetch shipments:', error);
+        toast.error('Failed to Load Shipments', { description: 'Using demo data instead' });
         // Fallback to mock data
         setShipments([
           {
