@@ -59,7 +59,8 @@ class RatesResponse(BaseModel):
 
 class EasyPostService:
     def __init__(self, api_key: str):
-        easypost.api_key = api_key
+        self.api_key = api_key
+        self.client = easypost.EasyPostClient(api_key)
         self.logger = logging.getLogger(__name__)
         self.executor = ThreadPoolExecutor(max_workers=10)
 
@@ -103,7 +104,7 @@ class EasyPostService:
         try:
             self.logger.info(f"Creating shipment with {carrier}")
 
-            shipment = easypost.Shipment.create(
+            shipment = self.client.shipment.create(
                 to_address=to_address, from_address=from_address, parcel=parcel
             )
 
@@ -153,7 +154,7 @@ class EasyPostService:
         """Synchronous tracking retrieval."""
         try:
             self.logger.info(f"Fetching tracking for {tracking_number}")
-            tracker = easypost.Tracker.retrieve(tracking_number)
+            tracker = self.client.tracker.retrieve(tracking_number)
 
             return {
                 "status": "success",
@@ -161,15 +162,23 @@ class EasyPostService:
                     "tracking_number": tracker.tracking_code,
                     "status_detail": tracker.status,
                     "updated_at": str(tracker.updated_at),
-                    "events": [
-                        {
-                            "timestamp": str(event.timestamp),
-                            "status": event.status,
-                            "message": event.message,
-                            "location": event.location,
-                        }
-                        for event in tracker.tracking_details
-                    ],
+                    "events": (
+                        [
+                            {
+                                "timestamp": str(
+                                    getattr(
+                                        event, "timestamp", getattr(event, "datetime", "unknown")
+                                    )
+                                ),
+                                "status": getattr(event, "status", "unknown"),
+                                "message": getattr(event, "message", "unknown"),
+                                "location": getattr(event, "location", None),
+                            }
+                            for event in tracker.tracking_details
+                        ]
+                        if hasattr(tracker, "tracking_details") and tracker.tracking_details
+                        else []
+                    ),
                 },
                 "message": "Tracking retrieved successfully",
                 "timestamp": datetime.utcnow().isoformat(),
@@ -223,7 +232,7 @@ class EasyPostService:
         """Synchronous rates retrieval."""
         try:
             self.logger.info("Calculating rates...")
-            shipment = easypost.Shipment.create(
+            shipment = self.client.shipment.create(
                 to_address=to_address, from_address=from_address, parcel=parcel
             )
 
@@ -303,8 +312,8 @@ class EasyPostService:
             if end_datetime:
                 params["end_datetime"] = end_datetime
 
-            # Get shipments from EasyPost
-            shipments_response = easypost.Shipment.all(**params)
+            # Get shipments from EasyPost using the client
+            shipments_response = self.client.shipment.all(**params)
 
             # Transform shipments to our format
             shipments = []
