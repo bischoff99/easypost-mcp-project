@@ -6,24 +6,21 @@ import TrackingPage from './pages/TrackingPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import AddressBookPage from './pages/AddressBookPage';
 import SettingsPage from './pages/SettingsPage';
-import ErrorBoundary from './components/ErrorBoundary';
 
 function App() {
   return (
-    <ErrorBoundary>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<AppShell />}>
-            <Route index element={<DashboardPage />} />
-            <Route path="shipments" element={<ShipmentsPage />} />
-            <Route path="tracking" element={<TrackingPage />} />
-            <Route path="analytics" element={<AnalyticsPage />} />
-            <Route path="addresses" element={<AddressBookPage />} />
-            <Route path="settings" element={<SettingsPage />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </ErrorBoundary>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<AppShell />}>
+          <Route index element={<DashboardPage />} />
+          <Route path="shipments" element={<ShipmentsPage />} />
+          <Route path="tracking" element={<TrackingPage />} />
+          <Route path="analytics" element={<AnalyticsPage />} />
+          <Route path="addresses" element={<AddressBookPage />} />
+          <Route path="settings" element={<SettingsPage />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
 
