@@ -1,7 +1,7 @@
 import logging
 import uuid
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict
 
 import uvicorn
@@ -122,7 +122,7 @@ async def create_shipment(request: Request, shipment_data: ShipmentRequest) -> D
                 "status": result.status,
                 "data": result.dict(),
                 "message": "Shipment created successfully",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
         else:
             logger.error(f"[PROGRESS] Shipment creation failed: {result.error}")
@@ -132,7 +132,7 @@ async def create_shipment(request: Request, shipment_data: ShipmentRequest) -> D
                     "status": "error",
                     "data": None,
                     "message": result.error or "Failed to create shipment",
-                    "timestamp": datetime.utcnow().isoformat(),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
                 },
             )
     except ValidationError as e:
@@ -143,7 +143,7 @@ async def create_shipment(request: Request, shipment_data: ShipmentRequest) -> D
                 "status": "error",
                 "data": None,
                 "message": f"Validation error: {str(e)}",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             },
         ) from e
     except HTTPException:
@@ -156,7 +156,7 @@ async def create_shipment(request: Request, shipment_data: ShipmentRequest) -> D
                 "status": "error",
                 "data": None,
                 "message": "An unexpected error occurred",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             },
         ) from None
 
@@ -226,7 +226,7 @@ async def get_rates(request: Request, rates_data: RatesRequest) -> Dict[str, Any
                 "status": "error",
                 "data": None,
                 "message": f"Validation error: {str(e)}",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             },
         ) from e
     except Exception as e:
@@ -237,7 +237,7 @@ async def get_rates(request: Request, rates_data: RatesRequest) -> Dict[str, Any
                 "status": "error",
                 "data": None,
                 "message": "Failed to retrieve rates",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             },
         ) from None
 
@@ -275,7 +275,7 @@ async def get_recent_shipments(limit: int = 10) -> Dict[str, Any]:
                     "status": "error",
                     "data": None,
                     "message": result["message"],
-                    "timestamp": datetime.utcnow().isoformat(),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
                 },
             )
     except HTTPException:
@@ -288,7 +288,7 @@ async def get_recent_shipments(limit: int = 10) -> Dict[str, Any]:
                 "status": "error",
                 "data": None,
                 "message": "Failed to retrieve recent shipments",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             },
         ) from None
 
@@ -354,7 +354,7 @@ async def get_shipment(shipment_id: str) -> Dict[str, Any]:
             "tracking_number": "9400111899223345",
             "status": "in_transit",
             "label_url": f"https://api.easypost.com/labels/{shipment_id}.pdf",
-            "created_at": datetime.utcnow().isoformat(),
+            "created_at": datetime.now(timezone.utc).isoformat(),
             "carrier": "USPS",
             "service": "Priority Mail",
             "rate": 8.50,

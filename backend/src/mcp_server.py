@@ -1,7 +1,7 @@
 """MCP Server implementation for EasyPost shipping operations."""
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastmcp import Context, FastMCP
 from pydantic import ValidationError
@@ -99,7 +99,7 @@ async def get_tracking(tracking_number: str, ctx: Context = None) -> dict:
                 "status": "error",
                 "data": None,
                 "message": "Tracking number is required",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
         if ctx:
@@ -190,7 +190,7 @@ async def get_stats_resource() -> str:
 
     try:
         # Fetch recent shipments (last 30 days worth, up to 100)
-        thirty_days_ago = (datetime.utcnow() - timedelta(days=30)).isoformat()
+        thirty_days_ago = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
         result = await easypost_service.get_shipments_list(
             page_size=100, purchased=True, start_datetime=thirty_days_ago
         )
@@ -240,7 +240,7 @@ async def get_stats_resource() -> str:
                 "status": "success",
                 "data": stats,
                 "message": f"Statistics calculated from {total_shipments} shipments",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             },
             indent=2,
         )
@@ -250,7 +250,7 @@ async def get_stats_resource() -> str:
             {
                 "status": "error",
                 "message": f"Failed to calculate statistics: {str(e)}",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             },
             indent=2,
         )

@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 import easypost
@@ -147,7 +147,7 @@ class EasyPostService:
                 "status": "error",
                 "data": None,
                 "message": "Failed to retrieve tracking information",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
     def _get_tracking_sync(self, tracking_number: str) -> Dict[str, Any]:
@@ -181,7 +181,7 @@ class EasyPostService:
                     ),
                 },
                 "message": "Tracking retrieved successfully",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
         except Exception as e:
             self.logger.error(f"Failed to get tracking: {self._sanitize_error(e)}")
@@ -189,7 +189,7 @@ class EasyPostService:
                 "status": "error",
                 "data": None,
                 "message": "Failed to retrieve tracking information",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
     async def get_rates(
@@ -215,7 +215,7 @@ class EasyPostService:
                 "status": "success",
                 "data": rates,
                 "message": "Rates retrieved successfully",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
         except Exception as e:
             self.logger.error(f"Error getting rates: {self._sanitize_error(e)}")
@@ -223,7 +223,7 @@ class EasyPostService:
                 "status": "error",
                 "data": None,
                 "message": "Failed to retrieve rates",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
     def _get_rates_sync(
@@ -285,7 +285,7 @@ class EasyPostService:
                 "status": "error",
                 "data": [],
                 "message": "Failed to retrieve shipments list",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
     def _get_shipments_list_sync(
@@ -350,7 +350,7 @@ class EasyPostService:
                 "data": shipments,
                 "message": f"Successfully retrieved {len(shipments)} shipments",
                 "has_more": len(shipments) == page_size,  # Simple heuristic
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
         except Exception as e:
@@ -359,7 +359,7 @@ class EasyPostService:
                 "status": "error",
                 "data": [],
                 "message": "Failed to retrieve shipments list",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
     def _sanitize_error(self, error: Exception) -> str:
