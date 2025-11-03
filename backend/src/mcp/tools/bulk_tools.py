@@ -32,45 +32,76 @@ class ShipmentLine(BaseModel):
     contents: str
 
 
-# Realistic California retail store addresses
-CA_STORE_ADDRESSES = {
-    "Los Angeles": {
-        "name": "Beauty & Wellness LA",
-        "company": "Natural Essentials Store",
-        "street1": "8500 Beverly Blvd",
-        "street2": "Suite 120",
-        "city": "Los Angeles",
-        "state": "CA",
-        "zip": "90048",
-        "country": "US",
-        "phone": "310-555-0199",
-        "email": "shipping@beautywellnessla.com",
+# Realistic retail store addresses by state
+STORE_ADDRESSES = {
+    "California": {
+        "Los Angeles": {
+            "name": "Beauty & Wellness LA",
+            "company": "Natural Essentials Store",
+            "street1": "8500 Beverly Blvd",
+            "street2": "Suite 120",
+            "city": "Los Angeles",
+            "state": "CA",
+            "zip": "90048",
+            "country": "US",
+            "phone": "310-555-0199",
+            "email": "shipping@beautywellnessla.com",
+        },
+        "San Francisco": {
+            "name": "Pacific Beauty Supply",
+            "company": "Pacific Beauty Supply Co",
+            "street1": "2200 Market St",
+            "street2": "",
+            "city": "San Francisco",
+            "state": "CA",
+            "zip": "94114",
+            "country": "US",
+            "phone": "415-555-0142",
+            "email": "orders@pacificbeauty.com",
+        },
+        "San Diego": {
+            "name": "Coastal Wellness",
+            "company": "Coastal Wellness & Spa Supplies",
+            "street1": "1025 Garnet Ave",
+            "street2": "",
+            "city": "San Diego",
+            "state": "CA",
+            "zip": "92109",
+            "country": "US",
+            "phone": "619-555-0188",
+            "email": "ship@coastalwellness.com",
+        },
     },
-    "San Francisco": {
-        "name": "Pacific Beauty Supply",
-        "company": "Pacific Beauty Supply Co",
-        "street1": "2200 Market St",
-        "street2": "",
-        "city": "San Francisco",
-        "state": "CA",
-        "zip": "94114",
-        "country": "US",
-        "phone": "415-555-0142",
-        "email": "orders@pacificbeauty.com",
-    },
-    "San Diego": {
-        "name": "Coastal Wellness",
-        "company": "Coastal Wellness & Spa Supplies",
-        "street1": "1025 Garnet Ave",
-        "street2": "",
-        "city": "San Diego",
-        "state": "CA",
-        "zip": "92109",
-        "country": "US",
-        "phone": "619-555-0188",
-        "email": "ship@coastalwellness.com",
+    "Nevada": {
+        "Las Vegas": {
+            "name": "Desert Essentials",
+            "company": "Desert Essentials Distribution",
+            "street1": "3500 S Las Vegas Blvd",
+            "street2": "Suite 210",
+            "city": "Las Vegas",
+            "state": "NV",
+            "zip": "89109",
+            "country": "US",
+            "phone": "702-555-0177",
+            "email": "ship@desertessentials.com",
+        },
+        "Reno": {
+            "name": "Sierra Outdoor Outfitters",
+            "company": "Sierra Outdoor Supply Co",
+            "street1": "255 N Sierra St",
+            "street2": "",
+            "city": "Reno",
+            "state": "NV",
+            "zip": "89501",
+            "country": "US",
+            "phone": "775-555-0163",
+            "email": "orders@sierraoutdoor.com",
+        },
     },
 }
+
+# Backward compatibility
+CA_STORE_ADDRESSES = STORE_ADDRESSES["California"]
 
 
 def parse_dimensions(dim_str: str) -> tuple:
@@ -156,7 +187,7 @@ def register_bulk_tools(mcp, easypost_service):
     @mcp.tool()
     async def parse_and_get_bulk_rates(
         spreadsheet_data: str,
-        from_city: str = "Los Angeles",
+        from_city: str = None,
         ctx: Context = None,
     ) -> dict:
         """
@@ -164,7 +195,8 @@ def register_bulk_tools(mcp, easypost_service):
 
         Args:
             spreadsheet_data: Tab-separated shipment data (paste from spreadsheet)
-            from_city: California city for origin address (Los Angeles, San Francisco, San Diego)
+            from_city: Override city (e.g., "Los Angeles", "Las Vegas"). 
+                      If None, auto-detects from origin_state column
             ctx: MCP context for progress reporting
 
         Returns:
@@ -185,10 +217,31 @@ def register_bulk_tools(mcp, easypost_service):
                     "timestamp": datetime.now(timezone.utc).isoformat(),
                 }
 
-            # Get origin address
-            from_address = CA_STORE_ADDRESSES.get(
-                from_city, CA_STORE_ADDRESSES["Los Angeles"]
-            )
+            # Auto-detect origin state from first line if not specified
+            if from_city is None:
+                first_line_data = parse_spreadsheet_line(lines[0])
+                origin_state = first_line_data["origin_state"]
+                
+                # Map state to default city
+                state_defaults = {
+                    "California": "Los Angeles",
+                    "Nevada": "Las Vegas",
+                }
+                from_city = state_defaults.get(origin_state, "Los Angeles")
+                
+                if ctx:
+                    await ctx.info(f"Auto-detected origin: {from_city} (from {origin_state})")
+
+            # Get origin address - check both state structures
+            from_address = None
+            for state_stores in STORE_ADDRESSES.values():
+                if from_city in state_stores:
+                    from_address = state_stores[from_city]
+                    break
+            
+            # Fallback to LA if city not found
+            if from_address is None:
+                from_address = STORE_ADDRESSES["California"]["Los Angeles"]
 
             results = []
             total_lines = len(lines)
