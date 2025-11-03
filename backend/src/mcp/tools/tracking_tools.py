@@ -1,0 +1,55 @@
+"""Tracking lookup MCP tool."""
+
+import asyncio
+import logging
+from datetime import datetime, timezone
+
+from fastmcp import Context
+
+logger = logging.getLogger(__name__)
+
+
+def register_tracking_tools(mcp, easypost_service):
+    """Register tracking-related tools with MCP server."""
+
+    @mcp.tool()
+    async def get_tracking(tracking_number: str, ctx: Context = None) -> dict:
+        """
+        Get real-time tracking information for a shipment.
+
+        Args:
+            tracking_number: The tracking number to look up
+
+        Returns:
+            Standardized response with tracking data
+        """
+        try:
+            if ctx:
+                await ctx.info(f"Fetching tracking for {tracking_number}...")
+
+            # Add timeout to prevent SSE timeout errors
+            result = await asyncio.wait_for(
+                easypost_service.get_tracking(tracking_number), timeout=20.0
+            )
+
+            if ctx:
+                await ctx.report_progress(1, 1)
+
+            return result
+        except asyncio.TimeoutError:
+            logger.error("Tracking lookup timed out after 20 seconds")
+            return {
+                "status": "error",
+                "data": None,
+                "message": "Tracking lookup timed out. Please try again.",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+        except Exception as e:
+            logger.error(f"Tool error: {str(e)}")
+            return {
+                "status": "error",
+                "data": None,
+                "message": "Failed to retrieve tracking information",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+
