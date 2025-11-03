@@ -40,6 +40,8 @@ async def create_shipment(
     Returns:
         Standardized response with status, data, message, timestamp
     """
+    import asyncio
+
     try:
         # Validate inputs
         to_addr = AddressModel(**to_address)
@@ -49,8 +51,12 @@ async def create_shipment(
         if ctx:
             await ctx.info(f"Creating shipment with {carrier}")
 
-        result = await easypost_service.create_shipment(
-            to_addr.dict(), from_addr.dict(), parcel_obj.dict(), carrier
+        # Add timeout to prevent SSE timeout errors
+        result = await asyncio.wait_for(
+            easypost_service.create_shipment(
+                to_addr.dict(), from_addr.dict(), parcel_obj.dict(), carrier
+            ),
+            timeout=30.0,  # 30 second timeout
         )
 
         if ctx and result.status == "success":
@@ -62,6 +68,14 @@ async def create_shipment(
             "message": (
                 "Shipment created successfully" if result.status == "success" else result.error
             ),
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+    except asyncio.TimeoutError:
+        logger.error("Shipment creation timed out after 30 seconds")
+        return {
+            "status": "error",
+            "data": None,
+            "message": "Shipment creation timed out. Please try again.",
             "timestamp": datetime.utcnow().isoformat(),
         }
     except ValidationError as e:
@@ -93,6 +107,8 @@ async def get_tracking(tracking_number: str, ctx: Context = None) -> dict:
     Returns:
         Standardized response with tracking data
     """
+    import asyncio
+
     try:
         if not tracking_number or not tracking_number.strip():
             return {
@@ -105,8 +121,20 @@ async def get_tracking(tracking_number: str, ctx: Context = None) -> dict:
         if ctx:
             await ctx.info(f"Fetching tracking for {tracking_number}")
 
-        result = await easypost_service.get_tracking(tracking_number.strip())
+        # Add timeout to prevent SSE timeout errors
+        result = await asyncio.wait_for(
+            easypost_service.get_tracking(tracking_number.strip()),
+            timeout=15.0,  # 15 second timeout for tracking
+        )
         return result
+    except asyncio.TimeoutError:
+        logger.error("Tracking request timed out after 15 seconds")
+        return {
+            "status": "error",
+            "data": None,
+            "message": "Tracking request timed out. Please try again.",
+            "timestamp": datetime.utcnow().isoformat(),
+        }
     except Exception as e:
         logger.error(f"Tool error: {str(e)}")
         return {
@@ -132,6 +160,8 @@ async def get_rates(
     Returns:
         Standardized response with available rates
     """
+    import asyncio
+
     try:
         # Validate inputs
         to_addr = AddressModel(**to_address)
@@ -141,14 +171,24 @@ async def get_rates(
         if ctx:
             await ctx.info("Calculating rates...")
 
-        result = await easypost_service.get_rates(
-            to_addr.dict(), from_addr.dict(), parcel_obj.dict()
+        # Add timeout to prevent SSE timeout errors
+        result = await asyncio.wait_for(
+            easypost_service.get_rates(to_addr.dict(), from_addr.dict(), parcel_obj.dict()),
+            timeout=20.0,  # 20 second timeout for rates
         )
 
         if ctx:
             await ctx.report_progress(1, 1)
 
         return result
+    except asyncio.TimeoutError:
+        logger.error("Rates calculation timed out after 20 seconds")
+        return {
+            "status": "error",
+            "data": None,
+            "message": "Rates calculation timed out. Please try again.",
+            "timestamp": datetime.utcnow().isoformat(),
+        }
     except ValidationError as e:
         logger.error(f"Validation error: {str(e)}")
         return {
@@ -173,26 +213,57 @@ async def get_rates(
 @mcp.resource("easypost://shipments/recent")
 async def get_recent_shipments_resource() -> str:
     """Get list of recent shipments from EasyPost API."""
+    import asyncio
     import json
 
-    result = await easypost_service.get_shipments_list(
-        page_size=10, purchased=True  # Get last 10 purchased shipments
-    )
-
-    return json.dumps(result, indent=2)
+    try:
+        # Add timeout to prevent SSE timeout errors
+        result = await asyncio.wait_for(
+            easypost_service.get_shipments_list(
+                page_size=10, purchased=True  # Get last 10 purchased shipments
+            ),
+            timeout=15.0,  # 15 second timeout for resource requests
+        )
+        return json.dumps(result, indent=2)
+    except asyncio.TimeoutError:
+        logger.error("Recent shipments resource timed out after 15 seconds")
+        return json.dumps(
+            {
+                "status": "error",
+                "message": "Request timed out. Please try again.",
+                "timestamp": datetime.utcnow().isoformat(),
+            },
+            indent=2,
+        )
+    except Exception as e:
+        logger.error(f"Resource error: {str(e)}")
+        return json.dumps(
+            {
+                "status": "error",
+                "message": "Failed to retrieve recent shipments",
+                "timestamp": datetime.utcnow().isoformat(),
+            },
+            indent=2,
+        )
 
 
 @mcp.resource("easypost://stats/overview")
 async def get_stats_resource() -> str:
     """Get shipping statistics overview calculated from real EasyPost data."""
+    import asyncio
     import json
     from datetime import timedelta
 
     try:
         # Fetch recent shipments (last 30 days worth, up to 100)
         thirty_days_ago = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
-        result = await easypost_service.get_shipments_list(
-            page_size=100, purchased=True, start_datetime=thirty_days_ago
+
+        # Add timeout to prevent SSE timeout errors
+        result = await asyncio.wait_for(
+            easypost_service.get_shipments_list(
+                page_size=100, purchased=True, start_datetime=thirty_days_ago
+            ),
+            timeout=20.0,  # 20 second timeout for stats calculation
         )
 
         if result["status"] == "error":
@@ -244,13 +315,23 @@ async def get_stats_resource() -> str:
             },
             indent=2,
         )
+    except asyncio.TimeoutError:
+        logger.error("Stats calculation timed out after 20 seconds")
+        return json.dumps(
+            {
+                "status": "error",
+                "message": "Statistics calculation timed out. Please try again.",
+                "timestamp": datetime.utcnow().isoformat(),
+            },
+            indent=2,
+        )
     except Exception as e:
         logger.error(f"Error calculating stats: {str(e)}")
         return json.dumps(
             {
                 "status": "error",
                 "message": f"Failed to calculate statistics: {str(e)}",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.utcnow().isoformat(),
             },
             indent=2,
         )
