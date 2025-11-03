@@ -14,13 +14,12 @@ from pydantic import ValidationError
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.middleware.cors import CORSMiddleware
-
 from src.models.requests import RatesRequest, ShipmentRequest
 from src.services.easypost_service import EasyPostService
 from src.utils.config import settings
 from src.utils.monitoring import HealthCheck, metrics
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.cors import CORSMiddleware
 
 # Constants
 MAX_RECENT_SHIPMENTS = 10
@@ -194,9 +193,23 @@ async def get_tracking(request: Request, tracking_number: str) -> Dict[str, Any]
     Returns:
         Standardized response with tracking data
     """
+    import re
+
     try:
         if not tracking_number or not tracking_number.strip():
             raise HTTPException(status_code=400, detail="Tracking number is required")
+
+        tracking_number = tracking_number.strip()
+
+        # Validate length (tracking numbers are typically 10-40 characters)
+        if len(tracking_number) > 50:
+            raise HTTPException(status_code=400, detail="Tracking number too long")
+
+        # Validate format (alphanumeric with optional hyphens)
+        if not re.match(r"^[A-Za-z0-9\-]+$", tracking_number):
+            raise HTTPException(
+                status_code=400, detail="Tracking number contains invalid characters"
+            )
 
         logger.info(f"[PROGRESS] Fetching tracking information for {tracking_number}...")
 
@@ -414,7 +427,7 @@ async def get_stats() -> Dict[str, Any]:
                     "period": "last_30_days",
                 },
                 "message": "No shipment data available",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
         shipments = shipments_result["data"]
