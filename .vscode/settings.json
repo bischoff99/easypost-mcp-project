@@ -78,6 +78,119 @@
     "**/.pytest_cache": true,
     "**/.mypy_cache": true,
     "**/.ruff_cache": true
-  }
-}
+  },
 
+  // ===== NEW EXTENSION CONFIGURATIONS =====
+
+  // Error Lens - Inline error display
+  "errorLens.enabled": true,
+  "errorLens.enabledDiagnosticLevels": ["error", "warning", "info"],
+  "errorLens.followCursor": "activeLine",
+  "errorLens.fontWeight": "bold",
+  "errorLens.fontSize": "0.9em",
+
+  // Todo Tree - Aggregate TODOs
+  "todo-tree.general.tags": ["TODO", "FIXME", "HACK", "NOTE", "BUG", "XXX"],
+  "todo-tree.highlights.defaultHighlight": {
+    "foreground": "black",
+    "type": "text-and-comment"
+  },
+  "todo-tree.highlights.customHighlight": {
+    "TODO": {
+      "icon": "check",
+      "iconColour": "#FF8C00",
+      "foreground": "#FF8C00",
+      "type": "text"
+    },
+    "FIXME": {
+      "icon": "alert",
+      "iconColour": "#FF2D00",
+      "foreground": "#FF2D00"
+    },
+    "HACK": {
+      "icon": "tools",
+      "iconColour": "#9B59B6"
+    },
+    "BUG": {
+      "icon": "bug",
+      "iconColour": "#E84393"
+    }
+  },
+  "todo-tree.general.showActivityBarBadge": true,
+
+  // Better Comments - Color-coded comments
+  "better-comments.tags": [
+    {
+      "tag": "!",
+      "color": "#FF2D00",
+      "strikethrough": false,
+      "bold": true,
+      "backgroundColor": "transparent"
+    },
+    {
+      "tag": "?",
+      "color": "#3498DB",
+      "italic": true,
+      "backgroundColor": "transparent"
+    },
+    {
+      "tag": "TODO",
+      "color": "#FF8C00",
+      "bold": true,
+      "backgroundColor": "transparent"
+    },
+    {
+      "tag": "FIXME",
+      "color": "#FF2D00",
+      "bold": true,
+      "underline": true,
+      "backgroundColor": "transparent"
+    },
+    {
+      "tag": "*",
+      "color": "#98C379",
+      "backgroundColor": "transparent"
+    },
+    {
+      "tag": "NOTE",
+      "color": "#3498DB",
+      "backgroundColor": "transparent"
+    }
+  ],
+
+  // Import Cost - Bundle size warnings
+  "importCost.smallPackageSize": 50,
+  "importCost.mediumPackageSize": 100,
+  "importCost.largePackageSize": 200,
+  "importCost.showCalculatingDecoration": true,
+
+  // Auto Docstring - Google style
+  "autoDocstring.docstringFormat": "google",
+  "autoDocstring.startOnNewLine": false,
+  "autoDocstring.includeExtendedSummary": true,
+  "autoDocstring.includeName": true,
+  "autoDocstring.guessTypes": true,
+
+  // Code Spell Checker
+  "cSpell.enabled": true,
+  "cSpell.language": "en-GB",
+  "cSpell.words": [
+    "easypost",
+    "fastmcp",
+    "fastapi",
+    "pydantic",
+    "uvicorn",
+    "pytest",
+    "asyncio",
+    "zustand",
+    "vite"
+  ],
+
+  // Path Intellisense
+  "path-intellisense.autoSlashAfterDirectory": true,
+  "path-intellisense.extensionOnImport": true,
+
+  // Console Ninja - Inline console output
+  "console-ninja.featureSet": "Community",
+  "console-ninja.captureFunctions": true
+}
