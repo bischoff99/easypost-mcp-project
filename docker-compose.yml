@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: easypost-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - EASYPOST_API_KEY=${EASYPOST_API_KEY}
+      - MCP_HOST=0.0.0.0
+      - MCP_PORT=8000
+      - MCP_LOG_LEVEL=INFO
+      - CORS_ORIGINS=http://localhost,http://localhost:80,http://localhost:5173
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - easypost-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: easypost-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    networks:
+      - easypost-network
+
+networks:
+  easypost-network:
+    driver: bridge
+
+# To run:
+# 1. Create .env file with EASYPOST_API_KEY=your_key_here
+# 2. Run: docker-compose up -d
+# 3. Access frontend at http://localhost
+# 4. Access backend API at http://localhost:8000
+# 5. View API docs at http://localhost:8000/docs
