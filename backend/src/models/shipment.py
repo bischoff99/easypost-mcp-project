@@ -35,7 +35,7 @@ class Shipment(Base):
     buyer_address_id = Column(UUID(as_uuid=True), ForeignKey("addresses.id"), nullable=True)
 
     # Parcel
-    parcel_id = Column(UUID(as_uuid=True), ForeignKey("parcels.id"), nullable=False)
+    parcel_id = Column(UUID(as_uuid=True), ForeignKey("parcels.id"), nullable=True)
 
     # Customs info
     customs_info_id = Column(UUID(as_uuid=True), ForeignKey("customs_infos.id"), nullable=True)
@@ -177,7 +177,7 @@ class ShipmentEvent(Base):
     __tablename__ = "shipment_events"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    shipment_id = Column(UUID(as_uuid=True), ForeignKey("shipments.id"), nullable=False)
+    shipment_id = Column(UUID(as_uuid=True), ForeignKey("shipments.id"), nullable=False, index=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     # Event details
