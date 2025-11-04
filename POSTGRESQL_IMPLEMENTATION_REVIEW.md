@@ -1,6 +1,6 @@
 # PostgreSQL Implementation Review
-**Date**: November 4, 2025  
-**Database**: PostgreSQL with asyncpg  
+**Date**: November 4, 2025
+**Database**: PostgreSQL with asyncpg
 **ORM**: SQLAlchemy 2.0 (Async)
 
 ## Overview
@@ -44,14 +44,14 @@ PostgreSQL is implemented as the **primary persistent data store** alongside Eas
 # Engine configuration with M3 Max optimizations
 engine = create_async_engine(
     settings.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://"),
-    
+
     # Connection Pool Settings
     pool_size=20,              # 20 concurrent connections
     max_overflow=30,           # 30 burst capacity (total: 50)
     pool_recycle=3600,         # Recycle every 1 hour
     pool_pre_ping=True,        # Verify connections
     pool_timeout=30,           # 30s wait for connection
-    
+
     # asyncpg-specific optimizations
     connect_args={
         "server_settings": {
@@ -234,28 +234,28 @@ errors: JSON
 class DatabaseService:
     def __init__(self, session: AsyncSession):
         self.session = session
-    
+
     # Shipments
     async def create_shipment(data: Dict) -> Shipment
     async def get_shipment(shipment_id: UUID) -> Optional[Shipment]
     async def update_shipment(id, data) -> Optional[Shipment]
     async def delete_shipment(id) -> bool
     async def list_shipments(limit, offset, filters) -> List[Shipment]
-    
+
     # Addresses
     async def create_address(data: Dict) -> Address
     async def get_address(id) -> Optional[Address]
     async def update_address(id, data) -> Optional[Address]
-    
+
     # Analytics
     async def create_analytics_summary(data) -> AnalyticsSummary
     async def get_analytics_summary(date, period) -> Optional[AnalyticsSummary]
     async def get_carrier_performance(carrier, service, date)
-    
+
     # User Activity
     async def log_user_activity(data) -> UserActivity
     async def get_recent_activities(limit) -> List[UserActivity]
-    
+
     # Batch Operations
     async def create_batch_operation(data) -> BatchOperation
     async def update_batch_operation(id, data)
@@ -274,7 +274,7 @@ async def get_shipments_with_details(limit, offset, filters):
         selectinload(Shipment.parcel),
     )
     # Apply filters, pagination, ordering
-    
+
 # Dashboard analytics (aggregates)
 async def get_dashboard_analytics(days: int = 30):
     """Aggregated metrics for dashboard"""
@@ -283,7 +283,7 @@ async def get_dashboard_analytics(days: int = 30):
         func.sum(Shipment.total_cost).label("total_cost"),
         func.avg(Shipment.total_cost).label("average_cost"),
     ).where(Shipment.created_at >= start_date)
-    
+
 # Carrier performance (joins + aggregates)
 async def get_dashboard_carrier_performance(days: int):
     """Carrier metrics with delivery time analysis"""
@@ -293,7 +293,7 @@ async def get_dashboard_carrier_performance(days: int):
         func.avg(ShipmentEvent.delivery_time_hours),
         (func.count(ShipmentEvent.id) * 100.0 / func.count(Shipment.id))
     ).outerjoin(ShipmentEvent, ...)
-    
+
 # Top routes (complex joins)
 async def get_top_routes(days, limit):
     """Top shipping routes by volume"""
@@ -329,20 +329,20 @@ async def get_top_routes(days, limit):
 CREATE FUNCTION uuid_generate_v7() ...
 
 -- Composite indexes for common queries
-CREATE INDEX ix_shipments_carrier_service_created 
+CREATE INDEX ix_shipments_carrier_service_created
 ON shipments (carrier, service, created_at);
 
-CREATE INDEX ix_shipments_status_created 
+CREATE INDEX ix_shipments_status_created
 ON shipments (status, created_at);
 
 -- Covering indexes (avoid table lookups)
-CREATE INDEX ix_shipments_tracking_covering 
-ON shipments (tracking_code) 
+CREATE INDEX ix_shipments_tracking_covering
+ON shipments (tracking_code)
 INCLUDE (status, carrier, service, updated_at);
 
 -- Partial indexes (filtered indexes)
-CREATE INDEX ix_shipments_active 
-ON shipments (created_at DESC) 
+CREATE INDEX ix_shipments_active
+ON shipments (created_at DESC)
 WHERE status NOT IN ('delivered', 'cancelled', 'returned');
 ```
 
@@ -370,13 +370,13 @@ async def app_lifespan(server):
         max_size=32,  # M3 Max: 2x CPU cores
         command_timeout=60,
     )
-    
+
     yield {
         "easypost_service": easypost_service,
         "db_pool": db_pool,           # Direct asyncpg pool
         "rate_limiter": rate_limiter,
     }
-    
+
     # Cleanup on shutdown
     await db_pool.close()
 ```
@@ -599,12 +599,12 @@ connect_args = {
 async def create_shipment(data):
     # Create via EasyPost
     easypost_shipment = await easypost_service.create_shipment(data)
-    
+
     # Sync to PostgreSQL (async, non-blocking)
     asyncio.create_task(
         db_service.create_shipment(easypost_shipment)
     )
-    
+
     return easypost_shipment
 ```
 
@@ -612,7 +612,7 @@ async def create_shipment(data):
 
 ```sql
 CREATE MATERIALIZED VIEW daily_analytics AS
-SELECT 
+SELECT
     date_trunc('day', created_at) as date,
     carrier,
     COUNT(*) as shipment_count,
@@ -629,10 +629,10 @@ REFRESH MATERIALIZED VIEW CONCURRENTLY daily_analytics;
 
 ```sql
 -- Index JSON fields for faster queries
-CREATE INDEX idx_shipments_tracking_details 
+CREATE INDEX idx_shipments_tracking_details
 ON shipments USING gin (tracking_details);
 
-CREATE INDEX idx_shipments_rates_data 
+CREATE INDEX idx_shipments_rates_data
 ON shipments USING gin (rates_data);
 ```
 
@@ -651,16 +651,16 @@ FOR VALUES FROM ('2025-11-01') TO ('2025-12-01');
 
 ```sql
 -- For searching addresses
-ALTER TABLE addresses 
+ALTER TABLE addresses
 ADD COLUMN search_vector tsvector;
 
-CREATE INDEX idx_addresses_search 
+CREATE INDEX idx_addresses_search
 ON addresses USING gin(search_vector);
 
 -- Update trigger to maintain search_vector
 CREATE TRIGGER tsvectorupdate BEFORE INSERT OR UPDATE
 ON addresses FOR EACH ROW EXECUTE FUNCTION
-tsvector_update_trigger(search_vector, 'pg_catalog.english', 
+tsvector_update_trigger(search_vector, 'pg_catalog.english',
     name, company, street1, city);
 ```
 
@@ -736,10 +736,10 @@ async def db_session():
     engine = create_async_engine("postgresql+asyncpg://test:test@localhost/test_db")
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    
+
     async with async_session() as session:
         yield session
-    
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
 ```

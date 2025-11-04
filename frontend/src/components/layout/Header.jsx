@@ -36,9 +36,9 @@ export default function Header() {
 
         {/* Actions */}
         <div className="flex items-center gap-2">
-          <Button 
-            variant="default" 
-            size="sm" 
+          <Button
+            variant="default"
+            size="sm"
             className="gap-2"
             onClick={() => setIsShipmentFormOpen(true)}
           >

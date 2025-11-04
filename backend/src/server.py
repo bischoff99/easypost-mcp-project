@@ -34,6 +34,7 @@ from src.models.analytics import (
 )
 from src.models.requests import BuyShipmentRequest, RatesRequest, ShipmentRequest
 from src.services.database_service import DatabaseService
+from src.services.webhook_service import WebhookService
 from src.utils.config import settings
 from src.utils.monitoring import HealthCheck, metrics
 
@@ -1102,6 +1103,73 @@ async def get_user_activity_db(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error retrieving user activity: {error_msg}",
+        ) from e
+
+
+# =============================================================================
+# WEBHOOK ENDPOINTS
+# =============================================================================
+
+
+@app.post("/webhooks/easypost")
+async def process_easypost_webhook(request: Request):
+    """
+    Process webhooks from EasyPost for real-time updates.
+
+    Handles events like:
+    - tracker.updated: Shipment tracking status changes
+    - shipment.purchased: New shipment created
+    - batch.updated: Batch operation status changes
+    """
+    request_id = getattr(request.state, "request_id", "unknown")
+
+    try:
+        # Get request body and signature
+        body = await request.body()
+        signature = request.headers.get("X-Easypost-Hmac-Signature", "")
+
+        # Initialize webhook service
+        webhook_secret = getattr(settings, "EASYPOST_WEBHOOK_SECRET", "")
+        webhook_service = WebhookService(webhook_secret)
+
+        # Verify signature (if webhook secret is configured)
+        if webhook_secret and not webhook_service.verify_signature(body, signature):
+            logger.warning(f"[{request_id}] Invalid webhook signature")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid webhook signature",
+            )
+
+        # Parse webhook payload
+        import json
+
+        payload = json.loads(body)
+        event_type = payload.get("description", "")
+        event_data = payload.get("result", {})
+
+        logger.info(f"[{request_id}] Webhook received: {event_type}")
+
+        # Process event
+        result = await webhook_service.process_webhook(event_type, {"result": event_data})
+
+        metrics.track_api_call("webhook_easypost", True)
+
+        return {
+            "status": "success",
+            "message": "Webhook processed",
+            "event_type": event_type,
+            "result": result,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        error_msg = str(e)[:MAX_REQUEST_LOG_SIZE]
+        logger.error(f"[{request_id}] Webhook processing error: {error_msg}")
+        metrics.track_api_call("webhook_easypost", False)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Webhook processing failed: {error_msg}",
         ) from e
 
 

@@ -74,6 +74,20 @@ class Shipment(Base):
     parcel = relationship("Parcel", back_populates="shipments")
     customs_info = relationship("CustomsInfo", back_populates="shipments")
 
+    def to_dict(self):
+        """Convert shipment to dictionary for API responses."""
+        return {
+            "id": str(self.id),
+            "easypost_id": self.easypost_id,
+            "tracking_code": self.tracking_code,
+            "status": self.status,
+            "carrier": self.carrier,
+            "service": self.service,
+            "total_cost": self.total_cost,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "delivery_date": self.delivery_date.isoformat() if self.delivery_date else None,
+        }
+
     def __repr__(self):
         return f"<Shipment(id={self.id}, tracking={self.tracking_code}, status={self.status})>"
 
@@ -108,6 +122,26 @@ class Address(Base):
     carrier_facility = Column(String(50), nullable=True)
     federal_tax_id = Column(String(20), nullable=True)
     state_tax_id = Column(String(20), nullable=True)
+
+    def to_dict(self):
+        """Convert address to dictionary for API responses."""
+        return {
+            "id": str(self.id),
+            "easypost_id": self.easypost_id,
+            "name": self.name,
+            "company": self.company,
+            "street1": self.street1,
+            "street2": self.street2,
+            "city": self.city,
+            "state": self.state,
+            "zip": self.zip,
+            "country": self.country,
+            "phone": self.phone,
+            "email": self.email,
+            "is_residential": self.is_residential,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "usage_count": getattr(self, "usage_count", 0),
+        }
 
     def __repr__(self):
         return f"<Address(id={self.id}, city={self.city}, country={self.country})>"

@@ -134,18 +134,20 @@ class DatabaseService:
         await self.session.refresh(summary)
         return summary
 
-    async def get_analytics_summary(self, date: str, period: str) -> Optional[AnalyticsSummary]:
-        """Get analytics summary for date and period."""
+    async def get_analytics_summary_by_date(
+        self, date: str, period: str
+    ) -> Optional[AnalyticsSummary]:
+        """Get analytics summary for specific date and period."""
         stmt = select(AnalyticsSummary).where(
             AnalyticsSummary.date == date, AnalyticsSummary.period == period
         )
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_carrier_performance(
+    async def get_carrier_performance_record(
         self, carrier: str, service: str, date: str
     ) -> Optional[CarrierPerformance]:
-        """Get carrier performance metrics."""
+        """Get carrier performance record for specific carrier/service/date."""
         stmt = select(CarrierPerformance).where(
             CarrierPerformance.carrier == carrier,
             CarrierPerformance.service == service,
@@ -351,7 +353,7 @@ class DatabaseService:
         result = await self.session.execute(stmt)
         return result.scalar()
 
-    async def get_dashboard_analytics(self, days: int = 30) -> Dict[str, Any]:
+    async def get_analytics_summary(self, days: int = 30) -> Dict[str, Any]:
         """Get analytics summary for dashboard (last N days)."""
         from datetime import datetime, timedelta, timezone
 
@@ -375,7 +377,7 @@ class DatabaseService:
             "date_range": {"start": start_date.isoformat(), "end": end_date.isoformat()},
         }
 
-    async def get_dashboard_carrier_performance(self, days: int = 30) -> List[Dict[str, Any]]:
+    async def get_carrier_performance(self, days: int = 30) -> List[Dict[str, Any]]:
         """Get carrier performance metrics for dashboard (last N days)."""
         from datetime import datetime, timedelta, timezone
 

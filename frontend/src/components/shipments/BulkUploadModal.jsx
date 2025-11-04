@@ -196,10 +196,10 @@ export default function BulkUploadModal({ isOpen, onClose, onSuccess }) {
               {step === 1
                 ? 'Upload CSV'
                 : step === 2
-                ? 'Preview Data'
-                : step === 3
-                ? 'Processing'
-                : 'Results'}
+                  ? 'Preview Data'
+                  : step === 3
+                    ? 'Processing'
+                    : 'Results'}
             </p>
           </div>
           <Button variant="ghost" size="icon" onClick={handleClose}>
@@ -382,8 +382,7 @@ export default function BulkUploadModal({ isOpen, onClose, onSuccess }) {
                   <div className="space-y-1 max-h-48 overflow-y-auto">
                     {results.errors.slice(0, 5).map((error, index) => (
                       <div key={index} className="text-sm">
-                        <span className="font-medium">Row {error.index}:</span>{' '}
-                        {error.message}
+                        <span className="font-medium">Row {error.index}:</span> {error.message}
                       </div>
                     ))}
                     {results.errors.length > 5 && (
@@ -417,4 +416,3 @@ export default function BulkUploadModal({ isOpen, onClose, onSuccess }) {
     </div>
   );
 }
-

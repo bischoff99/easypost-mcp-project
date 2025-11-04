@@ -4,11 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-EasyPost MCP (Model Context Protocol) server with FastAPI backend and React frontend for shipping operations. The project integrates with EasyPost's shipping API to provide shipment creation, tracking, rate comparison, and analytics with M3 Max hardware optimizations.
+EasyPost MCP (Model Context Protocol) server with FastAPI backend and React frontend for shipping operations. The project integrates with EasyPost's shipping API and PostgreSQL database to provide shipment creation, tracking, rate comparison, and analytics with M3 Max hardware optimizations.
 
 **Stack:**
-- Backend: Python 3.10+, FastAPI, FastMCP, EasyPost SDK
+- Backend: Python 3.10+, FastAPI, FastMCP, EasyPost SDK, PostgreSQL, SQLAlchemy 2.0
 - Frontend: React 18, Vite, TanStack Query, Zustand, Tailwind CSS
+- Database: PostgreSQL 14+ with asyncpg driver, Alembic migrations
 - Testing: pytest (backend), Vitest (frontend)
 - Performance: uvloop, parallel processing optimized for 16-core M3 Max
 
@@ -16,11 +17,24 @@ EasyPost MCP (Model Context Protocol) server with FastAPI backend and React fron
 
 ### Quick Start
 ```bash
+# PostgreSQL setup (required)
+# Install PostgreSQL 14+ if not already installed
+# macOS: brew install postgresql@14
+# Create database
+createdb easypost_mcp
+
 # Backend setup
 cd backend
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
+
+# Configure environment
+cp .env.example .env
+# Edit .env to add DATABASE_URL and EASYPOST_API_KEY
+
+# Run database migrations
+alembic upgrade head
 
 # Frontend setup
 cd frontend
@@ -70,6 +84,26 @@ make lint                              # Run all linters
 make format                            # Auto-format all code
 ```
 
+### Database Management
+```bash
+cd backend && source venv/bin/activate
+
+# Migrations
+alembic upgrade head                   # Run all migrations
+alembic downgrade -1                   # Rollback one migration
+alembic current                        # Show current version
+alembic history                        # Show migration history
+alembic revision -m "description"      # Create new migration
+
+# Database operations
+psql easypost_mcp                      # Connect to database
+psql easypost_mcp -c "SELECT COUNT(*) FROM shipments;"  # Quick query
+
+# Reset database (careful!)
+alembic downgrade base                 # Remove all tables
+alembic upgrade head                   # Recreate all tables
+```
+
 ### Running Individual Components
 ```bash
 # Backend only
@@ -108,6 +142,7 @@ ENVIRONMENT=production uvicorn src.server:app
 - Rate limiting (10 req/min for most endpoints, 20 for analytics)
 - Request ID middleware for tracing
 - Parallel analytics processing (16 chunks via asyncio.gather)
+- Hybrid data architecture: EasyPost API + PostgreSQL database
 
 **MCP Server** (`backend/src/mcp/`):
 - Separate FastMCP server for Claude Desktop integration
@@ -117,8 +152,34 @@ ENVIRONMENT=production uvicorn src.server:app
 
 **Key Services**:
 - `EasyPostService` (`backend/src/services/easypost_service.py`): Async wrapper around EasyPost SDK with ThreadPoolExecutor (32-40 workers on M3 Max)
+- `DatabaseService` (`backend/src/services/database_service.py`): Comprehensive CRUD operations for PostgreSQL (548 lines, 9 tables with advanced queries)
 - `monitoring.py`: Health checks and metrics tracking
 - `config.py`: Environment-based configuration (development/production)
+
+**Data Architecture** (Hybrid Approach):
+```
+API Request
+    ├──> EasyPost API (Primary)
+    │    └─ Real-time shipment operations
+    │    └─ Rate quotes and label creation
+    │
+    └──> PostgreSQL Database (Secondary)
+         └─ Historical data storage (9 tables)
+         └─ Analytics aggregation
+         └─ User activity tracking
+         └─ Batch operation logs
+```
+
+**Database Schema** (9 tables):
+- `shipments`: Core shipment data with optimized indexes
+- `addresses`: From/to addresses with verification
+- `parcels`: Package dimensions and weight
+- `customs_infos`: International shipping data
+- `shipment_events`: Tracking event timeline
+- `analytics_summaries`: Pre-aggregated metrics
+- `carrier_performance`: Carrier reliability stats
+- `user_activities`: User action logging
+- `batch_operations`: Bulk operation tracking
 
 **MCP Components Organization**:
 ```
@@ -197,6 +258,17 @@ The project uses hardware-optimized parallel processing in several areas:
 - `.env.production` (gitignored): Live API key (EZAK*)
 - `.env.example` (committed): Template
 - Load via `ENVIRONMENT` variable or default to development
+- `DATABASE_URL`: PostgreSQL connection string (postgresql+asyncpg://...)
+
+### Database Patterns
+- SQLAlchemy 2.0 async ORM with asyncpg driver
+- Connection pooling: 20 base + 30 overflow = 50 total connections
+- M3 Max optimizations: 32GB shared_buffers, 16 parallel workers
+- Advanced indexing: composite, covering, and partial indexes
+- Query optimization: selectinload() to prevent N+1 queries
+- UUID v7 primary keys for better B-tree locality
+- Async session management via FastAPI dependency injection
+- Alembic for schema migrations
 
 ### Code Style
 - Python: 100 char line length, snake_case, type hints required

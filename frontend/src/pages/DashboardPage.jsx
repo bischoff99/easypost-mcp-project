@@ -1,14 +1,14 @@
-import { useState, useEffect } from 'react';
-import { Package, TruckIcon, DollarSign, CheckCircle, Plus, Search, BarChart } from 'lucide-react';
+import QuickActionCard from '@/components/dashboard/QuickActionCard';
+import StatsCard from '@/components/dashboard/StatsCard';
+import { Badge } from '@/components/ui/Badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Skeleton, SkeletonCard, SkeletonStats, SkeletonText } from '@/components/ui/Skeleton';
+import { formatRelativeTime } from '@/lib/utils';
+import { shipmentAPI } from '@/services/api';
+import { BarChart, CheckCircle, DollarSign, Package, Plus, Search, TruckIcon } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
-import { Skeleton, SkeletonStats, SkeletonCard, SkeletonText } from '@/components/ui/Skeleton';
-import StatsCard from '@/components/dashboard/StatsCard';
-import QuickActionCard from '@/components/dashboard/QuickActionCard';
-import { shipmentAPI } from '@/services/api';
-import { formatRelativeTime } from '@/lib/utils';
 
 // Quick Actions (static)
 const quickActions = [
