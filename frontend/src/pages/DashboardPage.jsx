@@ -46,6 +46,7 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState([]);
   const [recentActivity, setRecentActivity] = useState([]);
+  const [carrierPerformance, setCarrierPerformance] = useState([]);
 
   // Fetch real data from API
   useEffect(() => {
@@ -53,10 +54,11 @@ export default function DashboardPage() {
       try {
         setIsLoading(true);
 
-        // Fetch stats and recent shipments in parallel
-        const [statsResponse, recentResponse] = await Promise.all([
+        // Fetch stats, recent shipments, and carrier performance in parallel
+        const [statsResponse, recentResponse, carrierResponse] = await Promise.all([
           shipmentAPI.getStats(),
           shipmentAPI.getRecentShipments(5),
+          shipmentAPI.getCarrierPerformance(),
         ]);
 
         // Transform stats data
@@ -65,33 +67,38 @@ export default function DashboardPage() {
           setStats([
             {
               name: 'Total Shipments',
-              value: statsData.total_shipments?.toLocaleString() || '0',
-              change: '+12.5%',
-              trend: 'up',
+              value: statsData.total_shipments?.value?.toLocaleString() || '0',
+              change: statsData.total_shipments?.change || '+0%',
+              trend: statsData.total_shipments?.trend || 'up',
               icon: Package,
             },
             {
               name: 'Active Deliveries',
-              value: '145', // This would come from API
-              change: '-2.3%',
-              trend: 'down',
+              value: statsData.active_deliveries?.value?.toLocaleString() || '0',
+              change: statsData.active_deliveries?.change || '+0%',
+              trend: statsData.active_deliveries?.trend || 'up',
               icon: TruckIcon,
             },
             {
               name: 'Total Cost',
-              value: `$${statsData.total_cost?.toFixed(2) || '0.00'}`,
-              change: '+8.1%',
-              trend: 'up',
+              value: `$${statsData.total_cost?.value?.toFixed(2) || '0.00'}`,
+              change: statsData.total_cost?.change || '+0%',
+              trend: statsData.total_cost?.trend || 'up',
               icon: DollarSign,
             },
             {
               name: 'On-Time Rate',
-              value: `${(statsData.delivery_success_rate * 100)?.toFixed(1) || '0'}%`,
-              change: '+1.2%',
-              trend: 'up',
+              value: `${(statsData.delivery_success_rate?.value * 100)?.toFixed(1) || '0'}%`,
+              change: statsData.delivery_success_rate?.change || '+0%',
+              trend: statsData.delivery_success_rate?.trend || 'up',
               icon: CheckCircle,
             },
           ]);
+        }
+
+        // Set carrier performance data
+        if (carrierResponse.status === 'success' && carrierResponse.data) {
+          setCarrierPerformance(carrierResponse.data);
         }
 
         // Transform recent shipments data
@@ -165,6 +172,12 @@ export default function DashboardPage() {
             timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
             status: 'in_transit',
           },
+        ]);
+
+        setCarrierPerformance([
+          { carrier: 'USPS', rate: 96, shipments: 1205 },
+          { carrier: 'UPS', rate: 94, shipments: 842 },
+          { carrier: 'FedEx', rate: 92, shipments: 409 },
         ]);
       } finally {
         setIsLoading(false);
@@ -283,27 +296,29 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {[
-                { carrier: 'USPS', rate: 96, shipments: 1205 },
-                { carrier: 'UPS', rate: 94, shipments: 842 },
-                { carrier: 'FedEx', rate: 92, shipments: 409 },
-              ].map(item => (
-                <div key={item.carrier} className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium">{item.carrier}</span>
-                    <span className="text-muted-foreground">{item.shipments} shipments</span>
+              {carrierPerformance.length > 0 ? (
+                carrierPerformance.map(item => (
+                  <div key={item.carrier} className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium">{item.carrier}</span>
+                      <span className="text-muted-foreground">{item.shipments} shipments</span>
+                    </div>
+                    <div className="relative h-2 rounded-full bg-muted overflow-hidden">
+                      <div
+                        className="absolute inset-y-0 left-0 bg-primary rounded-full transition-all"
+                        style={{ width: `${item.rate}%` }}
+                      />
+                    </div>
+                    <div className="text-right text-xs text-muted-foreground">
+                      {item.rate}% on-time
+                    </div>
                   </div>
-                  <div className="relative h-2 rounded-full bg-muted overflow-hidden">
-                    <div
-                      className="absolute inset-y-0 left-0 bg-primary rounded-full transition-all"
-                      style={{ width: `${item.rate}%` }}
-                    />
-                  </div>
-                  <div className="text-right text-xs text-muted-foreground">
-                    {item.rate}% on-time
-                  </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No carrier data available
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>

@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import PropTypes from 'prop-types';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { TrendingUp, Package, DollarSign, TruckIcon } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { Skeleton } from '../ui/Skeleton';
+import { Button } from '../ui/Button';
 import api from '../../services/api';
 import { toast } from 'sonner';
 
@@ -72,15 +74,13 @@ export default function AnalyticsDashboard({ days = 30 }) {
 
   if (error) {
     return (
-      <div className="p-8 text-center" data-testid="analytics-error">
-        <p className="text-red-500">Error loading analytics: {error}</p>
-        <button
-          onClick={fetchAnalytics}
-          className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
+      <Card className="p-8 text-center" data-testid="analytics-error">
+        <p className="text-destructive font-medium mb-2">Error loading analytics</p>
+        <p className="text-sm text-muted-foreground mb-4">{error}</p>
+        <Button onClick={fetchAnalytics} variant="default">
           Retry
-        </button>
-      </div>
+        </Button>
+      </Card>
     );
   }
 
@@ -258,3 +258,6 @@ export default function AnalyticsDashboard({ days = 30 }) {
   );
 }
 
+AnalyticsDashboard.propTypes = {
+  days: PropTypes.number,
+};

@@ -16,7 +16,7 @@ api.interceptors.response.use(
   response => response,
   error => {
     const message = error.response?.data?.message || error.message || 'An error occurred';
-    
+
     // Show toast notification for errors
     if (error.response?.status >= 500) {
       toast.error('Server Error', { description: message });
@@ -27,12 +27,12 @@ api.interceptors.response.use(
     } else if (error.code === 'ERR_NETWORK') {
       toast.error('Network Error', { description: 'Unable to connect to server' });
     }
-    
+
     // Log to console in dev mode
     if (import.meta.env.DEV) {
       console.warn('API Error:', error.response?.data || error.message);
     }
-    
+
     return Promise.reject(error);
   }
 );
@@ -74,12 +74,30 @@ export const shipmentAPI = {
     }
   },
 
-  getStats: async () => {
+  getAnalytics: async () => {
     try {
       const response = await api.get('/analytics');
       return response.data;
     } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to get analytics');
+    }
+  },
+
+  getStats: async () => {
+    try {
+      const response = await api.get('/stats');
+      return response.data;
+    } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to get statistics');
+    }
+  },
+
+  getCarrierPerformance: async () => {
+    try {
+      const response = await api.get('/carrier-performance');
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to get carrier performance');
     }
   },
 

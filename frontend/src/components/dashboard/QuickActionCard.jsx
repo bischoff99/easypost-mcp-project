@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import PropTypes from 'prop-types';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { cn } from '@/lib/utils';
 
@@ -45,3 +46,11 @@ export default function QuickActionCard({
   );
 }
 
+QuickActionCard.propTypes = {
+  title: PropTypes.string.isRequired,
+  description: PropTypes.string.isRequired,
+  icon: PropTypes.elementType.isRequired,
+  onClick: PropTypes.func.isRequired,
+  delay: PropTypes.number,
+  color: PropTypes.oneOf(['primary', 'secondary', 'accent']),
+};

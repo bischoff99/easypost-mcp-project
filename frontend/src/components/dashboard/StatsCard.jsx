@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { TrendingUp, TrendingDown } from 'lucide-react';
+import PropTypes from 'prop-types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { cn } from '@/lib/utils';
 
@@ -39,4 +40,13 @@ export default function StatsCard({ title, value, change, trend, icon: Icon, del
     </motion.div>
   );
 }
+
+StatsCard.propTypes = {
+  title: PropTypes.string.isRequired,
+  value: PropTypes.string.isRequired,
+  change: PropTypes.string.isRequired,
+  trend: PropTypes.oneOf(['up', 'down']).isRequired,
+  icon: PropTypes.elementType.isRequired,
+  delay: PropTypes.number,
+};
 

@@ -463,6 +463,169 @@ async def get_analytics(request: Request, days: int = 30, include_test: bool = F
         )
 
 
+@app.get("/stats")
+@limiter.limit("30/minute")
+async def get_dashboard_stats(request: Request):
+    """
+    Get dashboard statistics (optimized for dashboard page).
+
+    Returns summary stats including total shipments, active deliveries,
+    total cost, and on-time delivery rate.
+    """
+    request_id = getattr(request.state, "request_id", "unknown")
+
+    try:
+        logger.info(f"[{request_id}] Dashboard stats request")
+
+        # Get recent shipments for calculations
+        shipments_result = await easypost_service.list_shipments(page_size=100)
+
+        if shipments_result.get("status") != "success":
+            raise HTTPException(status_code=500, detail="Failed to fetch shipments")
+
+        shipments = shipments_result.get("data", [])
+        total_shipments = len(shipments)
+
+        # Calculate metrics
+        total_cost = 0.0
+        active_deliveries = 0
+        delivered_count = 0
+
+        for shipment in shipments:
+            # Extract cost from shipment (placeholder for now)
+            cost = 0.0
+            total_cost += cost
+
+            # Count active deliveries (in_transit, pre_transit)
+            status_val = shipment.get("status", "").lower()
+            if status_val in ["in_transit", "pre_transit", "out_for_delivery"]:
+                active_deliveries += 1
+            elif status_val == "delivered":
+                delivered_count += 1
+
+        # Calculate delivery success rate
+        delivery_success_rate = (
+            delivered_count / total_shipments if total_shipments > 0 else 0.0
+        )
+
+        # Calculate changes (compare with last period - mock data for now)
+        # TODO: Implement actual comparison with previous period from database
+        shipments_change = "+12.5%"
+        shipments_trend = "up"
+        active_change = "-2.3%"
+        active_trend = "down"
+        cost_change = "+8.1%"
+        cost_trend = "up"
+        rate_change = "+1.2%"
+        rate_trend = "up"
+
+        stats_data = {
+            "total_shipments": {
+                "value": total_shipments,
+                "change": shipments_change,
+                "trend": shipments_trend,
+            },
+            "active_deliveries": {
+                "value": active_deliveries,
+                "change": active_change,
+                "trend": active_trend,
+            },
+            "total_cost": {
+                "value": round(total_cost, 2),
+                "change": cost_change,
+                "trend": cost_trend,
+            },
+            "delivery_success_rate": {
+                "value": round(delivery_success_rate, 4),
+                "change": rate_change,
+                "trend": rate_trend,
+            },
+        }
+
+        logger.info(f"[{request_id}] Dashboard stats calculated")
+        metrics.track_api_call("get_dashboard_stats", True)
+
+        return {
+            "status": "success",
+            "data": stats_data,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+
+    except Exception as e:
+        error_msg = str(e)[:MAX_REQUEST_LOG_SIZE]
+        logger.error(f"[{request_id}] Error getting dashboard stats: {error_msg}")
+        metrics.track_api_call("get_dashboard_stats", False)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error getting dashboard stats: {error_msg}",
+        ) from e
+
+
+@app.get("/carrier-performance")
+@limiter.limit("30/minute")
+async def get_carrier_performance(request: Request):
+    """
+    Get carrier performance metrics.
+
+    Returns on-time delivery rates and shipment counts by carrier.
+    """
+    request_id = getattr(request.state, "request_id", "unknown")
+
+    try:
+        logger.info(f"[{request_id}] Carrier performance request")
+
+        # Get recent shipments for calculations
+        shipments_result = await easypost_service.list_shipments(page_size=100)
+
+        if shipments_result.get("status") != "success":
+            raise HTTPException(status_code=500, detail="Failed to fetch shipments")
+
+        shipments = shipments_result.get("data", [])
+
+        # Calculate carrier performance
+        carrier_stats = defaultdict(lambda: {"total": 0, "delivered": 0})
+
+        for shipment in shipments:
+            carrier = shipment.get("carrier", "Unknown")
+            carrier_stats[carrier]["total"] += 1
+
+            status_val = shipment.get("status", "").lower()
+            if status_val == "delivered":
+                carrier_stats[carrier]["delivered"] += 1
+
+        # Build response with on-time rates
+        performance_data = []
+        for carrier, stats in sorted(
+            carrier_stats.items(), key=lambda x: x[1]["total"], reverse=True
+        ):
+            on_time_rate = (
+                (stats["delivered"] / stats["total"] * 100) if stats["total"] > 0 else 0
+            )
+            performance_data.append({
+                "carrier": carrier,
+                "rate": round(on_time_rate, 0),  # Round to integer for UI
+                "shipments": stats["total"],
+            })
+
+        logger.info(f"[{request_id}] Carrier performance calculated")
+        metrics.track_api_call("get_carrier_performance", True)
+
+        return {
+            "status": "success",
+            "data": performance_data,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+
+    except Exception as e:
+        error_msg = str(e)[:MAX_REQUEST_LOG_SIZE]
+        logger.error(f"[{request_id}] Error getting carrier performance: {error_msg}")
+        metrics.track_api_call("get_carrier_performance", False)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error getting carrier performance: {error_msg}",
+        ) from e
+
+
 if __name__ == "__main__":
     import uvicorn
 

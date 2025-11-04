@@ -1,11 +1,12 @@
 import { motion } from 'framer-motion';
 import { TrendingUp, TrendingDown } from 'lucide-react';
+import PropTypes from 'prop-types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { cn } from '@/lib/utils';
 
-export default function MetricCard({ title, value, change, trend: _trend, icon: Icon, color = 'primary', delay = 0 }) {
-  const isPositive = parseFloat(change) > 0;
-  
+export default function MetricCard({ title, value, change, trend, icon: Icon, color = 'primary', delay = 0 }) {
+  const isPositive = trend === 'up';
+
   const colorClasses = {
     primary: 'text-primary',
     secondary: 'text-secondary',
@@ -55,4 +56,12 @@ export default function MetricCard({ title, value, change, trend: _trend, icon: 
   );
 }
 
-
+MetricCard.propTypes = {
+  title: PropTypes.string.isRequired,
+  value: PropTypes.string.isRequired,
+  change: PropTypes.string.isRequired,
+  trend: PropTypes.oneOf(['up', 'down']).isRequired,
+  icon: PropTypes.elementType.isRequired,
+  color: PropTypes.oneOf(['primary', 'secondary', 'success', 'warning']),
+  delay: PropTypes.number,
+};
