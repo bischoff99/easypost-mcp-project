@@ -103,14 +103,26 @@ export default function DashboardPage() {
 
         // Transform recent shipments data
         if (recentResponse.status === 'success' && recentResponse.data) {
-          const transformedActivity = recentResponse.data.map((shipment, index) => ({
-            id: shipment.id || index + 1,
-            type: 'shipment_created',
-            tracking: shipment.tracking_number || 'N/A',
-            message: `Shipment created to ${shipment.to || 'Unknown'}`,
-            timestamp: shipment.created_at || new Date().toISOString(),
-            status: shipment.status || 'pending',
-          }));
+          const transformedActivity = recentResponse.data.map((shipment, index) => {
+            // Extract destination city from to_address object
+            let destination = 'Unknown';
+            if (shipment.to_address?.city) {
+              destination = shipment.to_address.state
+                ? `${shipment.to_address.city}, ${shipment.to_address.state}`
+                : shipment.to_address.city;
+            } else if (shipment.to) {
+              destination = shipment.to;
+            }
+
+            return {
+              id: shipment.id || index + 1,
+              type: 'shipment_created',
+              tracking: shipment.tracking_number || 'N/A',
+              message: `Shipment created to ${destination}`,
+              timestamp: shipment.created_at || new Date().toISOString(),
+              status: shipment.status || 'pending',
+            };
+          });
           setRecentActivity(transformedActivity);
         }
       } catch {
