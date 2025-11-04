@@ -375,9 +375,7 @@ class DatabaseService:
             "date_range": {"start": start_date.isoformat(), "end": end_date.isoformat()},
         }
 
-    async def get_dashboard_carrier_performance(
-        self, days: int = 30
-    ) -> List[Dict[str, Any]]:
+    async def get_dashboard_carrier_performance(self, days: int = 30) -> List[Dict[str, Any]]:
         """Get carrier performance metrics for dashboard (last N days)."""
         from datetime import datetime, timedelta, timezone
 

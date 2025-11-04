@@ -15,6 +15,9 @@ from alembic import context
 from src.database import Base
 from src.utils.config import settings
 
+# Import all models to register them with Base.metadata
+import src.models  # noqa: F401
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
