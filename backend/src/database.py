@@ -19,14 +19,33 @@ class Base(DeclarativeBase):
     pass
 
 
-# Create async engine with optimized settings for M3 Max
+# Create async engine with comprehensive optimizations for M3 Max
+# Based on best practices from Lyft Engineering, FastAPI + asyncpg, and PostgreSQL docs
 engine = create_async_engine(
     settings.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://"),
     echo=settings.ENVIRONMENT == "development",
-    pool_size=settings.DATABASE_POOL_SIZE,
-    max_overflow=settings.DATABASE_MAX_OVERFLOW,
-    pool_recycle=settings.DATABASE_POOL_RECYCLE,
+    # Connection pool settings
+    pool_size=settings.DATABASE_POOL_SIZE,  # 20 concurrent connections
+    max_overflow=settings.DATABASE_MAX_OVERFLOW,  # 30 burst capacity
+    pool_recycle=settings.DATABASE_POOL_RECYCLE,  # 1 hour
     pool_pre_ping=True,  # Verify connections before use
+    pool_timeout=30,  # Wait 30s for connection from pool
+    # asyncpg-specific optimizations
+    connect_args={
+        "server_settings": {
+            "application_name": "easypost_mcp",
+            "jit": "on",  # Enable JIT compilation for complex queries
+            "timezone": "UTC",
+        },
+        "timeout": 10,  # Connection timeout (seconds)
+        "command_timeout": 60,  # Query timeout (seconds)
+        "statement_cache_size": 500,  # Prepared statement cache
+    },
+    # Execution options
+    execution_options={
+        "postgresql_readonly": False,  # Set True for read replicas
+        "postgresql_deferrable": False,
+    },
 )
 
 # Create async session factory
