@@ -110,6 +110,15 @@ export const shipmentAPI = {
     }
   },
 
+  buyShipment: async (data) => {
+    try {
+      const response = await api.post('/shipments/buy', data);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to purchase shipment');
+    }
+  },
+
   healthCheck: async () => {
     try {
       const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -117,6 +126,30 @@ export const shipmentAPI = {
       return response.data;
     } catch {
       throw new Error('Backend server is not running');
+    }
+  },
+
+  // Bulk Operations
+  createBulkShipments: async (shipments, onProgress) => {
+    try {
+      const response = await api.post('/bulk-shipments', { shipments });
+
+      // Simulate progress updates (in production, use WebSocket or SSE)
+      if (onProgress) {
+        const total = shipments.length;
+        let current = 0;
+        const interval = setInterval(() => {
+          current += Math.min(10, total - current);
+          onProgress(Math.round((current / total) * 100));
+          if (current >= total) {
+            clearInterval(interval);
+          }
+        }, 500);
+      }
+
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to create bulk shipments');
     }
   },
 };

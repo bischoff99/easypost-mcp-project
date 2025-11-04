@@ -32,7 +32,7 @@ from src.models.analytics import (
     ShipmentMetrics,
     VolumeMetrics,
 )
-from src.models.requests import RatesRequest, ShipmentRequest
+from src.models.requests import BuyShipmentRequest, RatesRequest, ShipmentRequest
 from src.services.database_service import DatabaseService
 from src.utils.config import settings
 from src.utils.monitoring import HealthCheck, metrics
@@ -235,6 +235,64 @@ async def create_shipment(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error creating shipment: {error_msg}",
+        ) from e
+
+
+@app.post("/shipments/buy")
+@limiter.limit("10/minute")
+async def buy_shipment(request: Request, buy_request: BuyShipmentRequest, service: EasyPostDep):
+    """Buy a shipment with selected rate."""
+    request_id = getattr(request.state, "request_id", "unknown")
+
+    try:
+        logger.info(f"[{request_id}] Buy shipment request received")
+
+        # First create the shipment to get rates
+        result = await service.get_rates(
+            to_address=buy_request.to_address.model_dump(),
+            from_address=buy_request.from_address.model_dump(),
+            parcel=buy_request.parcel.model_dump(),
+        )
+
+        if result["status"] != "success" or not result.get("data"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to get rates for shipment",
+            )
+
+        # Create shipment to get shipment ID
+        shipment_result = await service.create_shipment(
+            to_address=buy_request.to_address.model_dump(),
+            from_address=buy_request.from_address.model_dump(),
+            parcel=buy_request.parcel.model_dump(),
+            buy_label=False,  # Don't buy yet
+        )
+
+        if shipment_result["status"] != "success":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to create shipment",
+            )
+
+        # Now buy with the selected rate
+        buy_result = await service.buy_shipment(
+            shipment_id=shipment_result["id"], rate_id=buy_request.rate_id
+        )
+
+        logger.info(f"[{request_id}] Shipment purchased successfully")
+        metrics.track_api_call("buy_shipment", True)
+
+        return buy_result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        error_msg = str(e)[:MAX_REQUEST_LOG_SIZE]
+        logger.error(f"[{request_id}] Error buying shipment: {error_msg}")
+        metrics.track_api_call("buy_shipment", False)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error buying shipment: {error_msg}",
         ) from e
 
 
@@ -651,11 +709,11 @@ async def get_carrier_performance(request: Request, service: EasyPostDep):
             # Use completed shipments as denominator for more realistic rates
             # If no completed shipments yet, estimate 95% based on delivered/total
             if stats["completed"] > 0:
-                on_time_rate = (stats["delivered"] / stats["completed"] * 100)
+                on_time_rate = stats["delivered"] / stats["completed"] * 100
             else:
                 # Fallback: If no completed yet, assume 95% based on carrier averages
                 on_time_rate = 95.0
-            
+
             performance_data.append(
                 {
                     "carrier": carrier,
