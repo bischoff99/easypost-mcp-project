@@ -1,12 +1,15 @@
+import { useState } from 'react';
 import { Bell, Search, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 import useUIStore from '@/stores/useUIStore';
+import ShipmentForm from '@/components/shipments/ShipmentForm';
 import { cn } from '@/lib/utils';
 
 export default function Header() {
   const { sidebarCollapsed } = useUIStore();
+  const [isShipmentFormOpen, setIsShipmentFormOpen] = useState(false);
 
   return (
     <header
@@ -33,7 +36,12 @@ export default function Header() {
 
         {/* Actions */}
         <div className="flex items-center gap-2">
-          <Button variant="default" size="sm" className="gap-2">
+          <Button 
+            variant="default" 
+            size="sm" 
+            className="gap-2"
+            onClick={() => setIsShipmentFormOpen(true)}
+          >
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">New Shipment</span>
           </Button>
@@ -57,6 +65,16 @@ export default function Header() {
           </div>
         </div>
       </div>
+
+      {/* Shipment Form Modal */}
+      <ShipmentForm
+        isOpen={isShipmentFormOpen}
+        onClose={() => setIsShipmentFormOpen(false)}
+        onSuccess={() => {
+          // Could trigger a refresh or navigation here
+          window.location.reload();
+        }}
+      />
     </header>
   );
 }

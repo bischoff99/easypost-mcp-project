@@ -333,7 +333,13 @@ async def get_analytics(
             """Calculate carrier statistics for a chunk."""
             stats = defaultdict(lambda: {"count": 0, "cost": 0.0})
             for shipment in shipments_chunk:
-                cost = 0.0  # Placeholder (would extract from shipment.selected_rate)
+                # Extract actual cost from shipment rate
+                cost = 0.0
+                if "rate" in shipment and shipment["rate"]:
+                    try:
+                        cost = float(shipment["rate"])
+                    except (ValueError, TypeError):
+                        pass
                 carrier = shipment.get("carrier", "Unknown")
                 stats[carrier]["count"] += 1
                 stats[carrier]["cost"] += cost
@@ -343,7 +349,13 @@ async def get_analytics(
             """Calculate date statistics for a chunk."""
             stats = defaultdict(lambda: {"count": 0, "cost": 0.0})
             for shipment in shipments_chunk:
-                cost = 0.0  # Placeholder
+                # Extract actual cost from shipment rate
+                cost = 0.0
+                if "rate" in shipment and shipment["rate"]:
+                    try:
+                        cost = float(shipment["rate"])
+                    except (ValueError, TypeError):
+                        pass
                 created_at = shipment.get("created_at", datetime.now(timezone.utc))
                 if isinstance(created_at, str):
                     created_at = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
@@ -356,7 +368,13 @@ async def get_analytics(
             """Calculate route statistics for a chunk."""
             stats = defaultdict(lambda: {"count": 0, "cost": 0.0})
             for shipment in shipments_chunk:
-                cost = 0.0  # Placeholder
+                # Extract actual cost from shipment rate
+                cost = 0.0
+                if "rate" in shipment and shipment["rate"]:
+                    try:
+                        cost = float(shipment["rate"])
+                    except (ValueError, TypeError):
+                        pass
                 from_city = shipment.get("from_address", {}).get("city", "Unknown")
                 to_city = shipment.get("to_address", {}).get("city", "Unknown")
                 route_key = f"{from_city} → {to_city}"
@@ -516,8 +534,13 @@ async def get_dashboard_stats(request: Request, service: EasyPostDep):
         delivered_count = 0
 
         for shipment in shipments:
-            # Extract cost from shipment (placeholder for now)
+            # Extract cost from shipment rate
             cost = 0.0
+            if "rate" in shipment and shipment["rate"]:
+                try:
+                    cost = float(shipment["rate"])
+                except (ValueError, TypeError):
+                    pass
             total_cost += cost
 
             # Count active deliveries (in_transit, pre_transit)

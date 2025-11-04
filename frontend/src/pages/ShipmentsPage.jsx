@@ -5,12 +5,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/Button';
 import ShipmentTable from '@/components/shipments/ShipmentTable';
 import ShipmentFilters from '@/components/shipments/ShipmentFilters';
+import ShipmentForm from '@/components/shipments/ShipmentForm';
 import { shipmentAPI } from '@/services/api';
 
 export default function ShipmentsPage() {
   const [filters, setFilters] = useState({});
   const [shipments, setShipments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isShipmentFormOpen, setIsShipmentFormOpen] = useState(false);
 
   // Fetch real shipments data
   useEffect(() => {
@@ -139,7 +141,7 @@ export default function ShipmentsPage() {
           <h2 className="text-3xl font-bold tracking-tight">Shipments</h2>
           <p className="text-muted-foreground">View and manage all your shipments</p>
         </div>
-        <Button className="gap-2">
+        <Button className="gap-2" onClick={() => setIsShipmentFormOpen(true)}>
           <Plus className="h-4 w-4" />
           New Shipment
         </Button>
@@ -170,6 +172,18 @@ export default function ShipmentsPage() {
           <ShipmentTable shipments={shipments} isLoading={isLoading} />
         </CardContent>
       </Card>
+
+      {/* Shipment Form Modal */}
+      <ShipmentForm
+        isOpen={isShipmentFormOpen}
+        onClose={() => setIsShipmentFormOpen(false)}
+        onSuccess={(shipment) => {
+          toast.success('Shipment created!');
+          setIsShipmentFormOpen(false);
+          // Refresh shipments list
+          window.location.reload();
+        }}
+      />
     </div>
   );
 }
