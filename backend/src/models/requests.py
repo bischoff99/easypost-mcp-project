@@ -20,3 +20,12 @@ class RatesRequest(BaseModel):
     to_address: AddressModel
     from_address: AddressModel
     parcel: ParcelModel
+
+
+class BuyShipmentRequest(BaseModel):
+    """Request model for buying a shipment with selected rate."""
+
+    from_address: AddressModel
+    to_address: AddressModel
+    parcel: ParcelModel
+    rate_id: str

@@ -1,13 +1,13 @@
-import { useState } from 'react';
-import { X, Package, MapPin, Ruler, DollarSign } from 'lucide-react';
-import { toast } from 'sonner';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { shipmentAPI } from '@/services/api';
+import { DollarSign, MapPin, Package, Ruler, X } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 
 /**
  * ShipmentForm Component
- * 
+ *
  * Multi-step form for creating shipments:
  * 1. Addresses (from/to)
  * 2. Parcel details
@@ -29,7 +29,7 @@ export default function ShipmentForm({ isOpen, onClose, onSuccess }) {
       state: '',
       zip: '',
       country: 'US',
-      phone: ''
+      phone: '',
     },
     to_address: {
       name: '',
@@ -38,30 +38,30 @@ export default function ShipmentForm({ isOpen, onClose, onSuccess }) {
       state: '',
       zip: '',
       country: 'US',
-      phone: ''
+      phone: '',
     },
     parcel: {
       length: '',
       width: '',
       height: '',
-      weight: ''
-    }
+      weight: '',
+    },
   });
 
   const handleInputChange = (section, field, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [section]: {
         ...prev[section],
-        [field]: value
-      }
+        [field]: value,
+      },
     }));
   };
 
   const handleGetRates = async () => {
     try {
       setIsLoading(true);
-      
+
       const response = await shipmentAPI.getRates({
         from_address: formData.from_address,
         to_address: formData.to_address,
@@ -69,24 +69,24 @@ export default function ShipmentForm({ isOpen, onClose, onSuccess }) {
           length: parseFloat(formData.parcel.length),
           width: parseFloat(formData.parcel.width),
           height: parseFloat(formData.parcel.height),
-          weight: parseFloat(formData.parcel.weight)
-        }
+          weight: parseFloat(formData.parcel.weight),
+        },
       });
 
-      if (response.status === 'success' && response.data?.rates) {
-        setRates(response.data.rates);
+      if (response.status === 'success' && response.data) {
+        setRates(response.data);
         setStep(3);
         toast.success('Rates Retrieved', {
-          description: `Found ${response.data.rates.length} available rates`
+          description: `Found ${response.data.length} available rates`,
         });
       } else {
         toast.error('Failed to get rates', {
-          description: response.message || 'Please try again'
+          description: response.message || 'Please try again',
         });
       }
     } catch (error) {
       toast.error('Error', {
-        description: error.message || 'Failed to fetch rates'
+        description: error.message || 'Failed to fetch rates',
       });
     } finally {
       setIsLoading(false);
@@ -109,25 +109,25 @@ export default function ShipmentForm({ isOpen, onClose, onSuccess }) {
           length: parseFloat(formData.parcel.length),
           width: parseFloat(formData.parcel.width),
           height: parseFloat(formData.parcel.height),
-          weight: parseFloat(formData.parcel.weight)
+          weight: parseFloat(formData.parcel.weight),
         },
-        rate_id: selectedRate.id
+        rate_id: selectedRate.id,
       });
 
       if (response.status === 'success') {
         toast.success('Shipment Created!', {
-          description: `Tracking: ${response.data.tracking_number}`
+          description: `Tracking: ${response.data.tracking_number}`,
         });
         onSuccess?.(response.data);
         handleClose();
       } else {
         toast.error('Failed to create shipment', {
-          description: response.message || 'Please try again'
+          description: response.message || 'Please try again',
         });
       }
     } catch (error) {
       toast.error('Error', {
-        description: error.message || 'Failed to create shipment'
+        description: error.message || 'Failed to create shipment',
       });
     } finally {
       setIsLoading(false);
@@ -146,7 +146,7 @@ export default function ShipmentForm({ isOpen, onClose, onSuccess }) {
         state: '',
         zip: '',
         country: 'US',
-        phone: ''
+        phone: '',
       },
       to_address: {
         name: '',
@@ -155,14 +155,14 @@ export default function ShipmentForm({ isOpen, onClose, onSuccess }) {
         state: '',
         zip: '',
         country: 'US',
-        phone: ''
+        phone: '',
       },
       parcel: {
         length: '',
         width: '',
         height: '',
-        weight: ''
-      }
+        weight: '',
+      },
     });
     onClose();
   };
@@ -176,7 +176,8 @@ export default function ShipmentForm({ isOpen, onClose, onSuccess }) {
           <div>
             <h2 className="text-2xl font-bold">Create New Shipment</h2>
             <p className="text-sm text-muted-foreground">
-              Step {step} of 3: {step === 1 ? 'Addresses' : step === 2 ? 'Parcel Details' : 'Select Rate'}
+              Step {step} of 3:{' '}
+              {step === 1 ? 'Addresses' : step === 2 ? 'Parcel Details' : 'Select Rate'}
             </p>
           </div>
           <Button variant="ghost" size="icon" onClick={handleClose}>
@@ -293,9 +294,7 @@ export default function ShipmentForm({ isOpen, onClose, onSuccess }) {
               </div>
 
               <div className="flex justify-end">
-                <Button onClick={() => setStep(2)}>
-                  Next: Parcel Details
-                </Button>
+                <Button onClick={() => setStep(2)}>Next: Parcel Details</Button>
               </div>
             </div>
           )}
@@ -399,14 +398,19 @@ export default function ShipmentForm({ isOpen, onClose, onSuccess }) {
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="font-semibold">{rate.carrier} - {rate.service}</div>
+                        <div className="font-semibold">
+                          {rate.carrier} - {rate.service}
+                        </div>
                         <div className="text-sm text-muted-foreground">
                           Delivery: {rate.delivery_days} day{rate.delivery_days > 1 ? 's' : ''}
-                          {rate.delivery_date && ` (${new Date(rate.delivery_date).toLocaleDateString()})`}
+                          {rate.delivery_date &&
+                            ` (${new Date(rate.delivery_date).toLocaleDateString()})`}
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-2xl font-bold">${parseFloat(rate.rate).toFixed(2)}</div>
+                        <div className="text-2xl font-bold">
+                          ${parseFloat(rate.rate).toFixed(2)}
+                        </div>
                       </div>
                     </div>
                   </button>
@@ -414,19 +418,14 @@ export default function ShipmentForm({ isOpen, onClose, onSuccess }) {
               </div>
 
               {rates.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground">
-                  No rates available
-                </div>
+                <div className="text-center py-8 text-muted-foreground">No rates available</div>
               )}
 
               <div className="flex justify-between">
                 <Button variant="outline" onClick={() => setStep(2)}>
                   Back
                 </Button>
-                <Button 
-                  onClick={handleBuyShipment} 
-                  disabled={!selectedRate || isLoading}
-                >
+                <Button onClick={handleBuyShipment} disabled={!selectedRate || isLoading}>
                   {isLoading ? 'Creating...' : 'Buy Label'}
                 </Button>
               </div>
@@ -437,4 +436,3 @@ export default function ShipmentForm({ isOpen, onClose, onSuccess }) {
     </div>
   );
 }
-

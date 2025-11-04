@@ -59,12 +59,12 @@ async def app_lifespan(server) -> AsyncIterator[AppResources]:
     rate_limiter = asyncio.Semaphore(16)
 
     try:
-        # Yield as dict for FastAPI compatibility
-        yield {
-            "easypost_service": easypost_service,
-            "db_pool": db_pool,
-            "rate_limiter": rate_limiter,
-        }
+        # Yield AppResources instance for dependency injection
+        yield AppResources(
+            easypost_service=easypost_service,
+            db_pool=db_pool,
+            rate_limiter=rate_limiter,
+        )
     finally:
         # Cleanup
         logger.info("Shutting down EasyPost MCP Server...")

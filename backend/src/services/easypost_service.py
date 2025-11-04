@@ -412,6 +412,7 @@ class EasyPostService:
 
             return [
                 {
+                    "id": rate.id,
                     "carrier": rate.carrier,
                     "service": rate.service,
                     "rate": rate.rate,
