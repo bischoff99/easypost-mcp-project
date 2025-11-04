@@ -261,7 +261,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentActivity.map(activity => (
+              {recentActivity.map((activity) => (
                 <div
                   key={activity.id}
                   className="flex items-start gap-4 pb-4 border-b border-border last:border-0 last:pb-0"
@@ -297,7 +297,7 @@ export default function DashboardPage() {
           <CardContent>
             <div className="space-y-4">
               {carrierPerformance.length > 0 ? (
-                carrierPerformance.map(item => (
+                carrierPerformance.map((item) => (
                   <div key={item.carrier} className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
                       <span className="font-medium">{item.carrier}</span>

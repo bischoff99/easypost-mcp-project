@@ -89,9 +89,7 @@ export default function AddressBookPage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Address Book</h2>
-          <p className="text-muted-foreground">
-            Manage your saved shipping addresses
-          </p>
+          <p className="text-muted-foreground">Manage your saved shipping addresses</p>
         </div>
         <Button className="gap-2">
           <Plus className="h-4 w-4" />
@@ -136,9 +134,7 @@ export default function AddressBookPage() {
             <MapPin className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {addresses.filter((a) => a.company).length}
-            </div>
+            <div className="text-2xl font-bold">{addresses.filter((a) => a.company).length}</div>
             <p className="text-xs text-muted-foreground">With company name</p>
           </CardContent>
         </Card>
@@ -157,7 +153,10 @@ export default function AddressBookPage() {
       {/* Address List */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filteredAddresses.map((address) => (
-          <Card key={address.id} className="relative overflow-hidden hover:shadow-lg transition-shadow">
+          <Card
+            key={address.id}
+            className="relative overflow-hidden hover:shadow-lg transition-shadow"
+          >
             {address.is_default && (
               <div className="absolute top-0 right-0">
                 <Badge variant="default" className="rounded-none rounded-bl-lg">

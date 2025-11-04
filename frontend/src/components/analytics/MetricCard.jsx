@@ -4,7 +4,15 @@ import PropTypes from 'prop-types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { cn } from '@/lib/utils';
 
-export default function MetricCard({ title, value, change, trend, icon: Icon, color = 'primary', delay = 0 }) {
+export default function MetricCard({
+  title,
+  value,
+  change,
+  trend,
+  icon: Icon,
+  color = 'primary',
+  delay = 0,
+}) {
   const isPositive = trend === 'up';
 
   const colorClasses = {
@@ -26,9 +34,7 @@ export default function MetricCard({ title, value, change, trend, icon: Icon, co
         </div>
         <CardHeader className="relative">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              {title}
-            </CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
             <Icon className={cn('h-5 w-5', colorClasses[color])} />
           </div>
         </CardHeader>
@@ -41,10 +47,7 @@ export default function MetricCard({ title, value, change, trend, icon: Icon, co
               <TrendingDown className="h-4 w-4 text-red-600" />
             )}
             <span
-              className={cn(
-                'text-sm font-medium',
-                isPositive ? 'text-green-600' : 'text-red-600'
-              )}
+              className={cn('text-sm font-medium', isPositive ? 'text-green-600' : 'text-red-600')}
             >
               {change}
             </span>

@@ -26,10 +26,7 @@ export default function QuickActionCard({
       whileTap={{ scale: 0.98 }}
     >
       <Card
-        className={cn(
-          'cursor-pointer transition-all hover:shadow-xl',
-          colorClasses[color]
-        )}
+        className={cn('cursor-pointer transition-all hover:shadow-xl', colorClasses[color])}
         onClick={onClick}
       >
         <CardHeader className="flex flex-row items-center gap-4">

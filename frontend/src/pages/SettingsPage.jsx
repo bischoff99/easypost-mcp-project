@@ -26,12 +26,12 @@ export default function SettingsPage() {
     try {
       // Save to backend API
       await api.post('/settings', settings);
-      toast.success('Settings saved!', { 
-        description: 'Your preferences have been updated successfully.' 
+      toast.success('Settings saved!', {
+        description: 'Your preferences have been updated successfully.',
       });
     } catch (error) {
       toast.error('Failed to save settings', {
-        description: error.message || 'Please try again later.'
+        description: error.message || 'Please try again later.',
       });
     } finally {
       setIsSaving(false);
@@ -43,9 +43,7 @@ export default function SettingsPage() {
       {/* Header */}
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
-        <p className="text-muted-foreground">
-          Manage your account settings and preferences
-        </p>
+        <p className="text-muted-foreground">Manage your account settings and preferences</p>
       </div>
 
       {/* Account Settings */}
@@ -136,9 +134,7 @@ export default function SettingsPage() {
             <input
               type="checkbox"
               checked={settings.notifyOnShipment}
-              onChange={(e) =>
-                setSettings({ ...settings, notifyOnShipment: e.target.checked })
-              }
+              onChange={(e) => setSettings({ ...settings, notifyOnShipment: e.target.checked })}
               className="h-4 w-4 rounded border-input"
             />
           </div>
@@ -152,9 +148,7 @@ export default function SettingsPage() {
             <input
               type="checkbox"
               checked={settings.notifyOnDelivery}
-              onChange={(e) =>
-                setSettings({ ...settings, notifyOnDelivery: e.target.checked })
-              }
+              onChange={(e) => setSettings({ ...settings, notifyOnDelivery: e.target.checked })}
               className="h-4 w-4 rounded border-input"
             />
           </div>
@@ -168,9 +162,7 @@ export default function SettingsPage() {
             <input
               type="checkbox"
               checked={settings.notifyOnException}
-              onChange={(e) =>
-                setSettings({ ...settings, notifyOnException: e.target.checked })
-              }
+              onChange={(e) => setSettings({ ...settings, notifyOnException: e.target.checked })}
               className="h-4 w-4 rounded border-input"
             />
           </div>

@@ -1,5 +1,34 @@
-"""Models package."""
+"""
+Database models package for EasyPost MCP.
+"""
 
-from src.models.requests import RatesRequest, ShipmentRequest
+# Import all models to ensure they are registered with SQLAlchemy
+from .analytics import (
+    AnalyticsSummary,
+    BatchOperation,
+    CarrierPerformance,
+    ShipmentMetrics,
+    SystemMetrics,
+    UserActivity,
+)
+from .requests import RatesRequest, ShipmentRequest
+from .shipment import Address, CustomsInfo, Parcel, Shipment, ShipmentEvent
 
-__all__ = ["ShipmentRequest", "RatesRequest"]
+# Export all models and request types
+__all__ = [
+    # Request models
+    "ShipmentRequest",
+    "RatesRequest",
+    # Database models
+    "Shipment",
+    "Address",
+    "Parcel",
+    "CustomsInfo",
+    "ShipmentEvent",
+    "AnalyticsSummary",
+    "CarrierPerformance",
+    "ShipmentMetrics",
+    "UserActivity",
+    "SystemMetrics",
+    "BatchOperation",
+]

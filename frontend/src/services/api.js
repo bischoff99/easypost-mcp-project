@@ -13,8 +13,8 @@ const api = axios.create({
 
 // Error interceptor with toast notifications
 api.interceptors.response.use(
-  response => response,
-  error => {
+  (response) => response,
+  (error) => {
     const message = error.response?.data?.message || error.message || 'An error occurred';
 
     // Show toast notification for errors
@@ -38,7 +38,7 @@ api.interceptors.response.use(
 );
 
 export const shipmentAPI = {
-  createShipment: async data => {
+  createShipment: async (data) => {
     try {
       const response = await api.post('/shipments', data);
       return response.data;
@@ -47,7 +47,7 @@ export const shipmentAPI = {
     }
   },
 
-  getTracking: async trackingNumber => {
+  getTracking: async (trackingNumber) => {
     try {
       const response = await api.get(`/tracking/${trackingNumber}`);
       return response.data;
@@ -56,7 +56,7 @@ export const shipmentAPI = {
     }
   },
 
-  getRates: async data => {
+  getRates: async (data) => {
     try {
       const response = await api.post('/rates', data);
       return response.data;
@@ -101,7 +101,7 @@ export const shipmentAPI = {
     }
   },
 
-  getShipment: async shipmentId => {
+  getShipment: async (shipmentId) => {
     try {
       const response = await api.get(`/shipments/${shipmentId}`);
       return response.data;

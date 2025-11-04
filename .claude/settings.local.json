@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(test:*)",
+      "Bash(rm:*)",
+      "Bash(mkdir:*)",
+      "Bash(source venv/bin/activate)",
+      "Bash(pytest:*)",
+      "Bash(git reset:*)",
+      "Bash(git rm:*)",
+      "Bash(xargs:*)",
+      "Bash(source backend/venv/bin/activate)",
+      "Bash(python:*)",
+      "Bash(pkill:*)",
+      "Bash(node --version:*)",
+      "Bash(npm --version:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

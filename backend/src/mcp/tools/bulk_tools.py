@@ -238,10 +238,10 @@ def parse_spreadsheet_line(line: str) -> Dict[str, Any]:
     }
 
 
-def register_bulk_tools(mcp, easypost_service):
+def register_bulk_tools(mcp, easypost_service=None):
     """Register bulk shipment tools with MCP server."""
 
-    @mcp.tool()
+    @mcp.tool(tags=["bulk", "rates", "shipping"])
     async def parse_and_get_bulk_rates(
         spreadsheet_data: str,
         from_city: str = None,

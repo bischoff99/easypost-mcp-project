@@ -10,8 +10,7 @@ const useUIStore = create(
         set((state) => ({
           theme: state.theme === 'light' ? 'dark' : 'light',
         })),
-      toggleSidebar: () =>
-        set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
+      toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
       setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
     }),
     {
@@ -21,4 +20,3 @@ const useUIStore = create(
 );
 
 export default useUIStore;
-

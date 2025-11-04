@@ -1,6 +1,20 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import {
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
 import { TrendingUp, Package, DollarSign, TruckIcon } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { Skeleton } from '../ui/Skeleton';

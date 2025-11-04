@@ -11,7 +11,7 @@ export function useShipmentForm() {
       city: '',
       state: '',
       zip: '',
-      country: 'US'
+      country: 'US',
     },
     from_address: {
       name: '',
@@ -19,40 +19,40 @@ export function useShipmentForm() {
       city: '',
       state: '',
       zip: '',
-      country: 'US'
+      country: 'US',
     },
     parcel: {
       length: 10,
       width: 8,
       height: 5,
-      weight: 2
+      weight: 2,
     },
-    carrier: 'USPS'
+    carrier: 'USPS',
   });
 
   const updateToAddress = (field, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      to_address: { ...prev.to_address, [field]: value }
+      to_address: { ...prev.to_address, [field]: value },
     }));
   };
 
   const updateFromAddress = (field, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      from_address: { ...prev.from_address, [field]: value }
+      from_address: { ...prev.from_address, [field]: value },
     }));
   };
 
   const updateParcel = (field, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      parcel: { ...prev.parcel, [field]: parseFloat(value) || 0 }
+      parcel: { ...prev.parcel, [field]: parseFloat(value) || 0 },
     }));
   };
 
   const updateCarrier = (value) => {
-    setFormData(prev => ({ ...prev, carrier: value }));
+    setFormData((prev) => ({ ...prev, carrier: value }));
   };
 
   const resetForm = () => {
@@ -60,16 +60,27 @@ export function useShipmentForm() {
       to_address: { name: '', street1: '', city: '', state: '', zip: '', country: 'US' },
       from_address: { name: '', street1: '', city: '', state: '', zip: '', country: 'US' },
       parcel: { length: 10, width: 8, height: 5, weight: 2 },
-      carrier: 'USPS'
+      carrier: 'USPS',
     });
   };
 
   const isValid = () => {
     const { to_address, from_address, parcel } = formData;
     return (
-      to_address.name && to_address.street1 && to_address.city && to_address.state && to_address.zip &&
-      from_address.name && from_address.street1 && from_address.city && from_address.state && from_address.zip &&
-      parcel.length > 0 && parcel.width > 0 && parcel.height > 0 && parcel.weight > 0
+      to_address.name &&
+      to_address.street1 &&
+      to_address.city &&
+      to_address.state &&
+      to_address.zip &&
+      from_address.name &&
+      from_address.street1 &&
+      from_address.city &&
+      from_address.state &&
+      from_address.zip &&
+      parcel.length > 0 &&
+      parcel.width > 0 &&
+      parcel.height > 0 &&
+      parcel.weight > 0
     );
   };
 
@@ -80,7 +91,6 @@ export function useShipmentForm() {
     updateParcel,
     updateCarrier,
     resetForm,
-    isValid
+    isValid,
   };
 }
-

@@ -1,54 +1,65 @@
-"""
-Shared pytest fixtures and configuration
-"""
+"""Pytest configuration and shared fixtures."""
 
-import os
+from unittest.mock import AsyncMock
 
 import pytest
-from dotenv import load_dotenv
+from httpx import AsyncClient
 
-# Load environment variables
-load_dotenv()
-
-
-@pytest.fixture
-def easypost_api_key():
-    """EasyPost API key from environment."""
-    return os.getenv("EASYPOST_API_KEY")
+from src.dependencies import get_easypost_service
+from src.server import app
+from tests.factories import EasyPostFactory
 
 
 @pytest.fixture
-def sample_address_domestic():
-    """Sample US domestic address."""
-    return {
-        "name": "Test User",
-        "street1": "123 Main St",
-        "city": "Los Angeles",
-        "state": "CA",
-        "zip": "90021",
-        "country": "US",
-    }
+def mock_easypost_service():
+    """
+    Create a mock EasyPost service with default responses.
+
+    Can be customized in individual tests by setting return values.
+    """
+    from unittest.mock import PropertyMock
+
+    mock = AsyncMock()
+
+    # Set reasonable defaults
+    mock.get_rates.return_value = EasyPostFactory.rates()
+    mock.create_shipment.return_value = EasyPostFactory.shipment()
+    mock.list_shipments.return_value = EasyPostFactory.shipment_list()
+    mock.get_tracking.return_value = EasyPostFactory.tracking()
+
+    # Add api_key as a regular attribute (not a Mock)
+    type(mock).api_key = PropertyMock(return_value="test_api_key")
+
+    return mock
 
 
 @pytest.fixture
-def sample_address_international():
-    """Sample international address."""
-    return {
-        "name": "Test User",
-        "street1": "123 Test Street",
-        "city": "London",
-        "state": "",
-        "zip": "SW1A 1AA",
-        "country": "GB",
-    }
+async def async_client(mock_easypost_service):
+    """
+    Create async HTTP client with dependency overrides.
+
+    Uses httpx.AsyncClient for true async testing (not TestClient).
+    Automatically cleans up overrides after test.
+    """
+    from httpx import ASGITransport
+
+    # Override the dependency to use our mock
+    app.dependency_overrides[get_easypost_service] = lambda: mock_easypost_service
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        yield ac
+
+    # Clean up
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture
-def sample_parcel():
-    """Sample parcel dimensions."""
-    return {
-        "length": 10,
-        "width": 10,
-        "height": 5,
-        "weight": 16,  # ounces
-    }
+def client():
+    """
+    Legacy TestClient fixture for backward compatibility.
+
+    NOTE: Prefer async_client for new tests.
+    """
+    from fastapi.testclient import TestClient
+
+    return TestClient(app)

@@ -12,14 +12,18 @@ import uvloop
 # Install uvloop for faster async I/O (2-4x performance improvement)
 uvloop.install()
 
-from fastapi import FastAPI, HTTPException, Request, status
+from fastapi import FastAPI, HTTPException, Request
 from pydantic import ValidationError
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
+from starlette import status
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.cors import CORSMiddleware
 
+from src.database import get_db
+from src.dependencies import EasyPostDep
+from src.lifespan import app_lifespan
 from src.models.analytics import (
     AnalyticsData,
     AnalyticsResponse,
@@ -29,7 +33,7 @@ from src.models.analytics import (
     VolumeMetrics,
 )
 from src.models.requests import RatesRequest, ShipmentRequest
-from src.services.easypost_service import EasyPostService
+from src.services.database_service import DatabaseService
 from src.utils.config import settings
 from src.utils.monitoring import HealthCheck, metrics
 
@@ -50,11 +54,27 @@ except ValueError as e:
     logger.error(f"Configuration error: {e}")
     raise
 
-# Initialize FastAPI app
+# Initialize FastMCP server with lifespan
+from fastmcp import FastMCP
+
+from src.mcp.prompts import register_prompts
+from src.mcp.resources import register_resources
+from src.mcp.tools import register_tools
+
+mcp = FastMCP(
+    name="EasyPost Shipping Server",
+    instructions="MCP server for managing shipments and tracking with EasyPost API",
+    lifespan=app_lifespan,
+)
+
+# Register MCP components (will be registered after app init)
+
+# Initialize FastAPI app with MCP lifespan
 app = FastAPI(
     title="EasyPost MCP Server",
     description="MCP server for managing shipments and tracking with EasyPost API",
     version="1.0.0",
+    lifespan=app_lifespan,
 )
 
 # Rate limiting (10 requests per minute per IP)
@@ -88,8 +108,28 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
 
 app.add_middleware(RequestIDMiddleware)
 
-# Initialize EasyPost service
-easypost_service = EasyPostService(api_key=settings.EASYPOST_API_KEY)
+# Mount MCP server at /mcp endpoint for AI integration
+# Note: MCP tools will access easypost_service via Context
+app.mount("/mcp", mcp.http_app())
+
+# Add error handling middleware to MCP
+from fastmcp.server.middleware.error_handling import ErrorHandlingMiddleware
+
+mcp.add_middleware(
+    ErrorHandlingMiddleware(
+        include_traceback=settings.DEBUG if hasattr(settings, "DEBUG") else False,
+        transform_errors=True,
+        error_callback=lambda e: metrics.record_error(),
+    )
+)
+
+# Register MCP components after mounting
+# Pass None as service since tools will use Context
+register_tools(mcp, None)  # Updated to use Context in Phase 4
+register_resources(mcp, None)
+register_prompts(mcp)
+
+logger.info("MCP server mounted at /mcp (HTTP transport) with error handling middleware")
 
 
 # Endpoints
@@ -105,10 +145,10 @@ async def root():
 
 
 @app.get("/health")
-async def health_check():
+async def health_check(service: EasyPostDep):
     """Enhanced health check with EasyPost API validation."""
     health = HealthCheck()
-    return await health.check(easypost_service)
+    return await health.check(service)
 
 
 @app.get("/metrics")
@@ -119,7 +159,7 @@ async def get_metrics():
 
 @app.post("/rates")
 @limiter.limit("10/minute")
-async def get_rates(request: Request, rates_request: RatesRequest):
+async def get_rates(request: Request, rates_request: RatesRequest, service: EasyPostDep):
     """Get shipping rates from EasyPost."""
     request_id = getattr(request.state, "request_id", "unknown")
 
@@ -132,7 +172,7 @@ async def get_rates(request: Request, rates_request: RatesRequest):
         parcel_dict = rates_request.parcel.model_dump()
 
         # Get rates from EasyPost service
-        result = await easypost_service.get_rates(
+        result = await service.get_rates(
             to_address=to_address_dict,
             from_address=from_address_dict,
             parcel=parcel_dict,
@@ -162,7 +202,9 @@ async def get_rates(request: Request, rates_request: RatesRequest):
 
 @app.post("/shipments")
 @limiter.limit("10/minute")
-async def create_shipment(request: Request, shipment_request: ShipmentRequest):
+async def create_shipment(
+    request: Request, shipment_request: ShipmentRequest, service: EasyPostDep
+):
     """Create a shipment with EasyPost."""
     request_id = getattr(request.state, "request_id", "unknown")
 
@@ -174,12 +216,11 @@ async def create_shipment(request: Request, shipment_request: ShipmentRequest):
         from_address = shipment_request.from_address.model_dump()
         parcel = shipment_request.parcel.model_dump()
 
-        result = await easypost_service.create_shipment(
+        result = await service.create_shipment(
             to_address=to_address,
             from_address=from_address,
             parcel=parcel,
             carrier=shipment_request.carrier,
-            service=shipment_request.service,
         )
 
         logger.info(f"[{request_id}] Shipment created successfully")
@@ -198,14 +239,16 @@ async def create_shipment(request: Request, shipment_request: ShipmentRequest):
 
 
 @app.get("/shipments")
-async def list_shipments(request: Request, page_size: int = 20, before_id: str | None = None):
+async def list_shipments(
+    request: Request, service: EasyPostDep, page_size: int = 20, before_id: str | None = None
+):
     """List shipments from EasyPost."""
     request_id = getattr(request.state, "request_id", "unknown")
 
     try:
         logger.info(f"[{request_id}] List shipments request received")
 
-        result = await easypost_service.list_shipments(page_size=page_size, before_id=before_id)
+        result = await service.list_shipments(page_size=page_size, before_id=before_id)
 
         logger.info(f"[{request_id}] Shipments list retrieved")
         metrics.track_api_call("list_shipments", True)
@@ -222,40 +265,19 @@ async def list_shipments(request: Request, page_size: int = 20, before_id: str |
         ) from e
 
 
-@app.get("/shipments/{shipment_id}")
-async def get_shipment(request: Request, shipment_id: str):
-    """Get shipment details."""
-    request_id = getattr(request.state, "request_id", "unknown")
-
-    try:
-        logger.info(f"[{request_id}] Get shipment {shipment_id}")
-
-        result = await easypost_service.get_shipment(shipment_id=shipment_id)
-
-        logger.info(f"[{request_id}] Shipment retrieved")
-        metrics.track_api_call("get_shipment", True)
-
-        return result
-
-    except Exception as e:
-        error_msg = str(e)[:MAX_REQUEST_LOG_SIZE]
-        logger.error(f"[{request_id}] Error getting shipment {shipment_id}: {error_msg}")
-        metrics.track_api_call("get_shipment", False)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error getting shipment: {error_msg}",
-        ) from e
+# Removed /shipments/{shipment_id} endpoint - not implemented in EasyPostService
+# Use /shipments list endpoint instead
 
 
 @app.get("/tracking/{tracking_number}")
-async def track_shipment(request: Request, tracking_number: str):
+async def track_shipment(request: Request, tracking_number: str, service: EasyPostDep):
     """Track a shipment by tracking number."""
     request_id = getattr(request.state, "request_id", "unknown")
 
     try:
         logger.info(f"[{request_id}] Track shipment {tracking_number}")
 
-        result = await easypost_service.track_shipment(tracking_number=tracking_number)
+        result = await service.get_tracking(tracking_number=tracking_number)
 
         logger.info(f"[{request_id}] Tracking info retrieved")
         metrics.track_api_call("track_shipment", True)
@@ -274,7 +296,9 @@ async def track_shipment(request: Request, tracking_number: str):
 
 @app.get("/analytics", response_model=AnalyticsResponse)
 @limiter.limit("20/minute")
-async def get_analytics(request: Request, days: int = 30, include_test: bool = False):
+async def get_analytics(
+    request: Request, service: EasyPostDep, days: int = 30, include_test: bool = False
+):
     """
     Get shipping analytics and metrics.
 
@@ -294,7 +318,7 @@ async def get_analytics(request: Request, days: int = 30, include_test: bool = F
 
         # Get shipments (this would normally come from database)
         # For now, using list_shipments as demo
-        shipments_result = await easypost_service.list_shipments(page_size=100)
+        shipments_result = await service.list_shipments(page_size=100)
 
         if shipments_result.get("status") != "success":
             raise HTTPException(status_code=500, detail="Failed to fetch shipments")
@@ -465,7 +489,7 @@ async def get_analytics(request: Request, days: int = 30, include_test: bool = F
 
 @app.get("/stats")
 @limiter.limit("30/minute")
-async def get_dashboard_stats(request: Request):
+async def get_dashboard_stats(request: Request, service: EasyPostDep):
     """
     Get dashboard statistics (optimized for dashboard page).
 
@@ -478,7 +502,7 @@ async def get_dashboard_stats(request: Request):
         logger.info(f"[{request_id}] Dashboard stats request")
 
         # Get recent shipments for calculations
-        shipments_result = await easypost_service.list_shipments(page_size=100)
+        shipments_result = await service.list_shipments(page_size=100)
 
         if shipments_result.get("status") != "success":
             raise HTTPException(status_code=500, detail="Failed to fetch shipments")
@@ -504,9 +528,7 @@ async def get_dashboard_stats(request: Request):
                 delivered_count += 1
 
         # Calculate delivery success rate
-        delivery_success_rate = (
-            delivered_count / total_shipments if total_shipments > 0 else 0.0
-        )
+        delivery_success_rate = delivered_count / total_shipments if total_shipments > 0 else 0.0
 
         # Calculate changes (compare with last period - mock data for now)
         # TODO: Implement actual comparison with previous period from database
@@ -563,7 +585,7 @@ async def get_dashboard_stats(request: Request):
 
 @app.get("/carrier-performance")
 @limiter.limit("30/minute")
-async def get_carrier_performance(request: Request):
+async def get_carrier_performance(request: Request, service: EasyPostDep):
     """
     Get carrier performance metrics.
 
@@ -575,7 +597,7 @@ async def get_carrier_performance(request: Request):
         logger.info(f"[{request_id}] Carrier performance request")
 
         # Get recent shipments for calculations
-        shipments_result = await easypost_service.list_shipments(page_size=100)
+        shipments_result = await service.list_shipments(page_size=100)
 
         if shipments_result.get("status") != "success":
             raise HTTPException(status_code=500, detail="Failed to fetch shipments")
@@ -598,14 +620,14 @@ async def get_carrier_performance(request: Request):
         for carrier, stats in sorted(
             carrier_stats.items(), key=lambda x: x[1]["total"], reverse=True
         ):
-            on_time_rate = (
-                (stats["delivered"] / stats["total"] * 100) if stats["total"] > 0 else 0
+            on_time_rate = (stats["delivered"] / stats["total"] * 100) if stats["total"] > 0 else 0
+            performance_data.append(
+                {
+                    "carrier": carrier,
+                    "rate": round(on_time_rate, 0),  # Round to integer for UI
+                    "shipments": stats["total"],
+                }
             )
-            performance_data.append({
-                "carrier": carrier,
-                "rate": round(on_time_rate, 0),  # Round to integer for UI
-                "shipments": stats["total"],
-            })
 
         logger.info(f"[{request_id}] Carrier performance calculated")
         metrics.track_api_call("get_carrier_performance", True)
@@ -623,6 +645,370 @@ async def get_carrier_performance(request: Request):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error getting carrier performance: {error_msg}",
+        ) from e
+
+
+# Database-Backed Endpoints (Phase 2B)
+
+
+@app.get("/db/shipments")
+@limiter.limit("30/minute")
+async def get_shipments_db(
+    request: Request,
+    limit: int = 50,
+    offset: int = 0,
+    carrier: str | None = None,
+    status: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+):
+    """
+    Get shipments from database with advanced filtering.
+
+    Database-backed endpoint with full filtering and pagination support.
+    """
+    request_id = getattr(request.state, "request_id", "unknown")
+
+    try:
+        logger.info(f"[{request_id}] Database shipments request: limit={limit}, offset={offset}")
+
+        async for session in get_db():
+            db_service = DatabaseService(session)
+
+            # Build filters
+            filters = {}
+            if carrier:
+                filters["carrier"] = carrier
+            if status:
+                filters["status"] = status
+            if date_from:
+                filters["date_from"] = date_from
+            if date_to:
+                filters["date_to"] = date_to
+
+            # Get shipments with related data
+            shipments = await db_service.get_shipments_with_details(
+                limit=limit, offset=offset, filters=filters
+            )
+
+            # Get total count for pagination
+            total_count = await db_service.get_shipments_count(filters=filters)
+
+            logger.info(f"[{request_id}] Retrieved {len(shipments)} shipments from database")
+            metrics.track_api_call("get_shipments_db", True)
+
+            return {
+                "status": "success",
+                "data": {
+                    "shipments": [shipment.to_dict() for shipment in shipments],
+                    "pagination": {
+                        "total": total_count,
+                        "limit": limit,
+                        "offset": offset,
+                        "has_more": (offset + limit) < total_count,
+                    },
+                },
+                "message": f"Retrieved {len(shipments)} shipments",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+
+    except Exception as e:
+        error_msg = str(e)[:MAX_REQUEST_LOG_SIZE]
+        logger.error(f"[{request_id}] Error getting shipments from database: {error_msg}")
+        metrics.track_api_call("get_shipments_db", False)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving shipments: {error_msg}",
+        ) from e
+
+
+@app.get("/db/shipments/{shipment_id}")
+@limiter.limit("30/minute")
+async def get_shipment_by_id(request: Request, shipment_id: int):
+    """
+    Get detailed shipment information by database ID.
+
+    Includes full shipment details with addresses, parcel, and tracking info.
+    """
+    request_id = getattr(request.state, "request_id", "unknown")
+
+    try:
+        logger.info(f"[{request_id}] Get shipment by ID: {shipment_id}")
+
+        async for session in get_db():
+            db_service = DatabaseService(session)
+
+            shipment = await db_service.get_shipment_with_details(shipment_id)
+
+            if not shipment:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Shipment not found"
+                )
+
+            logger.info(f"[{request_id}] Retrieved shipment {shipment_id}")
+            metrics.track_api_call("get_shipment_by_id", True)
+
+            return {
+                "status": "success",
+                "data": shipment.to_dict(),
+                "message": f"Retrieved shipment {shipment_id}",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        error_msg = str(e)[:MAX_REQUEST_LOG_SIZE]
+        logger.error(f"[{request_id}] Error getting shipment {shipment_id}: {error_msg}")
+        metrics.track_api_call("get_shipment_by_id", False)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving shipment: {error_msg}",
+        ) from e
+
+
+@app.get("/db/addresses")
+@limiter.limit("30/minute")
+async def get_addresses_db(
+    request: Request,
+    limit: int = 50,
+    offset: int = 0,
+    country: str | None = None,
+    state: str | None = None,
+    city: str | None = None,
+):
+    """
+    Get address book from database.
+
+    Returns stored addresses with usage statistics.
+    """
+    request_id = getattr(request.state, "request_id", "unknown")
+
+    try:
+        logger.info(f"[{request_id}] Database addresses request: limit={limit}, offset={offset}")
+
+        async for session in get_db():
+            db_service = DatabaseService(session)
+
+            # Build filters
+            filters = {}
+            if country:
+                filters["country"] = country
+            if state:
+                filters["state"] = state
+            if city:
+                filters["city"] = city
+
+            # Get addresses with usage stats
+            addresses = await db_service.get_addresses_with_stats(
+                limit=limit, offset=offset, filters=filters
+            )
+
+            # Get total count
+            total_count = await db_service.get_addresses_count(filters=filters)
+
+            logger.info(f"[{request_id}] Retrieved {len(addresses)} addresses from database")
+            metrics.track_api_call("get_addresses_db", True)
+
+            return {
+                "status": "success",
+                "data": {
+                    "addresses": [addr.to_dict() for addr in addresses],
+                    "pagination": {
+                        "total": total_count,
+                        "limit": limit,
+                        "offset": offset,
+                        "has_more": (offset + limit) < total_count,
+                    },
+                },
+                "message": f"Retrieved {len(addresses)} addresses",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+
+    except Exception as e:
+        error_msg = str(e)[:MAX_REQUEST_LOG_SIZE]
+        logger.error(f"[{request_id}] Error getting addresses from database: {error_msg}")
+        metrics.track_api_call("get_addresses_db", False)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving addresses: {error_msg}",
+        ) from e
+
+
+@app.get("/db/analytics/dashboard")
+@limiter.limit("20/minute")
+async def get_analytics_dashboard_db(request: Request, days: int = 30):
+    """
+    Get real analytics from database for dashboard.
+
+    Returns comprehensive analytics data from stored shipments.
+    """
+    request_id = getattr(request.state, "request_id", "unknown")
+
+    try:
+        logger.info(f"[{request_id}] Database analytics dashboard request for {days} days")
+
+        async for session in get_db():
+            db_service = DatabaseService(session)
+
+            # Get analytics summary
+            analytics_summary = await db_service.get_analytics_summary(days=days)
+
+            # Get carrier performance
+            carrier_performance = await db_service.get_carrier_performance(days=days)
+
+            # Get shipment trends
+            shipment_trends = await db_service.get_shipment_trends(days=days)
+
+            # Get top routes
+            top_routes = await db_service.get_top_routes(days=days, limit=10)
+
+            logger.info(f"[{request_id}] Analytics dashboard data retrieved")
+            metrics.track_api_call("get_analytics_dashboard_db", True)
+
+            return {
+                "status": "success",
+                "data": {
+                    "summary": analytics_summary,
+                    "carrier_performance": carrier_performance,
+                    "shipment_trends": shipment_trends,
+                    "top_routes": top_routes,
+                },
+                "message": f"Analytics data for last {days} days",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+
+    except Exception as e:
+        error_msg = str(e)[:MAX_REQUEST_LOG_SIZE]
+        logger.error(f"[{request_id}] Error getting analytics dashboard: {error_msg}")
+        metrics.track_api_call("get_analytics_dashboard_db", False)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving analytics: {error_msg}",
+        ) from e
+
+
+@app.get("/db/batch-operations")
+@limiter.limit("30/minute")
+async def get_batch_operations_db(
+    request: Request,
+    limit: int = 20,
+    offset: int = 0,
+    status: str | None = None,
+):
+    """
+    Get batch operations history from database.
+
+    Returns batch operation records with statistics.
+    """
+    request_id = getattr(request.state, "request_id", "unknown")
+
+    try:
+        logger.info(
+            f"[{request_id}] Database batch operations request: limit={limit}, offset={offset}"
+        )
+
+        async for session in get_db():
+            db_service = DatabaseService(session)
+
+            # Build filters
+            filters = {}
+            if status:
+                filters["status"] = status
+
+            # Get batch operations
+            batch_operations = await db_service.get_batch_operations(
+                limit=limit, offset=offset, filters=filters
+            )
+
+            # Get total count
+            total_count = await db_service.get_batch_operations_count(filters=filters)
+
+            logger.info(f"[{request_id}] Retrieved {len(batch_operations)} batch operations")
+            metrics.track_api_call("get_batch_operations_db", True)
+
+            return {
+                "status": "success",
+                "data": {
+                    "batch_operations": [batch.to_dict() for batch in batch_operations],
+                    "pagination": {
+                        "total": total_count,
+                        "limit": limit,
+                        "offset": offset,
+                        "has_more": (offset + limit) < total_count,
+                    },
+                },
+                "message": f"Retrieved {len(batch_operations)} batch operations",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+
+    except Exception as e:
+        error_msg = str(e)[:MAX_REQUEST_LOG_SIZE]
+        logger.error(f"[{request_id}] Error getting batch operations: {error_msg}")
+        metrics.track_api_call("get_batch_operations_db", False)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving batch operations: {error_msg}",
+        ) from e
+
+
+@app.get("/db/user-activity")
+@limiter.limit("20/minute")
+async def get_user_activity_db(
+    request: Request,
+    limit: int = 50,
+    offset: int = 0,
+    action: str | None = None,
+    hours: int = 24,
+):
+    """
+    Get user activity logs from database.
+
+    Returns recent user actions for audit and analytics.
+    """
+    request_id = getattr(request.state, "request_id", "unknown")
+
+    try:
+        logger.info(
+            f"[{request_id}] Database user activity request: limit={limit}, offset={offset}"
+        )
+
+        async for session in get_db():
+            db_service = DatabaseService(session)
+
+            # Get user activity
+            activities = await db_service.get_user_activity(
+                limit=limit, offset=offset, action=action, hours=hours
+            )
+
+            # Get total count
+            total_count = await db_service.get_user_activity_count(action=action, hours=hours)
+
+            logger.info(f"[{request_id}] Retrieved {len(activities)} user activities")
+            metrics.track_api_call("get_user_activity_db", True)
+
+            return {
+                "status": "success",
+                "data": {
+                    "activities": [activity.to_dict() for activity in activities],
+                    "pagination": {
+                        "total": total_count,
+                        "limit": limit,
+                        "offset": offset,
+                        "has_more": (offset + limit) < total_count,
+                    },
+                },
+                "message": f"Retrieved {len(activities)} user activities",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+
+    except Exception as e:
+        error_msg = str(e)[:MAX_REQUEST_LOG_SIZE]
+        logger.error(f"[{request_id}] Error getting user activity: {error_msg}")
+        metrics.track_api_call("get_user_activity_db", False)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving user activity: {error_msg}",
         ) from e
 
 

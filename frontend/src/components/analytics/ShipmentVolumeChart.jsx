@@ -1,4 +1,13 @@
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 
 const data = [
@@ -30,10 +39,7 @@ export default function ShipmentVolumeChart() {
               className="text-xs"
               tick={{ fill: 'hsl(var(--muted-foreground))' }}
             />
-            <YAxis
-              className="text-xs"
-              tick={{ fill: 'hsl(var(--muted-foreground))' }}
-            />
+            <YAxis className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
             <Tooltip
               contentStyle={{
                 backgroundColor: 'hsl(var(--card))',
@@ -63,5 +69,3 @@ export default function ShipmentVolumeChart() {
     </Card>
   );
 }
-
-

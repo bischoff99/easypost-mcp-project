@@ -23,30 +23,14 @@ describe('MetricCard', () => {
   });
 
   it('shows trending up when trend is up', () => {
-    render(
-      <MetricCard
-        title="Test"
-        value="100"
-        change="+10%"
-        trend="up"
-        icon={Package}
-      />
-    );
+    render(<MetricCard title="Test" value="100" change="+10%" trend="up" icon={Package} />);
 
     const changeText = screen.getByText('+10%');
     expect(changeText).toHaveClass('text-green-600');
   });
 
   it('shows trending down when trend is down', () => {
-    render(
-      <MetricCard
-        title="Test"
-        value="100"
-        change="-5%"
-        trend="down"
-        icon={Package}
-      />
-    );
+    render(<MetricCard title="Test" value="100" change="-5%" trend="down" icon={Package} />);
 
     const changeText = screen.getByText('-5%');
     expect(changeText).toHaveClass('text-red-600');
@@ -54,29 +38,15 @@ describe('MetricCard', () => {
 
   it('renders different color variants', () => {
     const { rerender } = render(
-      <MetricCard
-        title="Test"
-        value="100"
-        change="+5%"
-        trend="up"
-        icon={Package}
-        color="primary"
-      />
+      <MetricCard title="Test" value="100" change="+5%" trend="up" icon={Package} color="primary" />
     );
 
     expect(screen.getByText('Test')).toBeInTheDocument();
 
     // Test all color variants
-    ['secondary', 'success', 'warning'].forEach(color => {
+    ['secondary', 'success', 'warning'].forEach((color) => {
       rerender(
-        <MetricCard
-          title="Test"
-          value="100"
-          change="+5%"
-          trend="up"
-          icon={Package}
-          color={color}
-        />
+        <MetricCard title="Test" value="100" change="+5%" trend="up" icon={Package} color={color} />
       );
       expect(screen.getByText('Test')).toBeInTheDocument();
     });

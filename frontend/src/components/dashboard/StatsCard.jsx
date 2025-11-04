@@ -27,10 +27,7 @@ export default function StatsCard({ title, value, change, trend, icon: Icon, del
               <TrendingDown className="h-4 w-4 text-red-600" />
             )}
             <p
-              className={cn(
-                'text-xs font-medium',
-                isPositive ? 'text-green-600' : 'text-red-600'
-              )}
+              className={cn('text-xs font-medium', isPositive ? 'text-green-600' : 'text-red-600')}
             >
               {change} from last month
             </p>
@@ -49,4 +46,3 @@ StatsCard.propTypes = {
   icon: PropTypes.elementType.isRequired,
   delay: PropTypes.number,
 };
-

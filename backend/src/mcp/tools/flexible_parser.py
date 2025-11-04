@@ -81,27 +81,37 @@ def parse_human_readable_shipment(text: str) -> Optional[Dict]:
                 address_lines.append(line)
 
     if len(address_lines) >= 4:
-        result["company"] = (
-            address_lines[0]
-            if "inc" in address_lines[0].lower() or "llc" in address_lines[0].lower()
-            else ""
-        )
-        result["name"] = address_lines[1] if result["company"] else address_lines[0]
-        result["street1"] = address_lines[2] if result["company"] else address_lines[1]
+        # Detect company (first line with business indicators)
+        company_indicators = ["inc", "llc", "ltd", "corporation", "corp", "co.", "company"]
+        has_company = any(indicator in address_lines[0].lower() for indicator in company_indicators)
+
+        result["company"] = address_lines[0] if has_company else ""
+        result["name"] = address_lines[1] if has_company else address_lines[0]
+        result["street1"] = address_lines[2] if has_company else address_lines[1]
 
         # Parse city, state, zip
-        location_line = address_lines[3] if result["company"] else address_lines[2]
-        city_state_match = re.match(r"([^,]+),\s*([A-Z]{2})\s*(\d{5})", location_line)
+        location_line = address_lines[3] if has_company else address_lines[2]
+        city_state_match = re.match(r"([^,]+),\s*([A-Z]{2})\s+(\d{5}(?:-\d{4})?)", location_line)
         if city_state_match:
             result["city"] = city_state_match.group(1).strip()
             result["state"] = city_state_match.group(2)
             result["zip"] = city_state_match.group(3)
 
-        # Country
-        result["country"] = address_lines[-1] if len(address_lines) > 4 else "US"
+        # Country (normalize common variations)
+        country_line = (
+            address_lines[4]
+            if has_company and len(address_lines) > 4
+            else address_lines[3] if len(address_lines) > 3 else "US"
+        )
+        if country_line.lower() in ["usa", "united states", "us"]:
+            result["country"] = "US"
+        elif country_line.lower() in ["canada", "ca"]:
+            result["country"] = "CA"
+        else:
+            result["country"] = country_line
 
-    result["email"] = email
-    result["phone"] = phone
+    result["email"] = email or ""
+    result["phone"] = phone or ""
     result["dimensions"] = dimensions or "12 x 12 x 4"
     result["weight"] = weight or "1 lbs"
 

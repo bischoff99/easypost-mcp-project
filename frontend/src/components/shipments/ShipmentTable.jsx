@@ -109,7 +109,7 @@ export default function ShipmentTable({ shipments: propShipments, isLoading = fa
     );
   };
 
-  const toggleRow = id => {
+  const toggleRow = (id) => {
     const newSelected = new Set(selectedRows);
     if (newSelected.has(id)) {
       newSelected.delete(id);
@@ -123,7 +123,7 @@ export default function ShipmentTable({ shipments: propShipments, isLoading = fa
     if (selectedRows.size === shipments.length) {
       setSelectedRows(new Set());
     } else {
-      setSelectedRows(new Set(shipments.map(s => s.id)));
+      setSelectedRows(new Set(shipments.map((s) => s.id)));
     }
   };
 
@@ -172,7 +172,7 @@ export default function ShipmentTable({ shipments: propShipments, isLoading = fa
             </TableRow>
           </TableHeader>
           <TableBody>
-            {shipments.map(shipment => {
+            {shipments.map((shipment) => {
               const statusInfo = statusConfig[shipment.status] || statusConfig.pending;
               const StatusIcon = statusInfo.icon;
 

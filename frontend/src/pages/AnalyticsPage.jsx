@@ -79,7 +79,7 @@ export default function AnalyticsPage() {
       {/* Charts Row 2 */}
       <div className="grid gap-4 lg:grid-cols-3">
         <CostBreakdownChart />
-        
+
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Top Destinations</CardTitle>

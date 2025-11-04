@@ -7,15 +7,17 @@ from datetime import datetime, timezone
 from fastmcp import Context
 from pydantic import ValidationError
 
+from src.database import get_db
+from src.services.database_service import DatabaseService
 from src.services.easypost_service import AddressModel, ParcelModel
 
 logger = logging.getLogger(__name__)
 
 
-def register_shipment_tools(mcp, easypost_service):
+def register_shipment_tools(mcp, easypost_service=None):
     """Register shipment-related tools with MCP server."""
 
-    @mcp.tool()
+    @mcp.tool(tags=["shipping", "core", "create"])
     async def create_shipment(
         to_address: dict,
         from_address: dict,
@@ -41,6 +43,14 @@ def register_shipment_tools(mcp, easypost_service):
             Standardized response with status, data, message, timestamp
         """
         try:
+            # Get service from context or use provided
+            if ctx:
+                service = ctx.request_context.lifespan_context.easypost_service
+            elif easypost_service:
+                service = easypost_service
+            else:
+                raise ValueError("No EasyPost service available")
+
             # Validate inputs
             to_addr = AddressModel(**to_address)
             from_addr = AddressModel(**from_address)
@@ -55,7 +65,7 @@ def register_shipment_tools(mcp, easypost_service):
 
             if is_international:
                 # Create customs info for international shipment
-                customs_item = easypost_service.client.customs_item.create(
+                customs_item = service.client.customs_item.create(
                     description=contents,
                     hs_tariff_number="9999.00.0000",  # Generic code
                     origin_country=from_addr.country,
@@ -63,17 +73,103 @@ def register_shipment_tools(mcp, easypost_service):
                     value=value,
                     weight=parcel_obj.weight,
                 )
-                customs_info = easypost_service.client.customs_info.create(
-                    customs_items=[customs_item]
-                )
+                customs_info = service.client.customs_info.create(customs_items=[customs_item])
 
             # Add timeout to prevent SSE timeout errors
             result = await asyncio.wait_for(
-                easypost_service.create_shipment(
+                service.create_shipment(
                     to_addr.dict(), from_addr.dict(), parcel_obj.dict(), carrier, True, customs_info
                 ),
                 timeout=30.0,
             )
+
+            # Database persistence for successful shipments
+            if result.get("status") == "success":
+                try:
+                    async for session in get_db():
+                        db_service = DatabaseService(session)
+
+                        # Store addresses
+                        from_address_data = {
+                            "name": from_addr.name or "",
+                            "company": from_addr.company or "",
+                            "street1": from_addr.street1,
+                            "street2": from_addr.street2 or "",
+                            "city": from_addr.city,
+                            "state": from_addr.state or "",
+                            "zip": from_addr.zip,
+                            "country": from_addr.country,
+                            "phone": from_addr.phone or "",
+                            "email": from_addr.email or "",
+                        }
+
+                        to_address_data = {
+                            "name": to_addr.name or "",
+                            "company": to_addr.company or "",
+                            "street1": to_addr.street1,
+                            "street2": to_addr.street2 or "",
+                            "city": to_addr.city,
+                            "state": to_addr.state or "",
+                            "zip": to_addr.zip,
+                            "country": to_addr.country,
+                            "phone": to_addr.phone or "",
+                            "email": to_addr.email or "",
+                        }
+
+                        from_addr_db = await db_service.create_address(from_address_data)
+                        to_addr_db = await db_service.create_address(to_address_data)
+
+                        # Store shipment
+                        shipment_data = {
+                            "easypost_id": result.get("id"),
+                            "status": "created",
+                            "mode": "test",
+                            "reference": f"single_{result.get('id')}",
+                            "from_address_id": from_addr_db.id,
+                            "to_address_id": to_addr_db.id,
+                            "carrier": result.get("carrier"),
+                            "service": result.get("service"),
+                            "total_cost": result.get("rate"),
+                            "currency": "USD",
+                            "tracking_code": result.get("tracking_code"),
+                            "metadata": {
+                                "contents": contents,
+                                "value": value,
+                                "is_international": is_international,
+                                "customs_created": is_international,
+                            },
+                        }
+
+                        db_shipment = await db_service.create_shipment(shipment_data)
+
+                        # Log user activity
+                        await db_service.log_user_activity(
+                            {
+                                "action": "create_shipment",
+                                "resource": "shipment",
+                                "resource_id": db_shipment.id,
+                                "method": "POST",
+                                "endpoint": "/mcp/create_shipment",
+                                "status_code": 200,
+                                "response_time_ms": 0,  # Not tracked for individual shipments
+                                "metadata": {
+                                    "carrier": result.get("carrier"),
+                                    "cost": result.get("rate"),
+                                    "is_international": is_international,
+                                },
+                            }
+                        )
+
+                        if ctx:
+                            await ctx.info("💾 Shipment data persisted to database")
+
+                        break
+
+                except Exception as db_error:
+                    logger.error(f"Failed to persist shipment to database: {db_error}")
+                    # Don't fail the shipment creation if database persistence fails
+                    if ctx:
+                        await ctx.info("⚠️ Shipment created but database persistence failed")
 
             if ctx and result.get("status") == "success":
                 await ctx.info(f"Shipment created: {result.get('id')}")

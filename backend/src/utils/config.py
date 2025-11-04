@@ -24,6 +24,14 @@ class Settings:
     # EasyPost
     EASYPOST_API_KEY: str = os.getenv("EASYPOST_API_KEY", "")
 
+    # Database
+    DATABASE_URL: str = os.getenv(
+        "DATABASE_URL", "postgresql://user:password@localhost/easypost_mcp"
+    )
+    DATABASE_POOL_SIZE: int = int(os.getenv("DATABASE_POOL_SIZE", "20"))
+    DATABASE_MAX_OVERFLOW: int = int(os.getenv("DATABASE_MAX_OVERFLOW", "30"))
+    DATABASE_POOL_RECYCLE: int = int(os.getenv("DATABASE_POOL_RECYCLE", "3600"))
+
     # Server
     MCP_HOST: str = os.getenv("MCP_HOST", "0.0.0.0")
     MCP_PORT: int = int(os.getenv("MCP_PORT", "8000"))

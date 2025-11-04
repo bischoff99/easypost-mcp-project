@@ -13,6 +13,8 @@ from typing import List
 
 from fastmcp import Context
 
+from src.database import get_db
+from src.services.database_service import DatabaseService
 from src.services.smart_customs import get_or_create_customs
 
 from .bulk_tools import (
@@ -34,10 +36,10 @@ MAX_CONCURRENT = 16  # API concurrency limit (rate limiting)
 # Use get_or_create_customs from src.services.smart_customs for customs info
 
 
-def register_bulk_creation_tools(mcp, easypost_service):
+def register_bulk_creation_tools(mcp, easypost_service=None):
     """Register bulk shipment creation tools with MCP server."""
 
-    @mcp.tool()
+    @mcp.tool(tags=["bulk", "create", "shipping", "m3-optimized"])
     async def create_bulk_shipments(
         spreadsheet_data: str,
         from_city: str = None,
@@ -78,6 +80,30 @@ def register_bulk_creation_tools(mcp, easypost_service):
         try:
             if ctx:
                 await ctx.info("🚀 Starting bulk shipment creation (16 parallel workers)...")
+
+            # Initialize database service for tracking
+            db_service = None
+            batch_operation = None
+
+            async for session in get_db():
+                db_service = DatabaseService(session)
+
+                # Create batch operation record
+                batch_operation = await db_service.create_batch_operation(
+                    {
+                        "batch_id": f"bulk_create_{int(start_time.timestamp())}",
+                        "operation_type": "create_bulk_shipments",
+                        "total_items": 0,  # Will update after validation
+                        "source": "mcp_tool",
+                        "parameters": {
+                            "purchase_labels": purchase_labels,
+                            "carrier": carrier,
+                            "dry_run": dry_run,
+                            "from_city": from_city,
+                        },
+                    }
+                )
+                break
 
             # Parse lines
             lines = [l.strip() for l in spreadsheet_data.split("\n") if l.strip()]
@@ -372,16 +398,135 @@ def register_bulk_creation_tools(mcp, easypost_service):
                 carrier_stats[carrier_name]["count"] += 1
                 carrier_stats[carrier_name]["cost"] += float(s.get("cost", 0))
 
+            # Update batch operation with final results
+            if db_service and batch_operation:
+                await db_service.update_batch_operation(
+                    batch_operation.batch_id,
+                    {
+                        "total_items": len(valid_shipments),
+                        "processed_items": len(results),
+                        "successful_items": len(successful),
+                        "failed_items": len(failed),
+                        "status": "completed",
+                        "completed_at": datetime.now(timezone.utc),
+                        "total_processing_time": duration,
+                        "errors": [
+                            {"line": r.get("line"), "error": r.get("error")} for r in failed
+                        ],
+                    },
+                )
+
+                # Store successful shipments in database
+                if successful and not dry_run:
+                    for shipment_result in successful:
+                        try:
+                            shipment_id = shipment_result.get("shipment_id")
+                            if shipment_id:
+                                # Get shipment details from EasyPost API
+                                loop = asyncio.get_event_loop()
+                                easypost_shipment = await loop.run_in_executor(
+                                    None, easypost_service.client.shipment.retrieve, shipment_id
+                                )
+
+                                # Store shipment in database
+                                shipment_data = {
+                                    "easypost_id": shipment_id,
+                                    "status": "created",
+                                    "mode": "test",
+                                    "reference": f"bulk_{batch_operation.batch_id}",
+                                    "batch_id": batch_operation.batch_id,
+                                    "batch_status": "created",
+                                    "carrier": shipment_result.get("carrier"),
+                                    "service": shipment_result.get("service"),
+                                    "total_cost": shipment_result.get("cost"),
+                                    "currency": "USD",
+                                    "tracking_code": shipment_result.get("tracking_code"),
+                                    "metadata": {
+                                        "batch_operation": batch_operation.batch_id,
+                                        "line_number": shipment_result.get("line"),
+                                        "recipient": shipment_result.get("recipient"),
+                                        "destination": shipment_result.get("destination"),
+                                    },
+                                }
+
+                                # Create addresses if they don't exist
+                                from_address_data = {
+                                    "name": from_address.get("name", ""),
+                                    "company": from_address.get("company", ""),
+                                    "street1": from_address.get("street1", ""),
+                                    "street2": from_address.get("street2", ""),
+                                    "city": from_address.get("city", ""),
+                                    "state": from_address.get("state", ""),
+                                    "zip": from_address.get("zip", ""),
+                                    "country": from_address.get("country", "US"),
+                                    "phone": from_address.get("phone", ""),
+                                    "email": from_address.get("email", ""),
+                                }
+
+                                to_address_data = {
+                                    "name": shipment_result.get("recipient", ""),
+                                    "street1": easypost_shipment.to_address.street1,
+                                    "street2": getattr(easypost_shipment.to_address, "street2", ""),
+                                    "city": easypost_shipment.to_address.city,
+                                    "state": getattr(easypost_shipment.to_address, "state", ""),
+                                    "zip": easypost_shipment.to_address.zip,
+                                    "country": easypost_shipment.to_address.country,
+                                    "phone": getattr(easypost_shipment.to_address, "phone", ""),
+                                    "email": getattr(easypost_shipment.to_address, "email", ""),
+                                }
+
+                                # Create or get addresses
+                                from_addr = await db_service.create_address(from_address_data)
+                                to_addr = await db_service.create_address(to_address_data)
+
+                                # Create shipment with address references
+                                shipment_data.update(
+                                    {
+                                        "from_address_id": from_addr.id,
+                                        "to_address_id": to_addr.id,
+                                        "parcel_id": None,  # Will be set after parcel creation
+                                    }
+                                )
+
+                                db_shipment = await db_service.create_shipment(shipment_data)
+
+                                # Log user activity
+                                await db_service.log_user_activity(
+                                    {
+                                        "action": "create_bulk_shipment",
+                                        "resource": "shipment",
+                                        "resource_id": db_shipment.id,
+                                        "method": "POST",
+                                        "endpoint": "/mcp/create_bulk_shipments",
+                                        "status_code": 200,
+                                        "response_time_ms": duration * 1000 / len(valid_shipments),
+                                        "metadata": {
+                                            "batch_id": batch_operation.batch_id,
+                                            "carrier": shipment_result.get("carrier"),
+                                            "cost": shipment_result.get("cost"),
+                                        },
+                                    }
+                                )
+
+                        except Exception as e:
+                            logger.error(
+                                f"Failed to store shipment "
+                                f"{shipment_result.get('shipment_id')}: {e}"
+                            )
+
             if ctx:
                 throughput = len(valid_shipments) / duration if duration > 0 else 0
                 await ctx.info(f"✅ Complete! {len(successful)}/{len(valid_shipments)} successful")
                 await ctx.info(f"⏱️ Total time: {duration:.1f}s")
                 await ctx.info(f"⚡ Throughput: {throughput:.2f} shipments/second")
                 await ctx.info(f"🔧 M3 Max: {MAX_WORKERS} workers, {MAX_CONCURRENT} concurrent")
+                if db_service:
+                    await ctx.info("💾 Shipment data persisted to database")
 
             return {
                 "status": "success",
                 "data": {
+                    "batch_id": batch_operation.batch_id if batch_operation else None,
                     "from_address": from_address,
                     "shipments": results,
                     "successful": successful,
@@ -418,7 +563,7 @@ def register_bulk_creation_tools(mcp, easypost_service):
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
-    @mcp.tool()
+    @mcp.tool(tags=["bulk", "purchase", "shipping", "m3-optimized"])
     async def buy_bulk_shipments(
         shipment_ids: List[str],
         customs_data: List[dict] = None,

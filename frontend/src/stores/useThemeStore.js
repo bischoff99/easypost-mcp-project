@@ -6,7 +6,7 @@ export const useThemeStore = create(
   persist(
     (set, get) => ({
       theme: 'light',
-      setTheme: theme => {
+      setTheme: (theme) => {
         set({ theme });
         // Update document class for Tailwind dark mode
         if (theme === 'dark') {
@@ -24,7 +24,7 @@ export const useThemeStore = create(
     {
       name: 'theme-storage', // Key for localStorage
       // Only persist the theme value
-      partialize: state => ({ theme: state.theme }),
+      partialize: (state) => ({ theme: state.theme }),
     }
   )
 );

@@ -61,12 +61,7 @@ export default function ShipmentFilters({ filters, onFilterChange, onClearFilter
               />
             </Badge>
           )}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClearFilters}
-            className="h-7 text-xs"
-          >
+          <Button variant="ghost" size="sm" onClick={onClearFilters} className="h-7 text-xs">
             Clear all
           </Button>
         </div>
@@ -74,4 +69,3 @@ export default function ShipmentFilters({ filters, onFilterChange, onClearFilter
     </div>
   );
 }
-

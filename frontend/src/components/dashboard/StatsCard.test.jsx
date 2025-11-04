@@ -23,13 +23,7 @@ describe('StatsCard', () => {
 
   it('shows trending up icon when trend is up', () => {
     const { container } = render(
-      <StatsCard
-        title="Test"
-        value="100"
-        change="+10%"
-        trend="up"
-        icon={Package}
-      />
+      <StatsCard title="Test" value="100" change="+10%" trend="up" icon={Package} />
     );
 
     // Check for green color class (trending up)
@@ -39,13 +33,7 @@ describe('StatsCard', () => {
 
   it('shows trending down icon when trend is down', () => {
     const { container } = render(
-      <StatsCard
-        title="Test"
-        value="100"
-        change="-5%"
-        trend="down"
-        icon={Package}
-      />
+      <StatsCard title="Test" value="100" change="-5%" trend="down" icon={Package} />
     );
 
     // Check for red color class (trending down)

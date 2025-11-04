@@ -12,13 +12,11 @@ from src.services.easypost_service import AddressModel, ParcelModel
 logger = logging.getLogger(__name__)
 
 
-def register_rate_tools(mcp, easypost_service):
+def register_rate_tools(mcp, easypost_service=None):
     """Register rate-related tools with MCP server."""
 
-    @mcp.tool()
-    async def get_rates(
-        to_address: dict, from_address: dict, parcel: dict, ctx: Context = None
-    ) -> dict:
+    @mcp.tool(tags=["rates", "shipping", "core"])
+    async def get_rates(to_address: dict, from_address: dict, parcel: dict, ctx: Context) -> dict:
         """
         Get available shipping rates from multiple carriers.
 
@@ -31,17 +29,19 @@ def register_rate_tools(mcp, easypost_service):
             Standardized response with available rates
         """
         try:
+            # Get service from context lifespan
+            service = ctx.request_context.lifespan_context.easypost_service
+
             # Validate inputs
             to_addr = AddressModel(**to_address)
             from_addr = AddressModel(**from_address)
             parcel_obj = ParcelModel(**parcel)
 
-            if ctx:
-                await ctx.info("Calculating rates...")
+            await ctx.info("Calculating rates...")
 
             # Add timeout to prevent SSE timeout errors
             result = await asyncio.wait_for(
-                easypost_service.get_rates(to_addr.dict(), from_addr.dict(), parcel_obj.dict()),
+                service.get_rates(to_addr.dict(), from_addr.dict(), parcel_obj.dict()),
                 timeout=20.0,
             )
 

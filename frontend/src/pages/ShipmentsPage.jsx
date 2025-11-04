@@ -38,7 +38,9 @@ export default function ShipmentsPage() {
           setShipments(transformedShipments);
         } else {
           // Fallback to mock data if API fails
-          toast.info('Using Demo Data', { description: 'Showing sample shipments for demonstration' });
+          toast.info('Using Demo Data', {
+            description: 'Showing sample shipments for demonstration',
+          });
           setShipments([
             {
               id: '1',
@@ -122,7 +124,7 @@ export default function ShipmentsPage() {
   }, []);
 
   const handleFilterChange = (key, value) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+    setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleClearFilters = () => {

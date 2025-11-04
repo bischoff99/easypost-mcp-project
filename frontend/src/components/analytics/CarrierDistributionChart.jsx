@@ -1,4 +1,14 @@
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell } from 'recharts';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+  Cell,
+} from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 
 const data = [
@@ -8,7 +18,12 @@ const data = [
   { carrier: 'DHL', shipments: 156, cost: 4680 },
 ];
 
-const COLORS = ['hsl(var(--primary))', 'hsl(var(--secondary))', 'hsl(var(--accent))', 'hsl(var(--muted))'];
+const COLORS = [
+  'hsl(var(--primary))',
+  'hsl(var(--secondary))',
+  'hsl(var(--accent))',
+  'hsl(var(--muted))',
+];
 
 export default function CarrierDistributionChart() {
   return (
@@ -26,10 +41,7 @@ export default function CarrierDistributionChart() {
               className="text-xs"
               tick={{ fill: 'hsl(var(--muted-foreground))' }}
             />
-            <YAxis
-              className="text-xs"
-              tick={{ fill: 'hsl(var(--muted-foreground))' }}
-            />
+            <YAxis className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
             <Tooltip
               contentStyle={{
                 backgroundColor: 'hsl(var(--card))',
@@ -49,5 +61,3 @@ export default function CarrierDistributionChart() {
     </Card>
   );
 }
-
-

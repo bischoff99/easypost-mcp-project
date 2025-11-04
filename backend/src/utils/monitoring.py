@@ -90,27 +90,12 @@ class MetricsCollector:
 
     def __init__(self):
         self.start_time = time.time()
-        self.request_count = 0
         self.error_count = 0
-        self.shipment_count = 0
-        self.tracking_count = 0
         self.api_calls = {}  # Track calls per endpoint
-
-    def record_request(self):
-        """Record an API request."""
-        self.request_count += 1
 
     def record_error(self):
         """Record an error."""
         self.error_count += 1
-
-    def record_shipment(self):
-        """Record a shipment creation."""
-        self.shipment_count += 1
-
-    def record_tracking(self):
-        """Record a tracking lookup."""
-        self.tracking_count += 1
 
     def track_api_call(self, endpoint: str, success: bool):
         """
@@ -132,13 +117,13 @@ class MetricsCollector:
     def get_metrics(self) -> Dict[str, Any]:
         """Get current metrics."""
         uptime_seconds = int(time.time() - self.start_time)
+        total_calls = sum(stats["success"] + stats["failure"] for stats in self.api_calls.values())
         return {
             "uptime_seconds": uptime_seconds,
-            "request_count": self.request_count,
+            "total_calls": total_calls,
             "error_count": self.error_count,
-            "shipment_count": self.shipment_count,
-            "tracking_count": self.tracking_count,
-            "error_rate": round(self.error_count / max(self.request_count, 1), 4),
+            "error_rate": round(self.error_count / max(total_calls, 1), 4),
+            "api_calls": self.api_calls,
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 

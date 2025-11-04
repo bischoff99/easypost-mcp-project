@@ -1,71 +1,123 @@
 {
-  // Python settings
-  "python.defaultInterpreterPath": "${workspaceFolder}/backend/venv/bin/python",
-  "python.testing.pytestPath": "${workspaceFolder}/backend/venv/bin/pytest",
-  "python.testing.unittestEnabled": false,
-  "python.testing.pytestEnabled": true,
-  "python.linting.enabled": true,
-  "python.linting.ruffEnabled": true,
-  "python.formatting.provider": "none",
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/coverage": true,
+    "**/.git": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/temp_docs": true,
+    "**/shipping_labels": true,
+    "**/*.log": true,
+    "**/.DS_Store": true,
+    "**/__pycache__": true,
+    "**/*.pyc": true,
+    "**/venv": true,
+    "**/.pytest_cache": true,
+    "**/htmlcov": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/coverage": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/temp_docs": true,
+    "**/shipping_labels": true,
+    "**/*.log": true,
+    "**/package-lock.json": true,
+    "**/.git": true,
+    "**/__pycache__": true,
+    "**/venv": true,
+    "**/.pytest_cache": true,
+    "**/htmlcov": true
+  },
+  "files.associations": {
+    "*.mcp": "json"
+  },
+  "files.autoSave": "onFocusChange",
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/coverage/**": true,
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/venv/**": true,
+    "**/__pycache__/**": true
+  },
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "explicit"
+  },
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.rulers": [80, 120],
+  "editor.quickSuggestions": {
+    "other": true,
+    "comments": false,
+    "strings": false
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[jsx]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.wordWrap": "on"
+  },
   "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter",
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
       "source.organizeImports": "explicit"
-    },
-    "editor.defaultFormatter": "charliermarsh.ruff"
-  },
-
-  // JavaScript/TypeScript settings
-  "[javascript]": {
-    "editor.formatOnSave": true,
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
-  "[javascriptreact]": {
-    "editor.formatOnSave": true,
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
-  "[json]": {
-    "editor.formatOnSave": true,
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
-
-  // Editor settings
-  "editor.tabSize": 2,
-  "editor.insertSpaces": true,
-  "editor.rulers": [80, 100, 120],
-  "files.trimTrailingWhitespace": true,
-  "files.insertFinalNewline": true,
-  "files.eol": "\n",
-
-  // File exclusions
-  "files.exclude": {
-    "**/__pycache__": true,
-    "**/.pytest_cache": true,
-    "**/.DS_Store": true,
-    "**/node_modules": true,
-    "**/dist": true,
-    "**/.venv": true,
-    "**/venv": true
-  },
-
-  // Terminal environment
-  "terminal.integrated.env.osx": {
-    "PYTHONPATH": "${workspaceFolder}/backend",
-    "ENVIRONMENT": "development"
-  },
-
-  // Environment indicator in status bar
-  "workbench.colorCustomizations": {
-    "[Default Dark+]": {
-      "statusBar.background": "#007ACC",
-      "statusBar.foreground": "#ffffff"
     }
   },
-
-  // File associations
-  "files.associations": {
-    "*.code-workspace": "jsonc",
-    ".cursorrules": "markdown",
-    ".env*": "properties"
-  }
+  "python.linting.enabled": true,
+  "python.linting.pylintEnabled": false,
+  "python.linting.flake8Enabled": true,
+  "python.testing.pytestEnabled": true,
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestArgs": [
+    "tests"
+  ],
+  "javascript.validate.enable": true,
+  "javascript.updateImportsOnFileMove.enabled": "always",
+  "javascript.suggest.autoImports": true,
+  "javascript.suggest.paths": true,
+  "eslint.workingDirectories": ["./frontend"],
+  "git.autofetch": true,
+  "git.confirmSync": false,
+  "git.enableSmartCommit": true,
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.expand": false,
+  "explorer.fileNesting.patterns": {
+    "package.json": "package-lock.json, .npmrc, .nvmrc",
+    "*.js": "$(capture).test.js, $(capture).spec.js, $(capture).config.js",
+    "*.jsx": "$(capture).test.jsx, $(capture).spec.jsx",
+    "*.py": "$(capture)_test.py, test_$(capture).py",
+    "*.md": "$(capture).*.md",
+    ".env": ".env.*, .env.example",
+    ".gitignore": ".gitattributes, .gitmodules, .editorconfig, .prettierignore",
+    "README.md": "CHANGELOG.md, CONTRIBUTING.md, LICENSE, CODE_OF_CONDUCT.md",
+    "pyproject.toml": "requirements.txt, setup.py, setup.cfg, pytest.ini",
+    "eslint.config.js": ".eslintignore, .prettierrc.json"
+  },
+  "terminal.integrated.defaultProfile.osx": "zsh",
+  "terminal.integrated.fontSize": 12,
+  "diffEditor.ignoreTrimWhitespace": false,
+  "diffEditor.renderSideBySide": true,
+  "workbench.tree.indent": 20,
+  "workbench.tree.renderIndentGuides": "always"
 }
