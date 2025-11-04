@@ -43,8 +43,10 @@ async def app_lifespan(server) -> AsyncIterator[AppResources]:
     db_pool = None
     if hasattr(settings, "DATABASE_URL") and settings.DATABASE_URL:
         try:
+            # Convert SQLAlchemy-style URL to asyncpg format
+            db_url = settings.DATABASE_URL.replace("postgresql+asyncpg://", "postgresql://")
             db_pool = await asyncpg.create_pool(
-                settings.DATABASE_URL,
+                db_url,
                 min_size=10,
                 max_size=32,  # M3 Max optimized - 2x CPU cores
                 command_timeout=60,
@@ -56,14 +58,13 @@ async def app_lifespan(server) -> AsyncIterator[AppResources]:
     # Initialize rate limiter (16 concurrent EasyPost API calls)
     rate_limiter = asyncio.Semaphore(16)
 
-    resources = AppResources(
-        easypost_service=easypost_service,
-        db_pool=db_pool,
-        rate_limiter=rate_limiter,
-    )
-
     try:
-        yield resources
+        # Yield as dict for FastAPI compatibility
+        yield {
+            "easypost_service": easypost_service,
+            "db_pool": db_pool,
+            "rate_limiter": rate_limiter,
+        }
     finally:
         # Cleanup
         logger.info("Shutting down EasyPost MCP Server...")

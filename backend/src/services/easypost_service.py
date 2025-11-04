@@ -519,7 +519,7 @@ class EasyPostService:
 
             # Transform shipments to our format
             shipments = []
-            for shipment in shipments_response:
+            for shipment in shipments_response.shipments:
                 shipment_data = {
                     "id": shipment.id,
                     "tracking_number": getattr(shipment, "tracking_code", None) or "",

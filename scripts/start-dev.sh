@@ -7,7 +7,7 @@ echo ""
 # Terminal 1: Backend
 echo "Starting Backend Server (Terminal 1)..."
 osascript -e 'tell application "Terminal"
-    do script "cd /Users/andrejs/easypost-mcp-project/backend && source venv/bin/activate && echo \"🐍 Backend Server Starting...\" && python src/server.py"
+    do script "cd /Users/andrejs/easypost-mcp-project/backend && source venv/bin/activate && echo \"🐍 Backend Server Starting...\" && uvicorn src.server:app --reload --log-level warning"
 end tell'
 
 sleep 2
