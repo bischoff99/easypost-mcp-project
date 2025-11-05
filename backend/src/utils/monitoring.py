@@ -3,8 +3,8 @@
 import asyncio
 import logging
 import time
-from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 import psutil
 
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class HealthCheck:
     """Health check utilities for monitoring application status."""
 
-    async def check(self, easypost_service, db_pool=None) -> Dict[str, Any]:
+    async def check(self, easypost_service, db_pool=None) -> dict[str, Any]:
         """
         Comprehensive health check combining EasyPost, database, and system checks.
 
@@ -47,18 +47,18 @@ class HealthCheck:
                 "system": system_health,
                 "easypost": easypost_health,
                 "database": database_health,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
         except Exception as e:
             logger.error(f"Health check failed: {str(e)}")
             return {
                 "status": "unhealthy",
                 "error": str(e),
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
     @staticmethod
-    async def check_database(db_pool: Optional[Any]) -> Dict[str, Any]:
+    async def check_database(db_pool: Any | None) -> dict[str, Any]:
         """
         Check database connectivity and connection pool health.
 
@@ -123,7 +123,7 @@ class HealthCheck:
         }
 
     @staticmethod
-    async def check_easypost(api_key: str) -> Dict[str, Any]:
+    async def check_easypost(api_key: str) -> dict[str, Any]:
         """Check EasyPost API connectivity."""
         try:
             import easypost
@@ -137,7 +137,7 @@ class HealthCheck:
             return {"status": "unhealthy", "error": str(e)}
 
     @staticmethod
-    def check_system() -> Dict[str, Any]:
+    def check_system() -> dict[str, Any]:
         """Check system resources."""
         try:
             cpu_percent = psutil.cpu_percent(interval=0.1)
@@ -186,7 +186,7 @@ class MetricsCollector:
             self.api_calls[endpoint]["failure"] += 1
             self.record_error()
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get current metrics."""
         uptime_seconds = int(time.time() - self.start_time)
         total_calls = sum(stats["success"] + stats["failure"] for stats in self.api_calls.values())
@@ -196,7 +196,7 @@ class MetricsCollector:
             "error_count": self.error_count,
             "error_rate": round(self.error_count / max(total_calls, 1), 4),
             "api_calls": self.api_calls,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
 

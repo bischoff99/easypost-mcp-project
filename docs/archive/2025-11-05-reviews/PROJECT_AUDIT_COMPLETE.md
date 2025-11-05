@@ -389,4 +389,3 @@ All 6 phases executed successfully. Project is clean, organized, well-documented
 **Pre-commit:** `pre-commit install`
 
 Run `make help` for all available commands.
-

@@ -427,6 +427,163 @@
       ],
       "dependsOrder": "sequence",
       "problemMatcher": []
+    },
+    {
+      "label": "🔒 Security: Scan Backend",
+      "type": "shell",
+      "command": "${command:python.interpreterPath}",
+      "args": ["-m", "bandit", "-r", "src/", "-f", "screen"],
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "🔍 Security: Audit Frontend Dependencies",
+      "type": "shell",
+      "command": "npm",
+      "args": ["audit", "--production"],
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "🔬 TypeCheck: Backend",
+      "type": "shell",
+      "command": "${command:python.interpreterPath}",
+      "args": ["-m", "mypy", "src/", "--config-file", "pyproject.toml"],
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "problemMatcher": {
+        "owner": "mypy",
+        "source": "mypy",
+        "pattern": {
+          "regexp": "^(.+?):(\\d+):(\\d+): (error|warning|note): (.+)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "message": 5
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "🗄️ Database: Create Migration",
+      "type": "shell",
+      "command": "${command:python.interpreterPath}",
+      "args": ["-m", "alembic", "revision", "--autogenerate", "-m", "${input:migrationMessage}"],
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "🗄️ Database: Migrate",
+      "type": "shell",
+      "command": "${command:python.interpreterPath}",
+      "args": ["-m", "alembic", "upgrade", "head"],
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "🗄️ Database: Rollback",
+      "type": "shell",
+      "command": "${command:python.interpreterPath}",
+      "args": ["-m", "alembic", "downgrade", "-1"],
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "✅ Pre-Commit: Run All Checks",
+      "dependsOn": [
+        "✨ Format: Backend",
+        "✨ Format: Frontend",
+        "🎨 Lint: Backend",
+        "🎨 Lint: Frontend",
+        "🔬 TypeCheck: Backend",
+        "🧪 Test: Backend"
+      ],
+      "dependsOrder": "sequence",
+      "problemMatcher": []
+    },
+    {
+      "label": "📊 Coverage: Backend",
+      "type": "shell",
+      "command": "${command:python.interpreterPath}",
+      "args": [
+        "-m", "pytest",
+        "tests/",
+        "--cov=src",
+        "--cov-report=html",
+        "--cov-report=term-missing",
+        "--cov-fail-under=80"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "problemMatcher": "$python",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "📊 Coverage: Frontend",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "test:coverage"],
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "⚡ Profile: Backend Performance",
+      "type": "shell",
+      "command": "${command:python.interpreterPath}",
+      "args": ["-m", "pytest", "tests/integration/test_bulk_performance.py", "-v", "--durations=10"],
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
     }
   ],
   "inputs": [
@@ -452,6 +609,12 @@
         "production"
       ],
       "default": "development"
+    },
+    {
+      "id": "migrationMessage",
+      "type": "promptString",
+      "description": "Migration message",
+      "default": "auto migration"
     }
   ]
 }

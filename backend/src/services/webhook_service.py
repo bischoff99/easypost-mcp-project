@@ -5,10 +5,11 @@ Handles real-time updates from EasyPost for shipment tracking,
 status changes, and other events.
 """
 
+import base64
 import hashlib
 import hmac
 import logging
-from typing import Any, Dict
+from typing import Any
 
 from ..database import async_session
 from .database_service import DatabaseService
@@ -41,19 +42,22 @@ class WebhookService:
             True if signature is valid, False otherwise
         """
         try:
-            # Compute HMAC-SHA256
+            # Compute HMAC-SHA256 and encode using Base64 (EasyPost header format)
             expected_signature = hmac.new(
-                self.webhook_secret.encode("utf-8"), request_body, hashlib.sha256
-            ).hexdigest()
+                self.webhook_secret.encode("utf-8"),
+                request_body,
+                hashlib.sha256,
+            ).digest()
+            encoded_signature = base64.b64encode(expected_signature).decode("utf-8")
 
             # Compare signatures (constant time comparison)
-            return hmac.compare_digest(expected_signature, signature)
+            return hmac.compare_digest(encoded_signature, signature)
 
         except Exception as e:
             logger.error(f"Signature verification error: {e}")
             return False
 
-    async def process_webhook(self, event_type: str, event_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def process_webhook(self, event_type: str, event_data: dict[str, Any]) -> dict[str, Any]:
         """
         Process webhook event from EasyPost.
 
@@ -70,19 +74,18 @@ class WebhookService:
             # Route to appropriate handler
             if event_type == "tracker.updated":
                 return await self._handle_tracker_update(event_data)
-            elif event_type == "shipment.purchased":
+            if event_type == "shipment.purchased":
                 return await self._handle_shipment_purchased(event_data)
-            elif event_type == "batch.updated":
+            if event_type == "batch.updated":
                 return await self._handle_batch_update(event_data)
-            else:
-                logger.warning(f"Unhandled webhook event type: {event_type}")
-                return {"status": "ignored", "message": f"Event type {event_type} not handled"}
+            logger.warning(f"Unhandled webhook event type: {event_type}")
+            return {"status": "ignored", "message": f"Event type {event_type} not handled"}
 
         except Exception as e:
             logger.error(f"Webhook processing error: {e}")
             return {"status": "error", "message": str(e)}
 
-    async def _handle_tracker_update(self, event_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def _handle_tracker_update(self, event_data: dict[str, Any]) -> dict[str, Any]:
         """
         Handle tracker.updated event.
 
@@ -99,7 +102,7 @@ class WebhookService:
             latest_event = tracking_details[0] if tracking_details else {}
 
             logger.info(
-                f"Tracker update: {tracking_code} -> {status_value} " f"(shipment: {shipment_id})"
+                f"Tracker update: {tracking_code} -> {status_value} (shipment: {shipment_id})"
             )
 
             # Sync tracking event to PostgreSQL (non-blocking)
@@ -115,7 +118,7 @@ class WebhookService:
             logger.error(f"Error handling tracker update: {e}")
             return {"status": "error", "message": str(e)}
 
-    async def _handle_shipment_purchased(self, event_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def _handle_shipment_purchased(self, event_data: dict[str, Any]) -> dict[str, Any]:
         """
         Handle shipment.purchased event.
 
@@ -141,7 +144,7 @@ class WebhookService:
             logger.error(f"Error handling shipment purchased: {e}")
             return {"status": "error", "message": str(e)}
 
-    async def _handle_batch_update(self, event_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def _handle_batch_update(self, event_data: dict[str, Any]) -> dict[str, Any]:
         """
         Handle batch.updated event.
 

@@ -4,7 +4,6 @@ Database models for analytics and metrics tracking.
 
 import uuid
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy import (
     JSON,
@@ -322,7 +321,7 @@ class BatchOperation(Base):
 
 
 # Pydantic models for API responses
-from typing import Any, Dict, List
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -342,18 +341,19 @@ class CarrierMetrics(BaseModel):
     """Carrier metrics for analytics."""
 
     carrier: str
-    shipments: int
+    shipment_count: int
     total_cost: float
-    avg_cost: float
-    success_rate: float
+    average_cost: float
+    percentage_of_total: float
+    success_rate: float | None = None
 
 
 class VolumeMetrics(BaseModel):
     """Volume metrics by date."""
 
     date: str
-    shipments: int
-    cost: float
+    shipment_count: int
+    total_cost: float
 
 
 class RouteMetrics(BaseModel):
@@ -368,16 +368,16 @@ class RouteMetrics(BaseModel):
 class AnalyticsData(BaseModel):
     """Analytics data structure for API responses."""
 
-    summary: Dict[str, Any]
-    by_carrier: List[Dict[str, Any]]
-    by_date: List[Dict[str, Any]]
-    top_routes: List[Dict[str, Any]]
+    summary: dict[str, Any]
+    by_carrier: list[dict[str, Any]]
+    by_date: list[dict[str, Any]]
+    top_routes: list[dict[str, Any]]
 
 
 class AnalyticsResponse(BaseModel):
     """Analytics API response."""
 
     status: str
-    data: Optional[Dict[str, Any]] = None
-    message: Optional[str] = None
+    data: dict[str, Any] | None = None
+    message: str | None = None
     timestamp: datetime

@@ -3,7 +3,7 @@
 import asyncio
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 logger = logging.getLogger(__name__)
 
@@ -24,13 +24,13 @@ def register_shipment_resources(mcp, easypost_service):
                 timeout=15.0,
             )
             return json.dumps(result, indent=2)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.error("Recent shipments resource timed out after 15 seconds")
             return json.dumps(
                 {
                     "status": "error",
                     "message": "Request timed out. Please try again.",
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 },
                 indent=2,
             )
@@ -40,7 +40,7 @@ def register_shipment_resources(mcp, easypost_service):
                 {
                     "status": "error",
                     "message": "Failed to retrieve recent shipments",
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 },
                 indent=2,
             )

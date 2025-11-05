@@ -2,12 +2,11 @@
 
 import logging
 import re
-from typing import Dict, Optional
 
 logger = logging.getLogger(__name__)
 
 
-def parse_human_readable_shipment(text: str) -> Optional[Dict]:
+def parse_human_readable_shipment(text: str) -> dict | None:
     """
     Parse human-readable shipment data into standard format.
 
@@ -71,7 +70,7 @@ def parse_human_readable_shipment(text: str) -> Optional[Dict]:
             if weight_match:
                 lbs = float(weight_match.group(1))
                 oz = float(weight_match.group(2)) if weight_match.group(2) else 0
-                weight = f"{lbs + oz/16} lbs"
+                weight = f"{lbs + oz / 16} lbs"
 
     # Parse address lines (first non-metadata lines)
     address_lines = []
@@ -101,7 +100,9 @@ def parse_human_readable_shipment(text: str) -> Optional[Dict]:
         country_line = (
             address_lines[4]
             if has_company and len(address_lines) > 4
-            else address_lines[3] if len(address_lines) > 3 else "US"
+            else address_lines[3]
+            if len(address_lines) > 3
+            else "US"
         )
         if country_line.lower() in ["usa", "united states", "us"]:
             result["country"] = "US"
@@ -157,11 +158,10 @@ def register_flexible_parser(mcp):
                     "data": parsed,
                     "message": "Parsed successfully - ready for get_rates or create_shipment",
                 }
-            else:
-                return {
-                    "status": "error",
-                    "message": "Could not parse shipment data. Please check format.",
-                }
+            return {
+                "status": "error",
+                "message": "Could not parse shipment data. Please check format.",
+            }
 
         except Exception as e:
             logger.error(f"Parse error: {str(e)}")

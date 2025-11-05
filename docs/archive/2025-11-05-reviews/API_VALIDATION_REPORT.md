@@ -428,4 +428,3 @@ POST /api/shipments/tracking - Track shipment
 **Report Generated**: November 5, 2025
 **Tool**: EasyPost MCP Validation Suite
 **Status**: ✅ PASSED (Production Ready)
-

@@ -13,6 +13,7 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: './src/tests/setup.js',
+
     // M3 Max parallel testing optimization
     pool: 'threads',
     poolOptions: {
@@ -21,6 +22,29 @@ export default defineConfig({
         minThreads: 8,
       },
     },
-    isolate: false, // Faster, shared context
+    isolate: true, // Prevent test pollution
+
+    // Coverage configuration
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html', 'lcov'],
+      exclude: [
+        'node_modules/',
+        'src/tests/',
+        '**/*.spec.{js,jsx}',
+        '**/*.test.{js,jsx}',
+        '**/dist/**',
+      ],
+      lines: 70,
+      functions: 70,
+      branches: 70,
+      statements: 70,
+    },
+
+    // Better test output
+    reporters: ['verbose', 'html'],
+    outputFile: {
+      html: './coverage/index.html',
+    },
   },
 });

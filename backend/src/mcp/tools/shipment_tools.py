@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastmcp import Context
 from pydantic import ValidationError
@@ -182,15 +182,15 @@ def register_shipment_tools(mcp, easypost_service=None):
                     if result.get("status") == "success"
                     else result.get("message", "Unknown error")
                 ),
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.error("Shipment creation timed out after 30 seconds")
             return {
                 "status": "error",
                 "data": None,
                 "message": "Shipment creation timed out. Please try again.",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
         except ValidationError as e:
             logger.error(f"Validation error: {str(e)}")
@@ -198,7 +198,7 @@ def register_shipment_tools(mcp, easypost_service=None):
                 "status": "error",
                 "data": None,
                 "message": f"Validation error: {str(e)}",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
         except Exception as e:
             logger.error(f"Tool error: {str(e)}", exc_info=True)
@@ -206,5 +206,5 @@ def register_shipment_tools(mcp, easypost_service=None):
                 "status": "error",
                 "data": None,
                 "message": f"Error: {str(e)}",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }

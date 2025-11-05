@@ -1,9 +1,10 @@
 """Analytics and statistics endpoints."""
 
 import asyncio
+import contextlib
 import logging
 from collections import defaultdict
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, HTTPException, Request
 from slowapi import Limiter
@@ -32,7 +33,10 @@ router = APIRouter(tags=["analytics"])  # Prefix added when including in app
 @router.get("/analytics", response_model=AnalyticsResponse)
 @limiter.limit("20/minute")
 async def get_analytics(
-    request: Request, service: EasyPostDep, days: int = 30, include_test: bool = False
+    request: Request,
+    service: EasyPostDep,
+    days: int = 30,
+    include_test: bool = False,  # noqa: ARG001 - Future use
 ):
     """
     Get shipping analytics and metrics.
@@ -71,10 +75,8 @@ async def get_analytics(
                 # Extract actual cost from shipment rate
                 cost = 0.0
                 if "rate" in shipment and shipment["rate"]:
-                    try:
+                    with contextlib.suppress(ValueError, TypeError):
                         cost = float(shipment["rate"])
-                    except (ValueError, TypeError):
-                        pass
                 carrier = shipment.get("carrier", "Unknown")
                 stats[carrier]["count"] += 1
                 stats[carrier]["cost"] += cost
@@ -90,11 +92,9 @@ async def get_analytics(
                 # Extract actual cost from shipment rate
                 cost = 0.0
                 if "rate" in shipment and shipment["rate"]:
-                    try:
+                    with contextlib.suppress(ValueError, TypeError):
                         cost = float(shipment["rate"])
-                    except (ValueError, TypeError):
-                        pass
-                created_at = shipment.get("created_at", datetime.now(timezone.utc))
+                created_at = shipment.get("created_at", datetime.now(UTC))
                 if isinstance(created_at, str):
                     created_at = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
                 date_key = created_at.strftime("%Y-%m-%d")
@@ -109,10 +109,8 @@ async def get_analytics(
                 # Extract actual cost from shipment rate
                 cost = 0.0
                 if "rate" in shipment and shipment["rate"]:
-                    try:
+                    with contextlib.suppress(ValueError, TypeError):
                         cost = float(shipment["rate"])
-                    except (ValueError, TypeError):
-                        pass
                 from_city = shipment.get("from_address", {}).get("city", "Unknown")
                 to_city = shipment.get("to_address", {}).get("city", "Unknown")
                 route_key = f"{from_city} → {to_city}"
@@ -120,38 +118,44 @@ async def get_analytics(
                 stats[route_key]["cost"] += cost
             return stats
 
-        # Split shipments into chunks for parallel processing (16 chunks for 16 cores)
-        chunk_size = max(1, len(shipments) // 16)
-        chunks = [shipments[i : i + chunk_size] for i in range(0, len(shipments), chunk_size)]
+        # Split shipments into chunks for parallel processing (up to 16 chunks)
+        if shipments:
+            max_chunks = min(16, len(shipments))
+            chunk_size = max(1, (len(shipments) + max_chunks - 1) // max_chunks)
+            chunks = [shipments[i : i + chunk_size] for i in range(0, len(shipments), chunk_size)]
+        else:
+            chunks = []
 
         # Process all chunks in parallel (carrier, date, route stats simultaneously)
         carrier_tasks = [calculate_carrier_stats(chunk) for chunk in chunks]
         date_tasks = [calculate_date_stats(chunk) for chunk in chunks]
         route_tasks = [calculate_route_stats(chunk) for chunk in chunks]
 
-        # Execute all 48 tasks in parallel (16 chunks × 3 stat types)
+        # Execute all tasks in parallel
         all_results = await asyncio.gather(*carrier_tasks, *date_tasks, *route_tasks)
+        chunk_count = len(chunks)
 
         # Aggregate results from chunks
         carrier_stats = defaultdict(lambda: {"count": 0, "cost": 0.0, "delivered": 0})
         date_stats = defaultdict(lambda: {"count": 0, "cost": 0.0})
         route_stats = defaultdict(lambda: {"count": 0, "cost": 0.0})
 
-        # Merge carrier stats (first 16 results)
-        for chunk_result in all_results[:16]:
+        carrier_results = all_results[:chunk_count]
+        date_results = all_results[chunk_count : chunk_count * 2]
+        route_results = all_results[chunk_count * 2 :]
+
+        for chunk_result in carrier_results:
             for carrier, stats in chunk_result.items():
                 carrier_stats[carrier]["count"] += stats["count"]
                 carrier_stats[carrier]["cost"] += stats["cost"]
                 carrier_stats[carrier]["delivered"] += stats.get("delivered", 0)
 
-        # Merge date stats (next 16 results)
-        for chunk_result in all_results[16:32]:
+        for chunk_result in date_results:
             for date_key, stats in chunk_result.items():
                 date_stats[date_key]["count"] += stats["count"]
                 date_stats[date_key]["cost"] += stats["cost"]
 
-        # Merge route stats (last 16 results)
-        for chunk_result in all_results[32:48]:
+        for chunk_result in route_results:
             for route_key, stats in chunk_result.items():
                 route_stats[route_key]["count"] += stats["count"]
                 route_stats[route_key]["cost"] += stats["cost"]
@@ -168,57 +172,61 @@ async def get_analytics(
             total_cost=round(total_cost, 2),
             average_cost=round(avg_cost, 2),
             date_range={
-                "start": (datetime.now(timezone.utc) - timedelta(days=days)).isoformat(),
-                "end": datetime.now(timezone.utc).isoformat(),
+                "start": (datetime.now(UTC) - timedelta(days=days)).isoformat(),
+                "end": datetime.now(UTC).isoformat(),
             },
         )
 
         # Carrier metrics
-        by_carrier = [
-            CarrierMetrics(
-                carrier=carrier,
-                shipments=stats["count"],
-                total_cost=round(stats["cost"], 2),
-                avg_cost=round(
-                    stats["cost"] / stats["count"] if stats["count"] > 0 else 0.0,
-                    2,
-                ),
-                success_rate=round(
-                    (
-                        (stats.get("delivered", 0) / stats["count"] * 100)
-                        if stats["count"] > 0
-                        else 0.0
-                    ),
-                    1,
-                ),
+        by_carrier = []
+        for carrier, stats in sorted(
+            carrier_stats.items(), key=lambda x: x[1]["count"], reverse=True
+        ):
+            shipment_count = stats["count"]
+            total_cost_for_carrier = stats["cost"]
+            delivered = stats.get("delivered", 0)
+            avg_cost = total_cost_for_carrier / shipment_count if shipment_count > 0 else 0.0
+            percentage_of_total = (
+                (shipment_count / total_shipments) * 100 if total_shipments > 0 else 0.0
             )
-            for carrier, stats in sorted(
-                carrier_stats.items(), key=lambda x: x[1]["count"], reverse=True
+            success_rate = (delivered / shipment_count) * 100 if shipment_count > 0 else 0.0
+
+            by_carrier.append(
+                CarrierMetrics(
+                    carrier=carrier,
+                    shipment_count=shipment_count,
+                    total_cost=round(total_cost_for_carrier, 2),
+                    average_cost=round(avg_cost, 2),
+                    percentage_of_total=round(percentage_of_total, 1),
+                    success_rate=round(success_rate, 1),
+                )
             )
-        ]
 
         # Volume by date
-        by_date = [
-            VolumeMetrics(
-                date=date,
-                shipments=stats["count"],
-                cost=round(stats["cost"], 2),
+        by_date = []
+        for date, stats in sorted(date_stats.items()):
+            by_date.append(
+                VolumeMetrics(
+                    date=date,
+                    shipment_count=stats["count"],
+                    total_cost=round(stats["cost"], 2),
+                )
             )
-            for date, stats in sorted(date_stats.items())
-        ]
 
         # Top routes
-        top_routes = [
-            RouteMetrics(
-                origin=route.split(" → ")[0],
-                destination=route.split(" → ")[1],
-                shipment_count=stats["count"],
-                total_cost=round(stats["cost"], 2),
+        top_routes = []
+        for route, stats in sorted(route_stats.items(), key=lambda x: x[1]["count"], reverse=True)[
+            :10
+        ]:
+            origin, _, destination = route.partition(" → ")
+            top_routes.append(
+                RouteMetrics(
+                    origin=origin,
+                    destination=destination,
+                    shipment_count=stats["count"],
+                    total_cost=round(stats["cost"], 2),
+                )
             )
-            for route, stats in sorted(
-                route_stats.items(), key=lambda x: x[1]["count"], reverse=True
-            )[:10]
-        ]
 
         analytics_data = AnalyticsData(
             summary=summary.model_dump(),
@@ -237,7 +245,7 @@ async def get_analytics(
             status="success",
             data=analytics_data.model_dump(),
             message=f"Analytics for {total_shipments} shipments over {days} days",
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
         )
 
     except Exception as e:
@@ -250,7 +258,7 @@ async def get_analytics(
         return AnalyticsResponse(
             status="error",
             message=f"Error calculating analytics: {error_msg}",
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
         )
 
 
@@ -286,10 +294,8 @@ async def get_dashboard_stats(request: Request, service: EasyPostDep):
             # Extract cost from shipment rate
             cost = 0.0
             if "rate" in shipment and shipment["rate"]:
-                try:
+                with contextlib.suppress(ValueError, TypeError):
                     cost = float(shipment["rate"])
-                except (ValueError, TypeError):
-                    pass
             total_cost += cost
 
             # Count active deliveries (in_transit, pre_transit)
@@ -303,7 +309,7 @@ async def get_dashboard_stats(request: Request, service: EasyPostDep):
         delivery_success_rate = delivered_count / total_shipments if total_shipments > 0 else 0.0
 
         # Calculate changes (compare with last period - mock data for now)
-        # TODO: Implement actual comparison with previous period from database
+        # Future: Implement period-over-period comparison using analytics_summaries table
         shipments_change = "+12.5%"
         shipments_trend = "up"
         active_change = "-2.3%"
@@ -342,7 +348,7 @@ async def get_dashboard_stats(request: Request, service: EasyPostDep):
         return {
             "status": "success",
             "data": stats_data,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
     except Exception as e:
@@ -419,7 +425,7 @@ async def get_carrier_performance(request: Request, service: EasyPostDep):
         return {
             "status": "success",
             "data": performance_data,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
     except Exception as e:

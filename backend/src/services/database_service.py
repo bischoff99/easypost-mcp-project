@@ -4,7 +4,8 @@ Provides CRUD operations and business logic for database models.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from datetime import UTC
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import delete, func, select, update
@@ -31,7 +32,7 @@ class DatabaseService:
         self.session = session
 
     # Shipment CRUD Operations
-    async def create_shipment(self, shipment_data: Dict[str, Any]) -> Shipment:
+    async def create_shipment(self, shipment_data: dict[str, Any]) -> Shipment:
         """Create a new shipment."""
         shipment = Shipment(**shipment_data)
         self.session.add(shipment)
@@ -40,21 +41,21 @@ class DatabaseService:
         logger.info(f"Created shipment {shipment.id}")
         return shipment
 
-    async def get_shipment(self, shipment_id: UUID) -> Optional[Shipment]:
+    async def get_shipment(self, shipment_id: UUID) -> Shipment | None:
         """Get shipment by ID with related data."""
         stmt = select(Shipment).where(Shipment.id == shipment_id)
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_shipment_by_easypost_id(self, easypost_id: str) -> Optional[Shipment]:
+    async def get_shipment_by_easypost_id(self, easypost_id: str) -> Shipment | None:
         """Get shipment by EasyPost ID."""
         stmt = select(Shipment).where(Shipment.easypost_id == easypost_id)
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
     async def update_shipment(
-        self, shipment_id: UUID, update_data: Dict[str, Any]
-    ) -> Optional[Shipment]:
+        self, shipment_id: UUID, update_data: dict[str, Any]
+    ) -> Shipment | None:
         """Update shipment."""
         stmt = (
             update(Shipment)
@@ -83,9 +84,9 @@ class DatabaseService:
         self,
         limit: int = 50,
         offset: int = 0,
-        status: Optional[str] = None,
-        carrier: Optional[str] = None,
-    ) -> List[Shipment]:
+        status: str | None = None,
+        carrier: str | None = None,
+    ) -> list[Shipment]:
         """List shipments with optional filtering."""
         stmt = select(Shipment)
 
@@ -99,7 +100,7 @@ class DatabaseService:
         return list(result.scalars().all())
 
     # Address CRUD Operations
-    async def create_address(self, address_data: Dict[str, Any]) -> Address:
+    async def create_address(self, address_data: dict[str, Any]) -> Address:
         """Create a new address."""
         address = Address(**address_data)
         self.session.add(address)
@@ -108,15 +109,13 @@ class DatabaseService:
         logger.info(f"Created address {address.id}")
         return address
 
-    async def get_address(self, address_id: UUID) -> Optional[Address]:
+    async def get_address(self, address_id: UUID) -> Address | None:
         """Get address by ID."""
         stmt = select(Address).where(Address.id == address_id)
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def update_address(
-        self, address_id: UUID, update_data: Dict[str, Any]
-    ) -> Optional[Address]:
+    async def update_address(self, address_id: UUID, update_data: dict[str, Any]) -> Address | None:
         """Update address."""
         stmt = (
             update(Address).where(Address.id == address_id).values(**update_data).returning(Address)
@@ -126,7 +125,7 @@ class DatabaseService:
         return result.scalar_one_or_none()
 
     # Analytics Operations
-    async def create_analytics_summary(self, summary_data: Dict[str, Any]) -> AnalyticsSummary:
+    async def create_analytics_summary(self, summary_data: dict[str, Any]) -> AnalyticsSummary:
         """Create analytics summary."""
         summary = AnalyticsSummary(**summary_data)
         self.session.add(summary)
@@ -134,7 +133,7 @@ class DatabaseService:
         await self.session.refresh(summary)
         return summary
 
-    async def get_analytics_summary_by_date(self, date, period: str) -> Optional[AnalyticsSummary]:
+    async def get_analytics_summary_by_date(self, date, period: str) -> AnalyticsSummary | None:
         """Get analytics summary for specific date and period."""
         from datetime import date as date_type
 
@@ -150,7 +149,7 @@ class DatabaseService:
 
     async def get_carrier_performance_record(
         self, carrier: str, service: str, date: str
-    ) -> Optional[CarrierPerformance]:
+    ) -> CarrierPerformance | None:
         """Get carrier performance record for specific carrier/service/date."""
         stmt = select(CarrierPerformance).where(
             CarrierPerformance.carrier == carrier,
@@ -161,7 +160,7 @@ class DatabaseService:
         return result.scalar_one_or_none()
 
     async def create_carrier_performance(
-        self, performance_data: Dict[str, Any]
+        self, performance_data: dict[str, Any]
     ) -> CarrierPerformance:
         """Create carrier performance record."""
         performance = CarrierPerformance(**performance_data)
@@ -171,7 +170,7 @@ class DatabaseService:
         return performance
 
     # User Activity Tracking
-    async def log_user_activity(self, activity_data: Dict[str, Any]) -> UserActivity:
+    async def log_user_activity(self, activity_data: dict[str, Any]) -> UserActivity:
         """Log user activity."""
         activity = UserActivity(**activity_data)
         self.session.add(activity)
@@ -180,7 +179,7 @@ class DatabaseService:
         return activity
 
     # System Metrics
-    async def record_system_metrics(self, metrics_data: Dict[str, Any]) -> SystemMetrics:
+    async def record_system_metrics(self, metrics_data: dict[str, Any]) -> SystemMetrics:
         """Record system performance metrics."""
         metrics = SystemMetrics(**metrics_data)
         self.session.add(metrics)
@@ -189,7 +188,7 @@ class DatabaseService:
         return metrics
 
     # Batch Operations
-    async def create_batch_operation(self, batch_data: Dict[str, Any]) -> BatchOperation:
+    async def create_batch_operation(self, batch_data: dict[str, Any]) -> BatchOperation:
         """Create batch operation record."""
         batch = BatchOperation(**batch_data)
         self.session.add(batch)
@@ -199,8 +198,8 @@ class DatabaseService:
         return batch
 
     async def update_batch_operation(
-        self, batch_id: str, update_data: Dict[str, Any]
-    ) -> Optional[BatchOperation]:
+        self, batch_id: str, update_data: dict[str, Any]
+    ) -> BatchOperation | None:
         """Update batch operation."""
         stmt = (
             update(BatchOperation)
@@ -212,7 +211,7 @@ class DatabaseService:
         await self.session.commit()
         return result.scalar_one_or_none()
 
-    async def get_batch_operation(self, batch_id: str) -> Optional[BatchOperation]:
+    async def get_batch_operation(self, batch_id: str) -> BatchOperation | None:
         """Get batch operation by ID."""
         stmt = select(BatchOperation).where(BatchOperation.batch_id == batch_id)
         result = await self.session.execute(stmt)
@@ -225,13 +224,13 @@ class DatabaseService:
         result = await self.session.execute(stmt)
         return result.scalar()
 
-    async def get_shipments_by_status(self) -> Dict[str, int]:
+    async def get_shipments_by_status(self) -> dict[str, int]:
         """Get shipment count by status."""
         stmt = select(Shipment.status, func.count(Shipment.id)).group_by(Shipment.status)
         result = await self.session.execute(stmt)
         return dict(result.all())
 
-    async def get_recent_activities(self, limit: int = 10) -> List[UserActivity]:
+    async def get_recent_activities(self, limit: int = 10) -> list[UserActivity]:
         """Get recent user activities."""
         stmt = select(UserActivity).order_by(UserActivity.timestamp.desc()).limit(limit)
         result = await self.session.execute(stmt)
@@ -239,8 +238,8 @@ class DatabaseService:
 
     # API Endpoint Methods
     async def get_shipments_with_details(
-        self, limit: int = 50, offset: int = 0, filters: Optional[Dict[str, Any]] = None
-    ) -> List[Shipment]:
+        self, limit: int = 50, offset: int = 0, filters: dict[str, Any] | None = None
+    ) -> list[Shipment]:
         """Get shipments with related data for API endpoints."""
         from sqlalchemy.orm import selectinload
 
@@ -265,7 +264,7 @@ class DatabaseService:
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
-    async def get_shipments_count(self, filters: Optional[Dict[str, Any]] = None) -> int:
+    async def get_shipments_count(self, filters: dict[str, Any] | None = None) -> int:
         """Get total shipments count with filters."""
         stmt = select(func.count(Shipment.id))
 
@@ -283,7 +282,7 @@ class DatabaseService:
         result = await self.session.execute(stmt)
         return result.scalar()
 
-    async def get_shipment_with_details(self, shipment_id: UUID) -> Optional[Shipment]:
+    async def get_shipment_with_details(self, shipment_id: UUID) -> Shipment | None:
         """Get shipment with all related data."""
         from sqlalchemy.orm import selectinload
 
@@ -303,8 +302,8 @@ class DatabaseService:
         return result.scalar_one_or_none()
 
     async def get_addresses_with_stats(
-        self, limit: int = 50, offset: int = 0, filters: Optional[Dict[str, Any]] = None
-    ) -> List[Address]:
+        self, limit: int = 50, offset: int = 0, filters: dict[str, Any] | None = None
+    ) -> list[Address]:
         """Get addresses with usage statistics."""
         # Get addresses with shipment counts
         stmt = (
@@ -341,7 +340,7 @@ class DatabaseService:
 
         return addresses
 
-    async def get_addresses_count(self, filters: Optional[Dict[str, Any]] = None) -> int:
+    async def get_addresses_count(self, filters: dict[str, Any] | None = None) -> int:
         """Get total addresses count with filters."""
         stmt = select(func.count(Address.id))
 
@@ -357,11 +356,11 @@ class DatabaseService:
         result = await self.session.execute(stmt)
         return result.scalar()
 
-    async def get_analytics_summary(self, days: int = 30) -> Dict[str, Any]:
+    async def get_analytics_summary(self, days: int = 30) -> dict[str, Any]:
         """Get analytics summary for dashboard (last N days)."""
-        from datetime import datetime, timedelta, timezone
+        from datetime import datetime, timedelta
 
-        end_date = datetime.now(timezone.utc)
+        end_date = datetime.now(UTC)
         start_date = end_date - timedelta(days=days)
 
         # Get shipment statistics
@@ -381,11 +380,11 @@ class DatabaseService:
             "date_range": {"start": start_date.isoformat(), "end": end_date.isoformat()},
         }
 
-    async def get_carrier_performance(self, days: int = 30) -> List[Dict[str, Any]]:
+    async def get_carrier_performance(self, days: int = 30) -> list[dict[str, Any]]:
         """Get carrier performance metrics for dashboard (last N days)."""
-        from datetime import datetime, timedelta, timezone
+        from datetime import datetime, timedelta
 
-        start_date = datetime.now(timezone.utc) - timedelta(days=days)
+        start_date = datetime.now(UTC) - timedelta(days=days)
 
         # Get carrier performance
         stmt = (
@@ -420,11 +419,11 @@ class DatabaseService:
 
         return performance
 
-    async def get_shipment_trends(self, days: int = 30) -> List[Dict[str, Any]]:
+    async def get_shipment_trends(self, days: int = 30) -> list[dict[str, Any]]:
         """Get shipment trends over time."""
-        from datetime import datetime, timedelta, timezone
+        from datetime import datetime, timedelta
 
-        start_date = datetime.now(timezone.utc) - timedelta(days=days)
+        start_date = datetime.now(UTC) - timedelta(days=days)
 
         # Get daily shipment counts and costs
         stmt = (
@@ -446,11 +445,11 @@ class DatabaseService:
 
         return trends
 
-    async def get_top_routes(self, days: int = 30, limit: int = 10) -> List[Dict[str, Any]]:
+    async def get_top_routes(self, days: int = 30, limit: int = 10) -> list[dict[str, Any]]:
         """Get top shipping routes by volume."""
-        from datetime import datetime, timedelta, timezone
+        from datetime import datetime, timedelta
 
-        start_date = datetime.now(timezone.utc) - timedelta(days=days)
+        start_date = datetime.now(UTC) - timedelta(days=days)
 
         # Get route statistics
         stmt = (
@@ -496,8 +495,8 @@ class DatabaseService:
         return routes
 
     async def get_batch_operations(
-        self, limit: int = 20, offset: int = 0, filters: Optional[Dict[str, Any]] = None
-    ) -> List[BatchOperation]:
+        self, limit: int = 20, offset: int = 0, filters: dict[str, Any] | None = None
+    ) -> list[BatchOperation]:
         """Get batch operations with pagination."""
         stmt = select(BatchOperation)
 
@@ -509,7 +508,7 @@ class DatabaseService:
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
-    async def get_batch_operations_count(self, filters: Optional[Dict[str, Any]] = None) -> int:
+    async def get_batch_operations_count(self, filters: dict[str, Any] | None = None) -> int:
         """Get total batch operations count."""
         stmt = select(func.count(BatchOperation.id))
 
@@ -521,12 +520,12 @@ class DatabaseService:
         return result.scalar()
 
     async def get_user_activity(
-        self, limit: int = 50, offset: int = 0, action: Optional[str] = None, hours: int = 24
-    ) -> List[UserActivity]:
+        self, limit: int = 50, offset: int = 0, action: str | None = None, hours: int = 24
+    ) -> list[UserActivity]:
         """Get user activity logs."""
-        from datetime import datetime, timedelta, timezone
+        from datetime import datetime, timedelta
 
-        start_time = datetime.now(timezone.utc) - timedelta(hours=hours)
+        start_time = datetime.now(UTC) - timedelta(hours=hours)
 
         stmt = select(UserActivity).where(UserActivity.timestamp >= start_time)
 
@@ -537,11 +536,11 @@ class DatabaseService:
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
-    async def get_user_activity_count(self, action: Optional[str] = None, hours: int = 24) -> int:
+    async def get_user_activity_count(self, action: str | None = None, hours: int = 24) -> int:
         """Get user activity count."""
-        from datetime import datetime, timedelta, timezone
+        from datetime import datetime, timedelta
 
-        start_time = datetime.now(timezone.utc) - timedelta(hours=hours)
+        start_time = datetime.now(UTC) - timedelta(hours=hours)
 
         stmt = select(func.count(UserActivity.id)).where(UserActivity.timestamp >= start_time)
 
