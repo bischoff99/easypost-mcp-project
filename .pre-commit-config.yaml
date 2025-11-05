@@ -1,23 +1,51 @@
+# Pre-commit hooks for EasyPost MCP Project
+# Install: pre-commit install
+# Run manually: pre-commit run --all-files
+
 repos:
-  # Ruff - Fast Python linter and formatter
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.4
+  # Python backend
+  - repo: local
     hooks:
-      - id: ruff
-        args: [--fix, --exit-non-zero-on-fix]
+      - id: ruff-check
+        name: ruff (check)
+        entry: bash -c 'cd backend && source venv/bin/activate && ruff check src/ tests/'
+        language: system
+        types: [python]
+        pass_filenames: false
+
       - id: ruff-format
+        name: ruff (format)
+        entry: bash -c 'cd backend && source venv/bin/activate && ruff format src/ tests/'
+        language: system
+        types: [python]
+        pass_filenames: false
 
-  # Prettier - Frontend formatter (with timeout and file size limits)
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v4.0.0-alpha.8
+      - id: pytest-fast
+        name: pytest (changed files only)
+        entry: bash -c 'cd backend && source venv/bin/activate && pytest tests/ -n 16 --lf --ff -x'
+        language: system
+        types: [python]
+        pass_filenames: false
+        stages: [commit]
+
+  # JavaScript/React frontend
+  - repo: local
     hooks:
-      - id: prettier
-        files: \.(js|jsx|ts|tsx|json|css|yml|yaml)$
-        # Exclude markdown files temporarily (they were causing hangs)
-        # Also exclude large files and generated content
-        exclude: ^(package-lock\.json|node_modules|.*\.md|docs/archive/|\.cursor/commands/v2/)
+      - id: eslint
+        name: eslint (fix)
+        entry: bash -c 'cd frontend && npm run lint:fix'
+        language: system
+        types: [javascript, jsx]
+        pass_filenames: false
 
-  # General file checks
+      - id: prettier
+        name: prettier (format)
+        entry: bash -c 'cd frontend && npm run format'
+        language: system
+        types: [javascript, jsx, json, css]
+        pass_filenames: false
+
+  # General
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
@@ -25,23 +53,15 @@ repos:
       - id: end-of-file-fixer
       - id: check-yaml
       - id: check-added-large-files
-        args: [--maxkb=1000]
-      - id: check-json
+        args: ['--maxkb=1000']
       - id: check-merge-conflict
       - id: detect-private-key
-
-  # Python-specific
-  - repo: https://github.com/pycqa/isort
-    rev: 5.13.2
-    hooks:
-      - id: isort
-        args: [--profile, black]
 
 # Configuration
 default_language_version:
   python: python3.12
-  node: 18.0.0
+  node: '18.0.0'
 
-# Only run on changed files
-files: ''
-exclude: '^(\.git|node_modules|venv|\.venv|dist|build|__pycache__|\.pytest_cache)/'
+# Parallel execution (M3 Max optimized)
+default_stages: [commit]
+fail_fast: false  # Run all hooks even if one fails

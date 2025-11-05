@@ -18,8 +18,12 @@ def get_easypost_service() -> EasyPostService:
     """
     try:
         ctx = get_context()
-        return ctx.request_context.lifespan_context.easypost_service
-    except (AttributeError, RuntimeError):
+        # Access dict state from lifespan
+        lifespan_ctx = ctx.request_context.lifespan_context
+        if isinstance(lifespan_ctx, dict):
+            return lifespan_ctx["easypost_service"]
+        return lifespan_ctx.easypost_service
+    except (AttributeError, RuntimeError, KeyError):
         # Fallback for non-MCP requests or testing
         from src.utils.config import settings
 
@@ -34,8 +38,11 @@ def get_db_pool() -> asyncpg.Pool | None:
     """
     try:
         ctx = get_context()
-        return ctx.request_context.lifespan_context.db_pool
-    except (AttributeError, RuntimeError):
+        lifespan_ctx = ctx.request_context.lifespan_context
+        if isinstance(lifespan_ctx, dict):
+            return lifespan_ctx.get("db_pool")
+        return lifespan_ctx.db_pool
+    except (AttributeError, RuntimeError, KeyError):
         return None
 
 
@@ -49,8 +56,11 @@ def get_rate_limiter():
 
     try:
         ctx = get_context()
-        return ctx.request_context.lifespan_context.rate_limiter
-    except (AttributeError, RuntimeError):
+        lifespan_ctx = ctx.request_context.lifespan_context
+        if isinstance(lifespan_ctx, dict):
+            return lifespan_ctx.get("rate_limiter", asyncio.Semaphore(16))
+        return lifespan_ctx.rate_limiter
+    except (AttributeError, RuntimeError, KeyError):
         # Fallback semaphore
         return asyncio.Semaphore(16)
 

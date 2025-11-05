@@ -12,7 +12,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
-    setupFiles: './src/test/setup.js',
+    setupFiles: './src/tests/setup.js',
     // M3 Max parallel testing optimization
     pool: 'threads',
     poolOptions: {

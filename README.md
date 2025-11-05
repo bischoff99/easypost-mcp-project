@@ -32,3 +32,28 @@ npm install
 ✅ Async/await
 ✅ Input validation
 ✅ Logging
+
+## Architecture & Integration
+
+### PostgreSQL Database (Dual-Pool Strategy)
+- **SQLAlchemy ORM Pool:** 50 connections (CRUD operations)
+- **asyncpg Direct Pool:** 32 connections (bulk operations)
+- **M3 Max Optimized:** 82 total connections
+- **Production-ready:** Handles 1000+ req/s
+
+### Reverse Proxy (Optional - Production)
+- **nginx configuration:** Single URL, no CORS
+- **Performance:** 20x faster static asset delivery
+- **Setup:** `bash scripts/setup-nginx-proxy.sh`
+- **Benefits:** Edge rate limiting, browser caching
+
+### Documentation
+- **[Complete Integration Guide](docs/guides/PROXY_AND_DATABASE_INTEGRATION.md)** - Architecture, usage patterns, deployment
+- **[Quick Reference](docs/guides/QUICK_REFERENCE.md)** - Code templates, commands, troubleshooting
+- **[Architecture Diagrams](ARCHITECTURE_DIAGRAM.md)** - Visual data flow and request patterns
+- **[Proxy Benefits](docs/guides/PROXY_BENEFITS.md)** - Detailed proxy analysis
+
+### Workflows & Commands
+- **[✅ Current Workflows](.cursor/commands/WORKFLOWS-CURRENT.md)** - All working make commands & development patterns
+- **[🔴 Future Workflows](.cursor/commands/WORKFLOW-EXAMPLES.md)** - Aspirational workflow templates (24% implemented)
+- **[Makefile](Makefile)** - 25+ quick development commands (`make help` to see all)

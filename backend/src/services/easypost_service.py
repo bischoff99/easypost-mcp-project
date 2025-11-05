@@ -137,6 +137,7 @@ class EasyPostService:
         from_address: Dict[str, Any],
         parcel: Dict[str, Any],
         carrier: str = "USPS",
+        service: Optional[str] = None,
         buy_label: bool = True,
         customs_info: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
@@ -148,6 +149,7 @@ class EasyPostService:
             from_address: Origin address dict with same structure
             parcel: Package dimensions dict with length, width, height, weight
             carrier: Shipping carrier preference (default: "USPS")
+            service: Specific service (e.g., "FEDEX_GROUND", "Priority") - if None, uses lowest rate
             buy_label: Whether to purchase label immediately (default: True)
             customs_info: Optional customs info for international shipments
 
@@ -163,6 +165,7 @@ class EasyPostService:
                 from_address,
                 parcel,
                 carrier,
+                service,
                 buy_label,
                 customs_info,
             )
@@ -177,12 +180,14 @@ class EasyPostService:
         from_address: Dict[str, Any],
         parcel: Dict[str, Any],
         carrier: str,
+        service: Optional[str],
         buy_label: bool,
         customs_info: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """Synchronous shipment creation with optional label purchase."""
         try:
-            self.logger.info(f"Creating shipment with {carrier}")
+            service_info = f" / {service}" if service else ""
+            self.logger.info(f"Creating shipment with {carrier}{service_info}")
 
             # For international shipments, create customs_info if not provided
             shipment_params = {
@@ -218,15 +223,41 @@ class EasyPostService:
 
             # Optionally buy label
             if buy_label:
-                try:
-                    # Try to get lowest rate for specified carrier
-                    rate = shipment.lowest_rate([carrier])
-                except Exception:
-                    # If carrier not available, use absolute lowest rate
-                    self.logger.warning(
-                        f"No rates found for {carrier}, using lowest available rate"
-                    )
-                    rate = shipment.lowest_rate()
+                rate = None
+
+                # If specific service requested, find matching rate
+                if service:
+                    for r in shipment.rates:
+                        # Flexible carrier matching: exact or partial match
+                        # (e.g., "FedEx" matches "FedExDefault")
+                        carrier_match = (
+                            r.carrier == carrier
+                            or carrier.lower() in r.carrier.lower()
+                            or r.carrier.lower() in carrier.lower()
+                        )
+                        if carrier_match and r.service == service:
+                            rate = r
+                            self.logger.info(
+                                f"Found matching rate: {r.carrier} {service} - ${r.rate} "
+                                f"(matched carrier '{carrier}')"
+                            )
+                            break
+
+                    if not rate:
+                        self.logger.warning(
+                            f"Service {service} not available for {carrier}, using lowest rate"
+                        )
+
+                # Fall back to lowest rate if service not found or not specified
+                if not rate:
+                    try:
+                        rate = shipment.lowest_rate([carrier])
+                    except Exception:
+                        # If carrier not available, use absolute lowest rate
+                        self.logger.warning(
+                            f"No rates found for {carrier}, using lowest available rate"
+                        )
+                        rate = shipment.lowest_rate()
 
                 # Buy the label using the client service
                 bought_shipment = self.client.shipment.buy(shipment.id, rate=rate)
@@ -246,6 +277,61 @@ class EasyPostService:
             self.logger.error(f"Failed to create shipment: {error_msg}", exc_info=True)
             # Include full error details for debugging
             return {"status": "error", "message": error_msg, "error_type": type(e).__name__}
+
+    async def refund_shipment(self, shipment_id: str) -> Dict[str, Any]:
+        """
+        Refund a shipment.
+
+        Args:
+            shipment_id: The shipment ID to refund
+
+        Returns:
+            Dict with status and refund information
+        """
+        try:
+            loop = asyncio.get_running_loop()
+            result = await loop.run_in_executor(
+                self.executor, self._refund_shipment_sync, shipment_id
+            )
+            return result
+        except Exception as e:
+            self.logger.error(f"Error refunding shipment: {self._sanitize_error(e)}")
+            return {
+                "status": "error",
+                "message": "Failed to refund shipment",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+
+    def _refund_shipment_sync(self, shipment_id: str) -> Dict[str, Any]:
+        """Synchronous shipment refund."""
+        try:
+            self.logger.info(f"Refunding shipment {shipment_id}")
+            shipment = self.client.shipment.retrieve(shipment_id)
+            refund = self.client.shipment.refund(shipment.id)
+
+            return {
+                "status": "success",
+                "data": {
+                    "shipment_id": shipment.id,
+                    "tracking_code": shipment.tracking_code,
+                    "refund_status": (
+                        refund.refund_status if hasattr(refund, "refund_status") else "submitted"
+                    ),
+                    "carrier": (
+                        shipment.selected_rate.carrier if shipment.selected_rate else "unknown"
+                    ),
+                    "amount": shipment.selected_rate.rate if shipment.selected_rate else "unknown",
+                },
+                "message": "Refund request submitted successfully",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+        except Exception as e:
+            self.logger.error(f"Failed to refund shipment: {self._sanitize_error(e)}")
+            return {
+                "status": "error",
+                "message": str(e),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
 
     async def buy_shipment(self, shipment_id: str, rate_id: str) -> Dict[str, Any]:
         """

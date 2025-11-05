@@ -177,7 +177,7 @@ export default function ShipmentsPage() {
       <ShipmentForm
         isOpen={isShipmentFormOpen}
         onClose={() => setIsShipmentFormOpen(false)}
-        onSuccess={(shipment) => {
+        onSuccess={(_shipment) => {
           toast.success('Shipment created!');
           setIsShipmentFormOpen(false);
           // Refresh shipments list

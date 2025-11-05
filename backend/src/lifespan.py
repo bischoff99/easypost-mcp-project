@@ -4,7 +4,6 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import AsyncIterator
 
 import asyncpg
 
@@ -24,7 +23,7 @@ class AppResources:
 
 
 @asynccontextmanager
-async def app_lifespan(server) -> AsyncIterator[AppResources]:
+async def app_lifespan(server):
     """
     Manage application startup and shutdown lifecycle.
 
@@ -47,24 +46,36 @@ async def app_lifespan(server) -> AsyncIterator[AppResources]:
             db_url = settings.DATABASE_URL.replace("postgresql+asyncpg://", "postgresql://")
             db_pool = await asyncpg.create_pool(
                 db_url,
-                min_size=10,
-                max_size=32,  # M3 Max optimized - 2x CPU cores
+                min_size=2,  # Start small to avoid connection exhaustion
+                max_size=20,  # Conservative max for multiple workers
+                max_inactive_connection_lifetime=300,  # 5 min idle timeout
                 command_timeout=60,
+                timeout=10,  # Connection acquire timeout
             )
-            logger.info(f"Database pool created: {db_pool.get_size()} connections")
+            logger.info(
+                f"Database pool created: {db_pool.get_size()} connections "
+                f"(min={db_pool.get_min_size()}, max={db_pool.get_max_size()})"
+            )
         except Exception as e:
             logger.warning(f"Database pool creation failed: {e}. Continuing without DB.")
 
     # Initialize rate limiter (16 concurrent EasyPost API calls)
     rate_limiter = asyncio.Semaphore(16)
 
+    # Create resources object
+    resources = AppResources(
+        easypost_service=easypost_service,
+        db_pool=db_pool,
+        rate_limiter=rate_limiter,
+    )
+
     try:
-        # Yield AppResources instance for dependency injection
-        yield AppResources(
-            easypost_service=easypost_service,
-            db_pool=db_pool,
-            rate_limiter=rate_limiter,
-        )
+        # Yield dict for FastAPI lifespan state (Starlette requirement)
+        yield {
+            "easypost_service": resources.easypost_service,
+            "db_pool": resources.db_pool,
+            "rate_limiter": resources.rate_limiter,
+        }
     finally:
         # Cleanup
         logger.info("Shutting down EasyPost MCP Server...")

@@ -231,12 +231,15 @@ The project uses hardware-optimized parallel processing in several areas:
 - Analytics: 16 chunks via asyncio.gather (server.py:344-376)
 - ThreadPoolExecutor: 32-40 workers for I/O (easypost_service.py)
 - Uvicorn production: 33 workers (2*16+1)
+- PostgreSQL: 16 max_parallel_workers, 50 connection pool
 
 **Key Files for Performance**:
 - `backend/src/mcp/tools/bulk_creation_tools.py`: Parallel shipment creation
 - `backend/src/server.py` (lines 305-377): Parallel analytics aggregation
+- `backend/src/services/database_service.py`: Optimized database queries with eager loading
 - `backend/tests/integration/test_bulk_performance.py`: Benchmarks
 - `backend/pytest.ini`: Test parallelization config
+- `database/postgresql-m3max.conf`: PostgreSQL M3 Max configuration
 
 ## Key Patterns
 
@@ -345,6 +348,15 @@ Commands are configured via `.dev-config.json` for project-specific behavior.
 
 ## Common Workflows
 
+### Adding a Database Model
+1. Add model to `backend/src/models.py` (SQLAlchemy model)
+2. Create migration: `alembic revision -m "add new model"`
+3. Edit migration file in `backend/alembic/versions/`
+4. Run migration: `alembic upgrade head`
+5. Add CRUD methods to `backend/src/services/database_service.py`
+6. Add tests in `backend/tests/unit/test_database_service.py`
+7. Add API endpoints if needed
+
 ### Adding a New MCP Tool
 1. Create tool function in `backend/src/mcp/tools/new_tool.py`
 2. Register in `backend/src/mcp/tools/__init__.py`
@@ -371,6 +383,8 @@ pytest tests/integration/test_bulk_performance.py -v
 **Configuration**:
 - `backend/pytest.ini`: Test configuration with parallel execution
 - `backend/pyproject.toml`: Python tool configuration (black, ruff, mypy)
+- `backend/alembic.ini`: Alembic migration configuration
+- `database/postgresql-m3max.conf`: PostgreSQL M3 Max optimizations
 - `frontend/package.json`: Frontend scripts and dependencies
 - `.cursorrules`: Universal command system rules
 - `Makefile`: Quick development commands
@@ -381,14 +395,39 @@ pytest tests/integration/test_bulk_performance.py -v
 - `frontend/src/main.jsx`: React app entry
 
 **Core Logic**:
-- `backend/src/services/easypost_service.py`: EasyPost API wrapper
+- `backend/src/services/easypost_service.py`: EasyPost API wrapper (32-40 workers)
+- `backend/src/services/database_service.py`: PostgreSQL CRUD operations (548 lines)
 - `backend/src/mcp/tools/bulk_creation_tools.py`: Parallel bulk operations
 - `frontend/src/services/api.js`: API client
+
+**Database**:
+- `backend/src/database.py`: SQLAlchemy async engine and session config
+- `backend/src/models.py`: Database models (9 tables)
+- `backend/src/dependencies.py`: FastAPI database session dependency
+- `backend/alembic/versions/`: Migration files
+- `backend/alembic/env.py`: Alembic environment configuration
 
 ## Environment Setup Notes
 
 - Python 3.10+ required (uses modern type hints)
+- PostgreSQL 14+ required (uses modern features like covering indexes)
 - Node.js for frontend (Vite requires Node 14+)
 - EasyPost API key required (test or production)
 - M3 Max optimizations assume 16+ cores (will work with fewer but slower)
 - pytest-xdist requires `pytest -n auto` or `-n <workers>` for parallel execution
+- Database URL format: `postgresql+asyncpg://user:password@localhost:5432/easypost_mcp`
+- M3 Max PostgreSQL config in `database/postgresql-m3max.conf` (32GB buffers, 16 workers)
+
+## Additional Documentation
+
+For comprehensive PostgreSQL implementation details, see:
+- `docs/architecture/POSTGRESQL_ARCHITECTURE.md`: Complete database architecture review
+  - 9-table schema with advanced indexing
+  - M3 Max-optimized configuration (32GB buffers, 16 parallel workers)
+  - 548-line DatabaseService with CRUD operations
+  - Connection pooling (50 total connections)
+  - Query optimization techniques
+  - Migration history and performance benchmarks
+
+For historical implementation reports and status updates, see:
+- `docs/archive/2025-11-implementation/`: Implementation phases, reports, and summaries

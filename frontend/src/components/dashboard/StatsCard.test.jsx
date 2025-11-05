@@ -22,7 +22,7 @@ describe('StatsCard', () => {
   });
 
   it('shows trending up icon when trend is up', () => {
-    const { container } = render(
+    render(
       <StatsCard title="Test" value="100" change="+10%" trend="up" icon={Package} />
     );
 
@@ -32,7 +32,7 @@ describe('StatsCard', () => {
   });
 
   it('shows trending down icon when trend is down', () => {
-    const { container } = render(
+    render(
       <StatsCard title="Test" value="100" change="-5%" trend="down" icon={Package} />
     );
 

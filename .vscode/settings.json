@@ -58,6 +58,17 @@
     "comments": false,
     "strings": false
   },
+  "editor.bracketPairColorization.enabled": true,
+  "editor.guides.bracketPairs": "active",
+  "editor.suggest.preview": true,
+  "cursor.chat.useContext": true,
+  "cursor.chat.contextFiles": [
+    ".cursorrules",
+    ".dev-config.json",
+    ".cursor/rules/**/*.mdc",
+    ".cursor/commands/**/*.md"
+  ],
+  "cursor.chat.maxTokens": 8000,
   "[json]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
@@ -92,6 +103,9 @@
   "python.testing.pytestArgs": [
     "tests"
   ],
+  "python.analysis.typeCheckingMode": "basic",
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.completeFunctionParens": true,
   "javascript.validate.enable": true,
   "javascript.updateImportsOnFileMove.enabled": "always",
   "javascript.suggest.autoImports": true,

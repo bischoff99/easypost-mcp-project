@@ -1,601 +1,165 @@
-# Universal Development Assistant Configuration
-# This file makes slash commands work across ANY project
-# Customize .dev-config.json for your specific project
-
-## 📋 Project Configuration
-
-Read configuration from `.dev-config.json` for:
-- Project name, type, and stack
-- Hardware specifications (M3 Max optimizations)
-- File paths and structure
-- Naming conventions
-- Testing setup
-- Custom domain logic
-
-**All slash commands use these variables dynamically.**
-
----
-
-## 🚀 Universal Slash Commands
-
-### Quick Commands (Single Purpose)
-
-#### `/api [path] [method]`
-**Generate API endpoint using project's backend framework.**
-
-Reads from config:
-- Backend language and framework
-- Naming conventions
-- Testing framework
-- Error handling patterns
-
-Output structure:
-1. Request/response models (Pydantic/Zod based on language)
-2. Route handler with validation
-3. Error handling
-4. Logging
-5. Tests with mocks
-6. OpenAPI/documentation
-
-Example: `/api /users POST`
-
----
-
-#### `/component [Name]`
-**Generate frontend component using project's framework.**
-
-Reads from config:
-- Frontend framework (React/Vue/Svelte)
-- Styling system (Tailwind/CSS/Styled)
-- Component library
-- State management
-
-Output structure:
-1. Functional component with hooks/composition
-2. PropTypes/TypeScript interfaces
-3. Loading/error states
-4. Styling
-5. Tests
-
-Example: `/component UserCard`
-
----
-
-#### `/test [file]`
-**Generate comprehensive tests for any file.**
-
-Reads from config:
-- Testing framework (pytest/jest/vitest)
-- Mocking libraries
-- Coverage targets
-- Parallel execution config
-
-Output structure:
-1. Unit tests for all functions/components
-2. Integration tests
-3. Edge cases
-4. Mocked dependencies
-5. Parallel test configuration
-
-Example: `/test backend/src/services/user_service.py`
-
----
-
-#### `/model [name]`
-**Generate data model with validation.**
-
-Reads from config:
-- Backend language (Python/TypeScript/Go)
-- ORM if applicable
-- Validation library
-
-Output for Python: Pydantic model
-Output for TypeScript: Zod schema or interface
-Output for Go: struct with validation tags
-
-Example: `/model User`
-
----
-
-#### `/crud [model]`
-**Generate complete CRUD operations.**
-
-Reads from config:
-- Backend and frontend stack
-- Database/ORM
-- API style (REST/GraphQL)
-- Component patterns
-
-Generates:
-1. Data model with validation
-2. Database schema/migration
-3. Repository/service layer
-4. API endpoints (all 5 operations)
-5. Frontend service
-6. UI components (list, form, detail)
-7. Tests (backend + frontend)
-
-Example: `/crud Product`
-
----
-
-#### `/service [name]`
-**Generate service class with standard patterns.**
-
-Reads from config:
-- Language and framework
-- Async patterns
-- Error handling
-- Logging setup
-
-Example: `/service EmailNotification`
-
----
-
-#### `/hook [name]`
-**Generate custom hook/composable.**
-
-Framework-aware:
-- React: Custom hook with useState/useEffect
-- Vue: Composition API composable
-- Svelte: Svelte store
-
-Example: `/hook useAuth`
-
----
-
-### 🔥 Power Commands (Multi-Step)
-
-#### `/feature [name]`
-**Generate complete feature (backend + frontend + tests).**
-
-Reads entire config to generate:
-1. Backend endpoints/services
-2. Frontend components/pages
-3. State management
-4. API integration
-5. Tests (all layers)
-6. Documentation
-
-Example: `/feature user-authentication`
-
-Time on M3 Max: ~30-45 seconds
-
----
-
-#### `/page [name]`
-**Generate complete page with routing.**
-
-Framework-aware:
-- React: Page component + React Router
-- Next.js: Pages router or App router
-- Vue: Vue Router
-- SvelteKit: +page.svelte
-
-Example: `/page dashboard`
-
----
-
-#### `/form [name] [fields]`
-**Generate form with validation.**
-
-Reads from config:
-- Form library (react-hook-form/formik/etc)
-- Validation (zod/yup/joi)
-- UI components
-
-Example: `/form login email,password`
-
----
-
-### ⚡ M3 Max Performance Commands
-
-#### `/optimize [file]`
-**Apply hardware-specific optimizations.**
-
-Reads from config:
-- CPU cores
-- RAM
-- Current optimizations enabled
-
-Applies:
-- ThreadPool/Worker scaling
-- Async/await patterns  
-- Parallel processing
-- Memory optimization
-- Benchmarking
-
-Example: `/optimize backend/src/services/batch_processor.py`
-
----
-
-#### `/parallel [file]`
-**Convert to parallel processing.**
-
-Uses hardware config to:
-- Calculate optimal workers
-- Implement parallelization
-- Add progress tracking
-- Configure test parallelism
-
-Example: `/parallel backend/src/services/data_importer.py`
-
----
-
-#### `/bench [function]`
-**Generate performance benchmark.**
-
-Hardware-aware benchmarking:
-- Uses actual CPU cores
-- RAM limits
-- Comparison metrics
-
-Example: `/bench process_batch`
-
----
-
-### 🎯 Context-Aware Commands
-
-#### `/fix`
-**Smart error fixing (no parameters needed).**
-
-Automatically:
-1. Reads error from visible context
-2. Analyzes using project patterns
-3. Suggests fix
-4. Implements with proper conventions
-5. Runs tests
-6. Verifies fix
-
----
-
-#### `/explain`
-**Explain selected code in context of project.**
-
-Provides:
-- What it does
-- How it fits in project architecture
-- Performance implications
-- Related code
-- Improvement suggestions
-
----
-
-#### `/improve`
-**Suggest improvements for selected code.**
-
-Analyzes using project config:
-- Performance (hardware-specific)
-- Security
-- Best practices for stack
-- Type safety
-- Test coverage
-- Documentation
-
----
-
-#### `/refactor [pattern]`
-**Smart refactoring.**
-
-Pattern examples:
-- "extract service"
-- "add error handling"
-- "improve types"
-- "optimize performance"
-
-Example: `/refactor "extract service layer"`
-
----
-
-### 🧪 Testing Commands
-
-#### `/tdd [feature]`
-**Test-Driven Development workflow.**
-
-Uses project's testing framework to:
-1. Write failing tests
-2. Implement minimal code
-3. Refactor
-4. Repeat
-
-Example: `/tdd user-registration`
-
----
-
-#### `/mock [dependency]`
-**Generate mocks for external dependencies.**
-
-Reads mocking config to create:
-- Mock responses
-- Fixtures
-- Test data generators
-
-Example: `/mock stripe-api`
-
----
-
-### 📊 Data & Visualization
-
-#### `/chart [type] [data]`
-**Generate chart component.**
-
-Framework-aware:
-- React: Recharts/Chart.js
-- Vue: Vue-Chartjs
-- Svelte: Layer Cake
-
-Types: line, bar, pie, area, scatter
-
-Example: `/chart line revenue`
-
----
-
-#### `/table [data]`
-**Generate data table with features.**
-
-Uses project's table library:
-- TanStack Table (React)
-- Vue Good Table (Vue)
-- Svelte Table
-
-Features: sorting, filtering, pagination
-
-Example: `/table users`
-
----
-
-### 🔒 Security Commands
-
-#### `/secure [file]`
-**Security audit and fixes.**
-
-Checks for:
-- Input validation
-- SQL injection
-- XSS vulnerabilities
-- API key exposure
-- Rate limiting
-- Framework-specific issues
-
-Example: `/secure backend/src/api/routes.py`
-
----
-
-#### `/auth [type]`
-**Generate authentication.**
-
-Types: jwt, oauth, api-key, session
-
-Framework-aware implementation:
-- Backend: JWT/Passport/Auth middleware
-- Frontend: Auth context/store/guards
-
-Example: `/auth jwt`
-
----
-
-### 📖 Documentation Commands
-
-#### `/doc [target]`
-**Generate documentation.**
-
-Targets: function, class, api, readme
-
-Uses project conventions:
-- Python: Google-style docstrings
-- JavaScript: JSDoc
-- API: OpenAPI/Swagger
-
-Example: `/doc create_user`
-
----
-
-#### `/readme [section]`
-**Generate/update README section.**
-
-Sections: install, usage, api, deploy, contribute
-
-Uses actual project structure and stack.
-
-Example: `/readme api`
-
----
-
-### 🚀 Deployment Commands
-
-#### `/deploy [environment]`
-**Generate deployment configuration.**
-
-Environments: dev, staging, production
-
-Generates based on stack:
-- Docker Compose (if applicable)
-- CI/CD workflow
-- Environment variables
-- Health checks
-- Monitoring
-
-Example: `/deploy production`
-
----
-
-#### `/docker`
-**Generate Dockerfiles and compose.**
-
-Reads stack to create:
-- Multi-stage builds
-- Framework-specific configs
-- Resource limits (M3 Max optimized)
-- Health checks
-
----
-
-### 🛠️ Utility Commands
-
-#### `/migrate [from] [to]`
-**Generate migration code.**
-
-Examples:
-- `/migrate REST GraphQL`
-- `/migrate JavaScript TypeScript`
-- `/migrate SQLite PostgreSQL`
-
-Analyzes current code and generates migration path.
-
----
-
-#### `/env`
-**Generate environment variable templates.**
-
-Creates:
-- .env.example with all required vars
-- Documentation for each variable
-- Validation schema
-
----
-
-#### `/script [name] [purpose]`
-**Generate utility script.**
-
-Purpose examples: "backup database", "seed data", "migrate files"
-
-Example: `/script backup "backup database daily"`
-
----
-
-## 🎯 Smart Context System
-
-### How Variables Work:
-
-1. **Read .dev-config.json** for project specifics
-2. **Apply conventions** automatically
-3. **Use hardware specs** for optimization
-4. **Follow stack patterns** for consistency
-
-### Example Flow:
-
+# Cursor IDE Project Configuration
+
+## Project: EasyPost MCP
+**Type**: Full-stack shipping and logistics automation
+**Stack**: FastAPI (Python) + React + PostgreSQL
+**Hardware**: M3 Max (16 cores, 128GB RAM) - Optimized for parallel processing
+
+## Quick Reference
+
+### The 5 Core Commands
+Read full documentation in `.cursor/commands/README.md`
+
+1. **/test** - Parallel testing (16 workers, 4-6s)
+2. **/fix** - Auto-repair errors with context
+3. **/explain** - AI-powered code understanding
+4. **/optimize** - M3 Max hardware optimizations
+5. **/api [path] [method]** - Generate FastAPI endpoint
+
+### Project-Specific Commands
+- **/ep-test** - Run EasyPost tests with parallel execution
+- **/ep-dev** - Start development environment
+- **/ep-benchmark** - Performance benchmarks
+
+## Configuration System
+
+All commands read from `.dev-config.json`:
+- **Stack details**: `{{stack.backend.framework}}` → "fastapi"
+- **Hardware specs**: `{{hardware.workers.pytest}}` → 16
+- **Conventions**: `{{conventions.python.functions}}` → "snake_case"
+- **Paths**: `{{paths.backend}}` → "backend/src"
+
+## Project Standards
+
+### Code Conventions
+- **Python**: snake_case functions, PascalCase classes, type hints required, 100 char line length
+- **JavaScript**: camelCase functions, PascalCase components, ESLint + Prettier
+- **Async-first**: All I/O operations use async/await patterns
+- **M3 Max optimization**: 16-32 parallel workers for bulk operations
+
+### Architecture Patterns
+- **Hybrid data model**: EasyPost API (primary) + PostgreSQL (secondary storage/analytics)
+- **MCP tools**: FastMCP server with tools, resources, and prompts
+- **Error handling**: Try/except with detailed logging, standardized response format
+- **Testing**: pytest (16 workers), vitest (20 workers), parallel execution via pytest-xdist
+
+### File Organization
 ```
-You type: /api /users POST
-         ↓
-System reads: .dev-config.json
-         ↓
-Sees: Backend = FastAPI (Python)
-      Testing = pytest
-      Conventions = snake_case
-      Hardware = M3 Max (28 workers)
-         ↓
-Generates: FastAPI endpoint with:
-           - Pydantic models
-           - Async handler
-           - pytest tests with xdist config
-           - Logging with request_id
-           - snake_case naming
-           - Rate limiting
+backend/
+├── src/
+│   ├── server.py              # FastAPI HTTP server
+│   ├── mcp/__init__.py         # MCP server
+│   ├── services/
+│   │   ├── easypost_service.py  # EasyPost API wrapper (32-40 workers)
+│   │   └── database_service.py  # PostgreSQL CRUD (548 lines)
+│   └── models.py              # SQLAlchemy models (9 tables)
+frontend/
+└── src/
+    ├── pages/                 # React pages
+    ├── components/            # Reusable components
+    └── services/api.js        # API client
+
+.cursor/
+├── rules/                     # Coding standards (14 .mdc files)
+├── commands/                  # Slash commands (8 core commands)
+└── config/                    # Templates
 ```
 
----
+### Key Patterns
 
-## 💡 Usage Tips
-
-### 1. **Customize .dev-config.json First**
-Update all variables for your project:
-- Stack details
-- File paths
-- Conventions
-- Hardware specs
-
-### 2. **Be Specific in Commands**
-Good: `/api /users/profile GET`
-Bad: `/api`
-
-### 3. **Open Relevant Files**
-Commands use visible context for better results.
-
-### 4. **Chain Commands**
-```
-/model User
-/crud User
-/test backend/src/models/user.py
-```
-
-### 5. **Review Generated Code**
-AI is fast but always review output!
-
----
-
-## ⚡ Performance Expectations (M3 Max)
-
-| Command Type | Time | Hardware Utilization |
-|--------------|------|---------------------|
-| Simple (/api, /component) | 5-10s | Neural Engine + 4 cores |
-| Medium (/crud, /feature) | 20-40s | Neural Engine + 8 cores |
-| Complex (/optimize, /migrate) | 30-60s | Neural Engine + 14 cores |
-
-**2-5x faster** than non-Apple Silicon hardware!
-
----
-
-## 🔧 Customization Examples
-
-### For Different Projects:
-
-**Django Backend:**
-```json
+**Standardized API Response**:
+```python
 {
-  "stack": {
-    "backend": {
-      "language": "python",
-      "framework": "django",
-      "orm": "django-orm"
-    }
-  }
+  "status": "success" | "error",
+  "data": {...},
+  "message": "optional message",
+  "request_id": "uuid"
 }
 ```
 
-**Vue Frontend:**
-```json
-{
-  "stack": {
-    "frontend": {
-      "language": "javascript",
-      "framework": "vue",
-      "buildTool": "vite",
-      "stateManagement": "pinia"
-    }
-  }
-}
+**Parallel Processing** (M3 Max):
+```python
+# Use asyncio.gather with 16 workers
+async def process_batch(items: List, workers: int = 16):
+    results = await asyncio.gather(*[
+        process_item(item) for item in items
+    ])
+    return results
 ```
 
-**Go Backend:**
-```json
-{
-  "stack": {
-    "backend": {
-      "language": "go",
-      "framework": "gin",
-      "version": "1.21"
-    }
-  }
-}
+**Database Queries** (Prevent N+1):
+```python
+# Use selectinload for eager loading
+stmt = select(Shipment).options(
+    selectinload(Shipment.from_address),
+    selectinload(Shipment.to_address)
+)
 ```
+
+## Development Workflow
+
+### Common Tasks
+```bash
+# Start everything
+make dev                    # Backend + Frontend
+
+# Testing
+make test                   # All tests (16 workers)
+make test-cov              # With coverage
+
+# Code quality
+make lint                   # All linters
+make format                # Auto-format
+
+# Database
+alembic upgrade head        # Run migrations
+alembic revision -m "msg"  # Create migration
+```
+
+### VS Code Tasks
+Available via `Cmd+Shift+P` → "Run Task":
+- 🚀 Dev: Full Stack
+- 🧪 Test: Backend (with watcher)
+- 🔍 Lint: Backend/Frontend
+- 🎨 Format: Backend/Frontend
+- 🐳 Docker: Build/Start/Stop
+
+## MCP Integration
+
+**MCP Server**: `python -m src.mcp`
+
+**Available Tools**:
+- `create_shipment`: Create shipment with label
+- `track_shipment`: Track by tracking number
+- `get_rates`: Compare carrier rates
+- `create_bulk_shipments`: Parallel bulk creation (16 workers)
+- `batch_track_shipments`: Track multiple packages
+
+## Performance Expectations (M3 Max)
+
+| Operation | Time | Workers |
+|-----------|------|---------|
+| Test suite | 4-6s | 16 |
+| Bulk shipment creation (100) | 30-40s | 16 |
+| Batch tracking (50) | 2-3s | 16 |
+| Analytics (1000 shipments) | 1-2s | 16 |
+
+## Important Notes
+
+- **PostgreSQL required**: Database URL in .env
+- **EasyPost API key**: Test key (EZTK*) for development
+- **Environment files**: .env.development (committed), .env (gitignored)
+- **Documentation**: See .cursor/commands/README.md for detailed command docs
+- **Rules**: See .cursor/rules/ for comprehensive coding standards (14 files)
+
+## Getting Started
+
+1. **Install recommended extensions**: Cmd+Shift+P → "Extensions: Show Recommended"
+2. **Start development**: `make dev` or use VS Code task
+3. **Try a command**: Type `/test` in Cursor chat
+4. **Read more**: See `.cursor/commands/README.md` for full documentation
 
 ---
 
-## 📚 Additional Resources
-
-- **Config Template**: Copy `.dev-config.json` to new projects
-- **Examples**: See `.ai-templates/` for code patterns
-- **Makefile**: Run `make help` for standard commands
-- **Snippets**: See `.vscode/snippets.code-snippets`
-
----
-
-## 🎯 Quick Start
-
-1. Update `.dev-config.json` for your project
-2. In Cursor, type any slash command
-3. AI reads config and generates appropriate code
-4. Review and accept
-5. Code follows YOUR project conventions!
-
-**Your slash commands are now universal and reusable!** 🚀
+*For comprehensive documentation, explore `.cursor/` directory.*
+*For project-specific details, see `CLAUDE.md` and `POSTGRESQL_IMPLEMENTATION_REVIEW.md`.*

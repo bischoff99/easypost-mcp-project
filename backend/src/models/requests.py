@@ -1,5 +1,7 @@
 """Request models for FastAPI endpoints."""
 
+from typing import Optional
+
 from pydantic import BaseModel
 
 from src.services.easypost_service import AddressModel, ParcelModel
@@ -12,6 +14,7 @@ class ShipmentRequest(BaseModel):
     from_address: AddressModel
     parcel: ParcelModel
     carrier: str = "USPS"
+    service: Optional[str] = None  # Specific service (e.g., "FEDEX_GROUND", "Priority")
 
 
 class RatesRequest(BaseModel):

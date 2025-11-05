@@ -1,0 +1,165 @@
+# Rules Index
+
+Quick reference for all coding standards in this project.
+
+---
+
+## Core Standards (1-6)
+
+### 01-code-standards.mdc
+**Python & JavaScript coding conventions**
+- Python: snake_case, type hints, 100 char lines, async patterns
+- JavaScript: camelCase, ESLint + Prettier, React patterns
+- Error handling with try/except and logging
+- Examples: FastAPI handlers, React components
+
+### 02-file-structure.mdc
+**Project organization**
+- Backend: `backend/src/` (server, services, models)
+- Frontend: `frontend/src/` (pages, components, services)
+- Tests: Parallel directory structure
+- Naming: snake_case.py, PascalCase.jsx
+
+### 03-naming-conventions.mdc
+**Naming rules**
+- Python: functions=snake_case, classes=PascalCase, constants=UPPER_SNAKE_CASE
+- JavaScript: functions=camelCase, components=PascalCase
+- Files: snake_case.py, PascalCase.jsx
+- Database: snake_case tables/columns
+
+### 04-error-handling.mdc
+**Error handling patterns**
+- Always use try/except with detailed logging
+- Standardized response format: `{status, data, message, request_id}`
+- FastAPI HTTPException for API errors
+- Request ID middleware for tracing
+- Never swallow exceptions
+
+### 05-logging.mdc
+**Logging standards**
+- Use Python logging module
+- Format: `%(asctime)s - %(name)s - %(levelname)s - %(message)s`
+- Levels: DEBUG for dev, INFO for prod, ERROR always
+- Include request_id in all API logs
+- Log performance metrics (timing, workers)
+
+### 06-testing.mdc
+**Testing patterns**
+- pytest (backend) with 16 parallel workers
+- vitest (frontend) with 20 parallel workers
+- AAA pattern: Arrange, Act, Assert
+- Mock external dependencies (EasyPost API)
+- Integration tests marked with `@pytest.mark.integration`
+- Coverage target: 80% backend, 70% frontend
+
+---
+
+## Domain Standards (7-9)
+
+### 07-git-version-control.mdc
+**Git workflow**
+- Conventional commits: `feat:`, `fix:`, `docs:`, `refactor:`
+- Branch naming: `feature/name`, `fix/name`
+- Never force push to main/master
+- Pre-commit: format + lint + test
+- Commit messages: why not what
+
+### 08-security.mdc
+**Security practices**
+- Never commit API keys (use .env)
+- Input validation with Pydantic models
+- SQL injection prevention (SQLAlchemy ORM)
+- XSS prevention (React escaping)
+- Rate limiting on API endpoints
+- API key validation in middleware
+
+### 09-api-format.mdc
+**API design standards**
+- RESTful conventions
+- Standardized responses: `{status, data, message, request_id}`
+- Pydantic models for validation
+- HTTP status codes: 200 OK, 201 Created, 400 Bad Request, 500 Internal Error
+- Rate limiting: 10 req/min (standard), 20 req/min (analytics)
+- OpenAPI documentation auto-generated
+
+---
+
+## Quality Standards (10-13)
+
+### 10-documentation.mdc
+**Documentation requirements**
+- Python: Google-style docstrings with Args/Returns/Raises
+- JavaScript: JSDoc comments for functions
+- API: OpenAPI/Swagger auto-docs
+- README: Setup, usage, architecture
+- Inline comments: why not what
+
+### 11-performance.mdc
+**Performance optimization**
+- M3 Max parallel processing: 16-32 workers
+- Async/await for all I/O operations
+- Connection pooling: 50 total (20 base + 30 overflow)
+- Database query optimization: selectinload for N+1 prevention
+- Batch operations: 150 items optimal batch size
+- uvloop for 2-4x async performance
+
+### 12-deployment.mdc
+**Deployment procedures**
+- Environment files: .env.development (committed), .env.production (gitignored)
+- Database migrations: Alembic
+- PostgreSQL: M3 Max config (32GB buffers, 16 workers)
+- Uvicorn production: 33 workers (2*16+1)
+- Health checks on /health endpoint
+- Docker: Multi-stage builds
+
+### 13-code-review.mdc
+**Code review checklist**
+- Tests pass (16 workers, 4-6s)
+- Linting clean (ruff, eslint)
+- Type hints present (Python)
+- Error handling comprehensive
+- Logging appropriate
+- Performance considered (parallel where possible)
+- Security reviewed (no secrets, validated inputs)
+- Documentation updated
+
+---
+
+## Quick Reference
+
+### 14-quick-reference.mdc
+**Common patterns**
+- Standardized API response
+- Parallel processing with asyncio.gather
+- Database queries with eager loading
+- Error handling with logging
+- MCP tool structure
+- Test fixtures and mocks
+
+---
+
+## Usage
+
+1. **New to project**: Read 01-06 (Core Standards)
+2. **Working on feature**: Reference specific rule (e.g., 04 for errors)
+3. **Code review**: Use 13-code-review.mdc checklist
+4. **Performance work**: See 11-performance.mdc
+5. **Security audit**: Review 08-security.mdc
+
+---
+
+## Rule Categories
+
+| Category | Rules | Focus |
+|----------|-------|-------|
+| Core | 01-06 | Coding standards, structure, naming |
+| Domain | 07-09 | Git, security, API design |
+| Quality | 10-13 | Documentation, performance, deployment |
+| Reference | 14 | Quick patterns and examples |
+
+---
+
+**Total**: 14 rule files + this index
+**Last updated**: 2025-11-04
+
+*For comprehensive project documentation, see `CLAUDE.md` and `POSTGRESQL_IMPLEMENTATION_REVIEW.md`.*

@@ -158,6 +158,11 @@ benchmark:
 	@echo "⚡ Running benchmarks..."
 	@./scripts/benchmark.sh
 
+# Structure validation
+validate-structure:
+	@echo "🔍 Validating project structure..."
+	@python3 scripts/validate-project-structure.py
+
 # Git shortcuts
 sync:
 	@git fetch origin

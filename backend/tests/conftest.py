@@ -1,6 +1,6 @@
 """Pytest configuration and shared fixtures."""
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from httpx import AsyncClient
@@ -54,12 +54,44 @@ async def async_client(mock_easypost_service):
 
 
 @pytest.fixture
-def client():
+def client(mock_easypost_service):
     """
     Legacy TestClient fixture for backward compatibility.
 
     NOTE: Prefer async_client for new tests.
     """
+    from contextlib import asynccontextmanager
+
     from fastapi.testclient import TestClient
 
-    return TestClient(app)
+    # Override the dependency to use our mock
+    app.dependency_overrides[get_easypost_service] = lambda: mock_easypost_service
+
+    # Replace FastMCP lifespan with simple test lifespan
+    original_router = app.router.lifespan_context
+
+    @asynccontextmanager
+    async def test_lifespan(app_instance):
+        # Empty lifespan for testing
+        yield {}
+
+    app.router.lifespan_context = test_lifespan
+
+    with TestClient(app) as test_client:
+        yield test_client
+
+    # Restore lifespan and clean up
+    app.router.lifespan_context = original_router
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def mock_db_session():
+    """Create a mock database session for testing database endpoints."""
+    mock_session = MagicMock()
+
+    async def mock_get_db_generator():
+        """Mock async generator for get_db."""
+        yield mock_session
+
+    return mock_session, mock_get_db_generator

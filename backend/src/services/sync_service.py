@@ -6,6 +6,7 @@ Implements non-blocking background sync to keep PostgreSQL in sync with EasyPost
 
 import asyncio
 import logging
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 from uuid import UUID
 
@@ -154,7 +155,7 @@ class SyncService:
                     description=event_data.get("description"),
                     carrier_status=event_data.get("carrier_detail", {}).get("status"),
                     tracking_location=event_data.get("tracking_location"),
-                    event_datetime=event_data.get("datetime"),
+                    event_datetime=event_data.get("datetime") or datetime.now(timezone.utc),
                 )
 
                 session.add(event)

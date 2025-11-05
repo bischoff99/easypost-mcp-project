@@ -29,7 +29,7 @@ from src.models.analytics import (
     AnalyticsResponse,
     CarrierMetrics,
     RouteMetrics,
-    ShipmentMetrics,
+    ShipmentMetricsResponse,
     VolumeMetrics,
 )
 from src.models.requests import BuyShipmentRequest, RatesRequest, ShipmentRequest
@@ -483,7 +483,7 @@ async def get_analytics(
         avg_cost = total_cost / total_shipments if total_shipments > 0 else 0.0
 
         # Summary metrics
-        summary = ShipmentMetrics(
+        summary = ShipmentMetricsResponse(
             total_shipments=total_shipments,
             total_cost=round(total_cost, 2),
             average_cost=round(avg_cost, 2),
@@ -497,16 +497,13 @@ async def get_analytics(
         by_carrier = [
             CarrierMetrics(
                 carrier=carrier,
-                shipment_count=stats["count"],
+                shipments=stats["count"],
                 total_cost=round(stats["cost"], 2),
-                average_cost=round(
+                avg_cost=round(
                     stats["cost"] / stats["count"] if stats["count"] > 0 else 0.0,
                     2,
                 ),
-                percentage_of_total=round(
-                    (stats["count"] / total_shipments * 100) if total_shipments > 0 else 0.0,
-                    1,
-                ),
+                success_rate=100.0,  # Placeholder - calculate from actual success/failure data
             )
             for carrier, stats in sorted(
                 carrier_stats.items(), key=lambda x: x[1]["count"], reverse=True
@@ -517,8 +514,8 @@ async def get_analytics(
         by_date = [
             VolumeMetrics(
                 date=date,
-                shipment_count=stats["count"],
-                total_cost=round(stats["cost"], 2),
+                shipments=stats["count"],
+                cost=round(stats["cost"], 2),
             )
             for date, stats in sorted(date_stats.items())
         ]
@@ -537,7 +534,10 @@ async def get_analytics(
         ]
 
         analytics_data = AnalyticsData(
-            summary=summary, by_carrier=by_carrier, by_date=by_date, top_routes=top_routes
+            summary=summary.model_dump(),
+            by_carrier=[c.model_dump() for c in by_carrier],
+            by_date=[d.model_dump() for d in by_date],
+            top_routes=[r.model_dump() for r in top_routes],
         )
 
         logger.info(
@@ -609,40 +609,36 @@ async def get_dashboard_stats(request: Request, service: EasyPostDep):
             elif status_val == "delivered":
                 delivered_count += 1
 
-        # Calculate delivery success rate
-        delivery_success_rate = delivered_count / total_shipments if total_shipments > 0 else 0.0
+        # Calculate delivery rate (delivered / total)
+        delivery_rate = delivered_count / total_shipments if total_shipments > 0 else 0.0
 
-        # Calculate changes (compare with last period - mock data for now)
-        # TODO: Implement actual comparison with previous period from database
-        shipments_change = "+12.5%"
-        shipments_trend = "up"
-        active_change = "-2.3%"
-        active_trend = "down"
-        cost_change = "+8.1%"
-        cost_trend = "up"
-        rate_change = "+1.2%"
-        rate_trend = "up"
-
+        # NOTE: EasyPost API doesn't provide historical trends or performance metrics
+        # Trends/changes require database storage - showing live snapshots only
         stats_data = {
             "total_shipments": {
                 "value": total_shipments,
-                "change": shipments_change,
-                "trend": shipments_trend,
+                "label": "Total Shipments",
+                "note": "Last 100 from EasyPost API",
             },
-            "active_deliveries": {
+            "in_transit": {
                 "value": active_deliveries,
-                "change": active_change,
-                "trend": active_trend,
+                "label": "In Transit",
+                "note": "Currently shipping",
+            },
+            "delivered": {
+                "value": delivered_count,
+                "label": "Delivered",
+                "note": "Successfully delivered",
             },
             "total_cost": {
                 "value": round(total_cost, 2),
-                "change": cost_change,
-                "trend": cost_trend,
+                "label": "Total Spent",
+                "note": "Based on shipment rates",
             },
-            "delivery_success_rate": {
-                "value": round(delivery_success_rate, 4),
-                "change": rate_change,
-                "trend": rate_trend,
+            "delivery_rate": {
+                "value": round(delivery_rate, 4),
+                "label": "Delivery Rate",
+                "note": f"{delivered_count}/{total_shipments} delivered",
             },
         }
 
@@ -669,9 +665,10 @@ async def get_dashboard_stats(request: Request, service: EasyPostDep):
 @limiter.limit("30/minute")
 async def get_carrier_performance(request: Request, service: EasyPostDep):
     """
-    Get carrier performance metrics.
+    Get carrier usage distribution.
 
-    Returns on-time delivery rates and shipment counts by carrier.
+    Returns shipment counts and delivery rates by carrier.
+    NOTE: EasyPost doesn't provide on-time metrics - this shows delivery completion only.
     """
     request_id = getattr(request.state, "request_id", "unknown")
 
@@ -701,25 +698,27 @@ async def get_carrier_performance(request: Request, service: EasyPostDep):
                 if status_val == "delivered":
                     carrier_stats[carrier]["delivered"] += 1
 
-        # Build response with on-time rates
-        # Calculate as: delivered / completed (only count finished shipments)
+        # Build response with delivery rates
+        # NOTE: This shows delivery completion, NOT on-time performance
+        # EasyPost doesn't track estimated vs actual delivery dates
         performance_data = []
         for carrier, stats in sorted(
             carrier_stats.items(), key=lambda x: x[1]["total"], reverse=True
         ):
-            # Use completed shipments as denominator for more realistic rates
-            # If no completed shipments yet, estimate 95% based on delivered/total
+            # Calculate delivery rate from completed shipments only
             if stats["completed"] > 0:
-                on_time_rate = stats["delivered"] / stats["completed"] * 100
+                delivery_rate = stats["delivered"] / stats["completed"] * 100
             else:
-                # Fallback: If no completed yet, assume 95% based on carrier averages
-                on_time_rate = 95.0
+                # No completed shipments yet - show 0% instead of fake data
+                delivery_rate = 0.0
 
             performance_data.append(
                 {
                     "carrier": carrier,
-                    "rate": round(on_time_rate, 0),  # Round to integer for UI
+                    "rate": round(delivery_rate, 0),  # Delivery completion rate
                     "shipments": stats["total"],
+                    "delivered": stats["delivered"],
+                    "in_progress": stats["total"] - stats["completed"],
                 }
             )
 
@@ -811,7 +810,7 @@ async def get_shipments_db(
         logger.error(f"[{request_id}] Error getting shipments from database: {error_msg}")
         metrics.track_api_call("get_shipments_db", False)
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=500,
             detail=f"Error retrieving shipments: {error_msg}",
         ) from e
 

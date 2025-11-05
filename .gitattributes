@@ -1,3 +1,40 @@
-# Cursor configuration
-.cursorrules merge=ours
-.dev-config.json merge=ours
+# Git attributes for consistent line endings and merge strategies
+
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Source code
+*.py text eol=lf diff=python
+*.js text eol=lf
+*.jsx text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.sh text eol=lf
+*.bash text eol=lf
+
+# Config files
+*.yaml text eol=lf
+*.yml text eol=lf
+*.toml text eol=lf
+*.ini text eol=lf
+*.conf text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
+
+# Prevent merge conflicts on generated files
+package-lock.json merge=union
+pnpm-lock.yaml merge=union
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary

@@ -1,0 +1,37 @@
+#compdef make
+# ZSH completion for EasyPost MCP Makefile
+
+_easypost_make_targets() {
+    local -a targets
+    targets=(
+        'help:Show all available commands'
+        'dev:Start backend + frontend servers'
+        'dev-mock:Start with mock EasyPost API'
+        'backend:Start backend server only'
+        'frontend:Start frontend server only'
+        'test:Run all tests'
+        'test-fast:Run tests for changed files'
+        'test-watch:Run tests in watch mode'
+        'test-cov:Run tests with coverage'
+        'lint:Run linters'
+        'format:Auto-format code'
+        'check:Format + lint + test'
+        'build:Build production bundles'
+        'build-docker:Build Docker images'
+        'install:Install dependencies'
+        'clean:Clean build artifacts'
+        'health:Check server health'
+        'db-reset:Reset database'
+        'db-migrate:Create migration (use m="message")'
+        'db-upgrade:Apply migrations'
+        'benchmark:Run performance benchmarks'
+        'sync:Fetch + rebase on main'
+        'commit:Commit changes (use m="message")'
+        'push:Sync + push branch'
+        'qcp:Quick commit + push (use m="message")'
+    )
+    _describe 'make targets' targets
+}
+
+_easypost_make_targets "$@"
+

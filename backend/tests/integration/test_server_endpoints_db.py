@@ -2,19 +2,11 @@
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
 from fastapi.testclient import TestClient
-
-from src.server import app
 
 
 class TestDatabaseBackedEndpoints:
     """Test database-backed API endpoints."""
-
-    @pytest.fixture
-    def client(self):
-        """Test client for FastAPI app."""
-        return TestClient(app)
 
     def test_get_shipments_db_empty(self, client: TestClient):
         """Test getting shipments from empty database."""
@@ -23,10 +15,13 @@ class TestDatabaseBackedEndpoints:
             patch("src.server.DatabaseService") as mock_db_service_class,
         ):
 
-            # Mock empty database
+            # Mock empty database - async generator pattern
             mock_session = MagicMock()
-            mock_get_db.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_get_db.return_value.__aexit__ = AsyncMock(return_value=None)
+
+            async def mock_db_generator():
+                yield mock_session
+
+            mock_get_db.return_value = mock_db_generator()
 
             mock_db_service = MagicMock()
             mock_db_service_class.return_value = mock_db_service
@@ -48,10 +43,13 @@ class TestDatabaseBackedEndpoints:
             patch("src.server.DatabaseService") as mock_db_service_class,
         ):
 
-            # Mock database with data
+            # Mock database with data - async generator pattern
             mock_session = MagicMock()
-            mock_get_db.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_get_db.return_value.__aexit__ = AsyncMock(return_value=None)
+
+            async def mock_db_generator():
+                yield mock_session
+
+            mock_get_db.return_value = mock_db_generator()
 
             mock_db_service = MagicMock()
             mock_db_service_class.return_value = mock_db_service
@@ -85,9 +83,13 @@ class TestDatabaseBackedEndpoints:
             patch("src.server.DatabaseService") as mock_db_service_class,
         ):
 
+            # Mock database - async generator pattern
             mock_session = MagicMock()
-            mock_get_db.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_get_db.return_value.__aexit__ = AsyncMock(return_value=None)
+
+            async def mock_db_generator():
+                yield mock_session
+
+            mock_get_db.return_value = mock_db_generator()
 
             mock_db_service = MagicMock()
             mock_db_service_class.return_value = mock_db_service
@@ -117,9 +119,13 @@ class TestDatabaseBackedEndpoints:
             patch("src.server.DatabaseService") as mock_db_service_class,
         ):
 
+            # Mock database - async generator pattern
             mock_session = MagicMock()
-            mock_get_db.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_get_db.return_value.__aexit__ = AsyncMock(return_value=None)
+
+            async def mock_db_generator():
+                yield mock_session
+
+            mock_get_db.return_value = mock_db_generator()
 
             mock_db_service = MagicMock()
             mock_db_service_class.return_value = mock_db_service
@@ -138,9 +144,13 @@ class TestDatabaseBackedEndpoints:
             patch("src.server.DatabaseService") as mock_db_service_class,
         ):
 
+            # Mock database - async generator pattern
             mock_session = MagicMock()
-            mock_get_db.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_get_db.return_value.__aexit__ = AsyncMock(return_value=None)
+
+            async def mock_db_generator():
+                yield mock_session
+
+            mock_get_db.return_value = mock_db_generator()
 
             mock_db_service = MagicMock()
             mock_db_service_class.return_value = mock_db_service
@@ -175,9 +185,13 @@ class TestDatabaseBackedEndpoints:
             patch("src.server.DatabaseService") as mock_db_service_class,
         ):
 
+            # Mock database - async generator pattern
             mock_session = MagicMock()
-            mock_get_db.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_get_db.return_value.__aexit__ = AsyncMock(return_value=None)
+
+            async def mock_db_generator():
+                yield mock_session
+
+            mock_get_db.return_value = mock_db_generator()
 
             mock_db_service = MagicMock()
             mock_db_service_class.return_value = mock_db_service
@@ -235,9 +249,13 @@ class TestDatabaseBackedEndpoints:
             patch("src.server.DatabaseService") as mock_db_service_class,
         ):
 
+            # Mock database - async generator pattern
             mock_session = MagicMock()
-            mock_get_db.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_get_db.return_value.__aexit__ = AsyncMock(return_value=None)
+
+            async def mock_db_generator():
+                yield mock_session
+
+            mock_get_db.return_value = mock_db_generator()
 
             mock_db_service = MagicMock()
             mock_db_service_class.return_value = mock_db_service
@@ -272,9 +290,13 @@ class TestDatabaseBackedEndpoints:
             patch("src.server.DatabaseService") as mock_db_service_class,
         ):
 
+            # Mock database - async generator pattern
             mock_session = MagicMock()
-            mock_get_db.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_get_db.return_value.__aexit__ = AsyncMock(return_value=None)
+
+            async def mock_db_generator():
+                yield mock_session
+
+            mock_get_db.return_value = mock_db_generator()
 
             mock_db_service = MagicMock()
             mock_db_service_class.return_value = mock_db_service
@@ -306,11 +328,12 @@ class TestDatabaseBackedEndpoints:
     def test_database_error_handling(self, client: TestClient):
         """Test that database errors are handled gracefully."""
         with patch("src.server.get_db") as mock_get_db:
-            # Mock database connection failure
-            mock_get_db.return_value.__aenter__ = AsyncMock(
-                side_effect=Exception("Database connection failed")
-            )
-            mock_get_db.return_value.__aexit__ = AsyncMock(return_value=None)
+            # Mock database connection failure - async generator that raises
+            async def mock_db_generator_error():
+                raise Exception("Database connection failed")
+                yield  # unreachable but required for generator
+
+            mock_get_db.return_value = mock_db_generator_error()
 
             response = client.get("/db/shipments")
 
@@ -325,9 +348,13 @@ class TestDatabaseBackedEndpoints:
             patch("src.server.DatabaseService") as mock_db_service_class,
         ):
 
+            # Mock database - async generator pattern
             mock_session = MagicMock()
-            mock_get_db.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_get_db.return_value.__aexit__ = AsyncMock(return_value=None)
+
+            async def mock_db_generator():
+                yield mock_session
+
+            mock_get_db.return_value = mock_db_generator()
 
             mock_db_service = MagicMock()
             mock_db_service_class.return_value = mock_db_service
@@ -351,9 +378,13 @@ class TestDatabaseBackedEndpoints:
             patch("src.server.DatabaseService") as mock_db_service_class,
         ):
 
+            # Mock database - async generator pattern
             mock_session = MagicMock()
-            mock_get_db.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_get_db.return_value.__aexit__ = AsyncMock(return_value=None)
+
+            async def mock_db_generator():
+                yield mock_session
+
+            mock_get_db.return_value = mock_db_generator()
 
             mock_db_service = MagicMock()
             mock_db_service_class.return_value = mock_db_service

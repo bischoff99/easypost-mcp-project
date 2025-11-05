@@ -17,6 +17,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    func,
 )
 from sqlalchemy.dialects.postgresql import UUID
 
@@ -31,7 +32,7 @@ class AnalyticsSummary(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     date = Column(Date, nullable=False, index=True)
     period = Column(String(20), nullable=False)  # daily, weekly, monthly
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     # Shipment metrics
     total_shipments = Column(Integer, nullable=False, default=0)
@@ -73,7 +74,7 @@ class CarrierPerformance(Base):
     carrier = Column(String(50), nullable=False, index=True)
     service = Column(String(50), nullable=False, index=True)
     date = Column(Date, nullable=False, index=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     # Performance metrics
     total_shipments = Column(Integer, nullable=False, default=0)
@@ -111,7 +112,7 @@ class ShipmentMetrics(Base):
     shipment_id = Column(
         UUID(as_uuid=True), ForeignKey("shipments.id"), nullable=False, unique=True
     )
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     # Processing metrics
     creation_to_purchase_time = Column(Float, nullable=True)  # seconds
@@ -161,7 +162,9 @@ class UserActivity(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(String(100), nullable=True, index=True)  # For future user system
     session_id = Column(String(100), nullable=True, index=True)
-    timestamp = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    timestamp = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
+    )
 
     # Activity details
     action = Column(String(100), nullable=False)  # create_shipment, get_rates, track_package, etc.
@@ -182,6 +185,26 @@ class UserActivity(Base):
     # Additional context
     extra_metadata = Column(JSON, nullable=True)
 
+    def to_dict(self):
+        """Convert user activity to dictionary for API responses."""
+        return {
+            "id": str(self.id),
+            "user_id": self.user_id,
+            "session_id": self.session_id,
+            "timestamp": self.timestamp.isoformat() if self.timestamp else None,
+            "action": self.action,
+            "resource": self.resource,
+            "resource_id": self.resource_id,
+            "method": self.method,
+            "endpoint": self.endpoint,
+            "user_agent": self.user_agent,
+            "ip_address": self.ip_address,
+            "status_code": self.status_code,
+            "response_time_ms": self.response_time_ms,
+            "error_message": self.error_message,
+            "extra_metadata": self.extra_metadata,
+        }
+
     def __repr__(self):
         return (
             f"<UserActivity(action={self.action}, "
@@ -195,7 +218,9 @@ class SystemMetrics(Base):
     __tablename__ = "system_metrics"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    timestamp = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    timestamp = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
+    )
 
     # Application metrics
     active_connections = Column(Integer, nullable=False, default=0)
@@ -242,7 +267,7 @@ class BatchOperation(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     batch_id = Column(String(50), unique=True, index=True, nullable=False)
     operation_type = Column(String(50), nullable=False)  # create_shipments, get_rates, etc.
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     started_at = Column(DateTime, nullable=True)
     completed_at = Column(DateTime, nullable=True)
 
@@ -267,6 +292,28 @@ class BatchOperation(Base):
     source = Column(String(50), nullable=True)  # api, ui, scheduled
     parameters = Column(JSON, nullable=True)  # Original request parameters
 
+    def to_dict(self):
+        """Convert batch operation to dictionary for API responses."""
+        return {
+            "id": str(self.id),
+            "batch_id": self.batch_id,
+            "operation_type": self.operation_type,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "started_at": self.started_at.isoformat() if self.started_at else None,
+            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
+            "status": self.status,
+            "total_items": self.total_items,
+            "processed_items": self.processed_items,
+            "successful_items": self.successful_items,
+            "failed_items": self.failed_items,
+            "total_processing_time": self.total_processing_time,
+            "avg_item_time": self.avg_item_time,
+            "errors": self.errors,
+            "user_id": self.user_id,
+            "source": self.source,
+            "parameters": self.parameters,
+        }
+
     def __repr__(self):
         return (
             f"<BatchOperation(batch_id={self.batch_id}, status={self.status}, "
@@ -275,10 +322,11 @@ class BatchOperation(Base):
 
 
 # Pydantic models for API responses
-from datetime import datetime
 from typing import Any, Dict, List
 
 from pydantic import BaseModel
+
+# datetime already imported at top of file
 
 
 class ShipmentMetricsResponse(BaseModel):

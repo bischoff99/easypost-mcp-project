@@ -1,4 +1,24 @@
 {
+  "metadata": {
+    "version": "1.0.0",
+    "lastUpdated": "2025-11-04",
+    "maintainer": "andrejs",
+    "cursorVersion": "0.40+",
+    "schemaVersion": "1.0",
+    "changelog": [
+      {
+        "version": "1.0.0",
+        "date": "2025-11-04",
+        "changes": [
+          "Optimized Cursor IDE setup",
+          "Reduced commands from 22 to 8 core",
+          "Trimmed workflows from 21 to 10",
+          "Added comprehensive documentation"
+        ]
+      }
+    ]
+  },
+
   "project": {
     "name": "EasyPost MCP",
     "type": "fullstack",
@@ -141,15 +161,9 @@
 
   "workflows": {
     "universal": {
-      "morning": {
-        "description": "Morning startup routine",
-        "commands": "/clean --cache-only && /test --fast",
-        "estimated_time": "10s",
-        "category": "daily"
-      },
       "pre-commit": {
         "description": "Before committing code",
-        "commands": "make format && make lint && /test @git-staged",
+        "commands": "make format && make lint && /test",
         "estimated_time": "15s",
         "category": "quality"
       },
@@ -159,113 +173,35 @@
         "estimated_time": "25s",
         "category": "quality"
       },
-      "pre-pr": {
-        "description": "Before creating pull request",
-        "commands": "make format && make lint && /test --coverage && /secure @git-diff",
-        "estimated_time": "40s",
-        "category": "quality"
-      },
-      "tdd": {
-        "description": "Test-driven development cycle",
-        "commands": "/test @selection --watch",
-        "estimated_time": "continuous",
-        "category": "development"
-      },
       "debug": {
         "description": "Debug failing code",
-        "commands": "/test || (/explain @errors && /fix @errors)",
+        "commands": "/test || (/explain && /fix)",
         "estimated_time": "20s",
         "category": "development"
-      },
-      "optimize": {
-        "description": "Optimize code performance",
-        "commands": "/optimize @selection && /test --benchmark",
-        "estimated_time": "30s",
-        "category": "performance"
       },
       "ship": {
         "description": "Prepare code for shipping",
         "commands": "/fix && /test --coverage && /optimize && make lint",
         "estimated_time": "45s",
         "category": "release"
-      },
-      "security": {
-        "description": "Security audit",
-        "commands": "/secure @file && make lint && /test",
-        "estimated_time": "25s",
-        "category": "security"
-      },
-      "full-check": {
-        "description": "Complete codebase check",
-        "commands": "/clean && make format && make lint && /test --coverage && /optimize",
-        "estimated_time": "60s",
-        "category": "quality"
       }
     },
     "easypost": {
-      "ep-dev": {
-        "description": "Start EasyPost development environment",
-        "commands": "make dev",
-        "estimated_time": "5s",
-        "category": "development"
-      },
-      "ep-test": {
-        "description": "Run EasyPost tests (16 workers)",
-        "commands": "/ep-test",
-        "estimated_time": "6s",
-        "category": "testing"
+      "ep-morning": {
+        "description": "Morning startup and verification",
+        "commands": "/ep-dev && /test",
+        "estimated_time": "8s",
+        "category": "daily"
       },
       "ep-test-all": {
         "description": "Run all tests including integration",
-        "commands": "/ep-test unit & /ep-test integration",
-        "estimated_time": "8s",
-        "category": "testing"
-      },
-      "ep-benchmark": {
-        "description": "Performance benchmarks",
-        "commands": "/ep-benchmark && make benchmark",
-        "estimated_time": "15s",
-        "category": "performance"
-      },
-      "ep-mcp-tool": {
-        "description": "Create new MCP tool with EasyPost patterns",
-        "commands": "/ep-mcp $1 $2 && /test backend/tests/",
-        "estimated_time": "30s",
-        "category": "development"
-      },
-      "ep-bulk-test": {
-        "description": "Test bulk operations",
-        "commands": "/bulk-create test-data.csv && /track-batch tracking-numbers.txt",
+        "commands": "/ep-test unit && /ep-test integration",
         "estimated_time": "12s",
         "category": "testing"
       },
-      "ep-rate-check": {
-        "description": "Verify rate accuracy",
-        "commands": "/carrier-compare test-shipment && /analytics-deep rates",
-        "estimated_time": "18s",
-        "category": "testing"
-      },
-      "ep-debug": {
-        "description": "Debug EasyPost API issues",
-        "commands": "/ep-lint && /test integration || /explain @errors",
-        "estimated_time": "20s",
-        "category": "debugging"
-      },
-      "ep-optimize": {
-        "description": "Optimize shipping operations",
-        "commands": "/shipping-optimize && /ep-benchmark",
-        "estimated_time": "25s",
-        "category": "performance"
-      },
-      "ep-full": {
-        "description": "Complete EasyPost workflow test",
-        "commands": "/ep-test && /ep-benchmark && /bulk-create test && /track-batch test",
-        "estimated_time": "30s",
-        "category": "testing"
-      },
-      "ep-pre-release": {
-        "description": "Pre-release quality gate",
-        "commands": "make format && make lint && /ep-test --coverage && /ep-benchmark && /secure backend/src/",
+      "ep-quality-gate": {
+        "description": "Complete quality check before release",
+        "commands": "make format && make lint && /ep-test && /ep-benchmark",
         "estimated_time": "60s",
         "category": "release"
       },
@@ -274,6 +210,18 @@
         "commands": "/test backend/tests/unit & /test backend/tests/integration & /ep-benchmark",
         "estimated_time": "8s",
         "category": "testing"
+      },
+      "ep-feature-dev": {
+        "description": "Feature development workflow",
+        "commands": "/api /endpoint POST && /test && /optimize",
+        "estimated_time": "30s",
+        "category": "development"
+      },
+      "ep-debug-api": {
+        "description": "Debug EasyPost API issues",
+        "commands": "/ep-test integration || (/explain && /fix)",
+        "estimated_time": "25s",
+        "category": "debugging"
       }
     }
   }

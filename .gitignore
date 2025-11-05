@@ -40,11 +40,32 @@ coverage.json
 .mypy_cache/
 
 # IDEs
-.vscode/
 .idea/
 *.swp
 *.swo
 *~
+
+# VS Code - Track settings, exclude workspace-specific files
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/snippets.code-snippets
+*.code-workspace
+
+# Cursor - Track rules and commands, exclude temporary/generated files
+.cursor/archive/
+.cursor/docs/
+.cursor/*RECOVERED*.md
+.cursor/*STATUS*.md
+.cursor/*COMPLETE*.md
+.cursor/*REVIEW*.md
+.cursor/*TEST*.sh
+.cursor/*WORKFLOW*.md
+.cursor/PROJECT_PROGRESS.md
+.cursor/QUICK_*.md
+.cursor/commands/v2/
 
 # OS
 .DS_Store

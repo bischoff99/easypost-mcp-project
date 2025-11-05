@@ -347,10 +347,50 @@ Type `/` in Cursor chat - you should see:
 ## 📚 DOCUMENTATION
 
 - **This file**: Quick command reference
+- **Workflows (Current)**: `WORKFLOWS-CURRENT.md` - ✅ All working workflows
+- **Workflows (Future)**: `WORKFLOW-EXAMPLES.md` - 🔴 Aspirational templates
 - **Full guide**: `.cursor/docs/UNIVERSAL_COMMANDS_GUIDE.md`
 - **Quick ref**: `.cursor/docs/COMMANDS_QUICK_REF.md`
 - **Configuration**: `.cursor/config/universal-commands.json`
 - **Main README**: `.cursor/README.md`
+
+---
+
+## 🔄 WORKFLOWS
+
+### ✅ Currently Working (See WORKFLOWS-CURRENT.md)
+
+**Real commands you can use right now:**
+
+```bash
+# Development
+make dev              # Start servers (5s)
+make test             # Run all tests (15s)
+make test-fast        # Fast tests (6s)
+make test-watch       # TDD mode
+
+# Quality
+make format           # Auto-format (3s)
+make lint             # Linters (4s)
+make check            # All checks (22s)
+
+# Build
+make build            # Production (30s)
+make benchmark        # Performance (15s)
+
+# Chains
+make check && make benchmark  # Pre-push (37s)
+```
+
+### 🔴 Future Templates (See WORKFLOW-EXAMPLES.md)
+
+Aspirational workflow patterns for future implementation:
+- `/workflow:morning` - Morning routine
+- `/workflow:pre-commit` - Git hooks
+- `/workflow:security` - Security audit
+- And 14 more...
+
+**Status:** 4/17 workflows implemented (24%)
 
 ---
 

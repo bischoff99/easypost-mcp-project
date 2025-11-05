@@ -61,36 +61,32 @@ export default function DashboardPage() {
           shipmentAPI.getCarrierPerformance(),
         ]);
 
-        // Transform stats data
+        // Transform stats data - EasyPost API provides live snapshots only
         if (statsResponse.status === 'success' && statsResponse.data) {
           const statsData = statsResponse.data;
           setStats([
             {
-              name: 'Total Shipments',
+              name: statsData.total_shipments?.label || 'Total Shipments',
               value: statsData.total_shipments?.value?.toLocaleString() || '0',
-              change: statsData.total_shipments?.change || '+0%',
-              trend: statsData.total_shipments?.trend || 'up',
+              note: statsData.total_shipments?.note || 'Last 100 from API',
               icon: Package,
             },
             {
-              name: 'Active Deliveries',
-              value: statsData.active_deliveries?.value?.toLocaleString() || '0',
-              change: statsData.active_deliveries?.change || '+0%',
-              trend: statsData.active_deliveries?.trend || 'up',
+              name: statsData.in_transit?.label || 'In Transit',
+              value: statsData.in_transit?.value?.toLocaleString() || '0',
+              note: statsData.in_transit?.note || 'Currently shipping',
               icon: TruckIcon,
             },
             {
-              name: 'Total Cost',
+              name: statsData.total_cost?.label || 'Total Spent',
               value: `$${statsData.total_cost?.value?.toFixed(2) || '0.00'}`,
-              change: statsData.total_cost?.change || '+0%',
-              trend: statsData.total_cost?.trend || 'up',
+              note: statsData.total_cost?.note || 'From shipment rates',
               icon: DollarSign,
             },
             {
-              name: 'On-Time Rate',
-              value: `${(statsData.delivery_success_rate?.value * 100)?.toFixed(1) || '0'}%`,
-              change: statsData.delivery_success_rate?.change || '+0%',
-              trend: statsData.delivery_success_rate?.trend || 'up',
+              name: statsData.delivery_rate?.label || 'Delivery Rate',
+              value: `${(statsData.delivery_rate?.value * 100)?.toFixed(1) || '0'}%`,
+              note: statsData.delivery_rate?.note || 'Delivered / Total',
               icon: CheckCircle,
             },
           ]);
@@ -126,71 +122,38 @@ export default function DashboardPage() {
           setRecentActivity(transformedActivity);
         }
       } catch {
-        toast.error('Failed to Load Dashboard', { description: 'Using demo data instead' });
-        // Fallback to mock data if API fails
+        toast.error('Failed to Load Dashboard', { description: 'Cannot connect to EasyPost API' });
+        // Fallback to empty state if API fails
         setStats([
           {
             name: 'Total Shipments',
-            value: '2,456',
-            change: '+12.5%',
-            trend: 'up',
+            value: '0',
+            note: 'API connection failed',
             icon: Package,
           },
           {
-            name: 'Active Deliveries',
-            value: '145',
-            change: '-2.3%',
-            trend: 'down',
+            name: 'In Transit',
+            value: '0',
+            note: 'API connection failed',
             icon: TruckIcon,
           },
           {
-            name: 'Total Cost',
-            value: '$12,458',
-            change: '+8.1%',
-            trend: 'up',
+            name: 'Total Spent',
+            value: '$0.00',
+            note: 'API connection failed',
             icon: DollarSign,
           },
           {
-            name: 'On-Time Rate',
-            value: '94.2%',
-            change: '+1.2%',
-            trend: 'up',
+            name: 'Delivery Rate',
+            value: '0%',
+            note: 'API connection failed',
             icon: CheckCircle,
           },
         ]);
 
-        setRecentActivity([
-          {
-            id: 1,
-            type: 'shipment_created',
-            tracking: 'EZ1234567890',
-            message: 'New shipment created to New York, NY',
-            timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-            status: 'pending',
-          },
-          {
-            id: 2,
-            type: 'shipment_delivered',
-            tracking: 'EZ9876543210',
-            message: 'Shipment delivered to Seattle, WA',
-            timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-            status: 'delivered',
-          },
-          {
-            id: 3,
-            type: 'shipment_in_transit',
-            tracking: 'EZ5555555555',
-            message: 'Shipment in transit to Boston, MA',
-            timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-            status: 'in_transit',
-          },
-        ]);
-
-        setCarrierPerformance([
-          { carrier: 'USPS', rate: 96, shipments: 1205 },
-          { carrier: 'UPS', rate: 94, shipments: 842 },
-          { carrier: 'FedEx', rate: 92, shipments: 409 },
-        ]);
+        // Empty state - no mock data to avoid confusion
+        setRecentActivity([]);
+        setCarrierPerformance([]);
       } finally {
         setIsLoading(false);
       }
@@ -238,7 +201,7 @@ export default function DashboardPage() {
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
         <p className="text-muted-foreground">
-          Welcome back! Here&apos;s an overview of your shipping operations.
+          Live snapshot from EasyPost API • Last 100 shipments • Historical trends require database storage
         </p>
       </div>
 
@@ -300,11 +263,11 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Carrier Performance */}
+        {/* Carrier Usage */}
         <Card>
           <CardHeader>
-            <CardTitle>Carrier Performance</CardTitle>
-            <CardDescription>Delivery success rates</CardDescription>
+            <CardTitle>Carrier Distribution</CardTitle>
+            <CardDescription>Shipments by carrier (last 100)</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -313,7 +276,9 @@ export default function DashboardPage() {
                   <div key={item.carrier} className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
                       <span className="font-medium">{item.carrier}</span>
-                      <span className="text-muted-foreground">{item.shipments} shipments</span>
+                      <span className="text-muted-foreground">
+                        {item.shipments} total • {item.delivered || 0} delivered
+                      </span>
                     </div>
                     <div className="relative h-2 rounded-full bg-muted overflow-hidden">
                       <div
@@ -322,7 +287,7 @@ export default function DashboardPage() {
                       />
                     </div>
                     <div className="text-right text-xs text-muted-foreground">
-                      {item.rate}% on-time
+                      {item.rate}% delivery completion
                     </div>
                   </div>
                 ))

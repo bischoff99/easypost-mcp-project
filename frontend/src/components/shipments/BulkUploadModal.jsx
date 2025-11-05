@@ -19,7 +19,6 @@ import { shipmentAPI } from '@/services/api';
 
 export default function BulkUploadModal({ isOpen, onClose, onSuccess }) {
   const [step, setStep] = useState(1);
-  const [file, setFile] = useState(null);
   const [csvData, setCsvData] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -36,8 +35,6 @@ export default function BulkUploadModal({ isOpen, onClose, onSuccess }) {
       });
       return;
     }
-
-    setFile(selectedFile);
 
     // Parse CSV
     const reader = new FileReader();
@@ -176,7 +173,6 @@ export default function BulkUploadModal({ isOpen, onClose, onSuccess }) {
 
   const handleClose = () => {
     setStep(1);
-    setFile(null);
     setCsvData([]);
     setProgress(0);
     setResults(null);

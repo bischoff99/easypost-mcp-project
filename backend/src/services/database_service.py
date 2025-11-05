@@ -134,10 +134,14 @@ class DatabaseService:
         await self.session.refresh(summary)
         return summary
 
-    async def get_analytics_summary_by_date(
-        self, date: str, period: str
-    ) -> Optional[AnalyticsSummary]:
+    async def get_analytics_summary_by_date(self, date, period: str) -> Optional[AnalyticsSummary]:
         """Get analytics summary for specific date and period."""
+        from datetime import date as date_type
+
+        # Convert string to date if needed
+        if isinstance(date, str):
+            date = date_type.fromisoformat(date)
+
         stmt = select(AnalyticsSummary).where(
             AnalyticsSummary.date == date, AnalyticsSummary.period == period
         )
@@ -395,8 +399,7 @@ class DatabaseService:
             )
             .outerjoin(
                 ShipmentEvent,
-                (ShipmentEvent.shipment_id == Shipment.id)
-                & (ShipmentEvent.event_type == "delivered"),
+                (ShipmentEvent.shipment_id == Shipment.id) & (ShipmentEvent.status == "delivered"),
             )
             .where(Shipment.created_at >= start_date)
             .group_by(Shipment.carrier)
