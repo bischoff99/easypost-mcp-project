@@ -13,7 +13,8 @@
     "**/*.pyc": true,
     "**/venv": true,
     "**/.pytest_cache": true,
-    "**/htmlcov": true
+    "**/htmlcov": true,
+    "**/bandit-report.json": true
   },
   "search.exclude": {
     "**/node_modules": true,
@@ -28,14 +29,18 @@
     "**/__pycache__": true,
     "**/venv": true,
     "**/.pytest_cache": true,
-    "**/htmlcov": true
+    "**/htmlcov": true,
+    "**/*.env": true,
+    "**/bandit-report.json": true
   },
   "files.associations": {
-    "*.mcp": "json"
+    "*.mcp": "json",
+    "*.env.*": "dotenv"
   },
   "files.autoSave": "onFocusChange",
   "files.trimTrailingWhitespace": true,
   "files.insertFinalNewline": true,
+  "files.maxMemoryForLargeFilesMB": 8192,
   "files.watcherExclude": {
     "**/node_modules/**": true,
     "**/coverage/**": true,
@@ -47,20 +52,32 @@
   "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit",
+    "source.fixAll": "explicit",
     "source.organizeImports": "explicit"
   },
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.tabSize": 2,
   "editor.insertSpaces": true,
   "editor.rulers": [80, 120],
+  "editor.inlineSuggest.enabled": true,
+  "editor.suggestSelection": "first",
+  "editor.acceptSuggestionOnCommitCharacter": true,
+  "editor.snippetSuggestions": "top",
+  "editor.wordBasedSuggestions": "matchingDocuments",
+  "editor.linkedEditing": true,
+  "editor.stickyScroll.enabled": true,
+  "editor.minimap.enabled": true,
+  "editor.minimap.maxColumn": 100,
   "editor.quickSuggestions": {
     "other": true,
     "comments": false,
     "strings": false
   },
+  "editor.quickSuggestionsDelay": 10,
+  "editor.suggest.preview": true,
+  "editor.suggest.showStatusBar": true,
   "editor.bracketPairColorization.enabled": true,
   "editor.guides.bracketPairs": "active",
-  "editor.suggest.preview": true,
   "cursor.chat.useContext": true,
   "cursor.chat.contextFiles": [
     ".cursorrules",
@@ -91,29 +108,47 @@
   "[python]": {
     "editor.defaultFormatter": "ms-python.black-formatter",
     "editor.formatOnSave": true,
+    "editor.rulers": [100],
     "editor.codeActionsOnSave": {
-      "source.organizeImports": "explicit"
+      "source.organizeImports": "explicit",
+      "source.fixAll": "explicit"
     }
   },
+  "python.languageServer": "Pylance",
   "python.linting.enabled": true,
   "python.linting.pylintEnabled": false,
   "python.linting.flake8Enabled": true,
+  "python.linting.banditEnabled": true,
+  "python.linting.banditArgs": ["-r", "backend/src/"],
   "python.testing.pytestEnabled": true,
   "python.testing.unittestEnabled": false,
   "python.testing.pytestArgs": [
     "tests"
   ],
-  "python.analysis.typeCheckingMode": "basic",
+  "python.analysis.typeCheckingMode": "strict",
+  "python.analysis.diagnosticMode": "workspace",
   "python.analysis.autoImportCompletions": true,
   "python.analysis.completeFunctionParens": true,
+  "python.analysis.inlayHints.variableTypes": true,
+  "python.analysis.inlayHints.functionReturnTypes": true,
   "javascript.validate.enable": true,
   "javascript.updateImportsOnFileMove.enabled": "always",
   "javascript.suggest.autoImports": true,
   "javascript.suggest.paths": true,
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "typescript.suggest.autoImports": true,
+  "typescript.inlayHints.parameterNames.enabled": "all",
+  "typescript.inlayHints.functionLikeReturnTypes.enabled": true,
+  "emmet.includeLanguages": {
+    "javascript": "javascriptreact",
+    "typescript": "typescriptreact"
+  },
+  "emmet.triggerExpansionOnTab": true,
   "eslint.workingDirectories": ["./frontend"],
   "git.autofetch": true,
   "git.confirmSync": false,
   "git.enableSmartCommit": true,
+  "git.untrackedChanges": "separate",
   "explorer.fileNesting.enabled": true,
   "explorer.fileNesting.expand": false,
   "explorer.fileNesting.patterns": {
@@ -133,5 +168,25 @@
   "diffEditor.ignoreTrimWhitespace": false,
   "diffEditor.renderSideBySide": true,
   "workbench.tree.indent": 20,
-  "workbench.tree.renderIndentGuides": "always"
+  "workbench.tree.renderIndentGuides": "always",
+  "security.workspace.trust.enabled": true,
+  "security.workspace.trust.startupPrompt": "always",
+  "security.workspace.trust.untrustedFiles": "prompt",
+  "search.maxResults": 20000,
+  "search.smartCase": true,
+  "search.followSymlinks": false,
+  "remote.portsAttributes": {
+    "8000": {
+      "label": "Backend API",
+      "onAutoForward": "notify"
+    },
+    "5173": {
+      "label": "Frontend Dev",
+      "onAutoForward": "openBrowser"
+    },
+    "5432": {
+      "label": "PostgreSQL",
+      "onAutoForward": "ignore"
+    }
+  }
 }

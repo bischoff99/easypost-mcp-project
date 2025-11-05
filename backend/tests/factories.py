@@ -1,7 +1,7 @@
 """Test data factories for EasyPost MCP tests."""
 
-from datetime import datetime, timezone
-from typing import Any, Dict, List
+from datetime import UTC, datetime
+from typing import Any
 
 
 class EasyPostFactory:
@@ -9,11 +9,11 @@ class EasyPostFactory:
 
     @staticmethod
     def shipment(
-        id: str = "shp_test123",
+        id: str = "shp_test123",  # noqa: A002 - Test factory, not shadowing in practice
         tracking_code: str = "9400111899223345",
         status: str = "delivered",
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Create a mock shipment response."""
         base = {
             "status": "success",
@@ -27,13 +27,13 @@ class EasyPostFactory:
                 "rate": 5.50,
                 "currency": "USD",
             },
-            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
         }
         base.update(kwargs)
         return base
 
     @staticmethod
-    def rates(rates: List[Dict] = None) -> Dict[str, Any]:
+    def rates(rates: list[dict] = None) -> dict[str, Any]:
         """Create a mock rates response."""
         default_rates = [
             {
@@ -59,7 +59,7 @@ class EasyPostFactory:
     @staticmethod
     def tracking(
         tracking_code: str = "9400111899223345", status: str = "delivered", **kwargs
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Create a mock tracking response."""
         base = {
             "status": "success",
@@ -81,7 +81,7 @@ class EasyPostFactory:
         return base
 
     @staticmethod
-    def shipment_list(shipments: List[Dict] = None) -> Dict[str, Any]:
+    def shipment_list(shipments: list[dict] = None) -> dict[str, Any]:
         """Create a mock shipments list response."""
         default_shipments = [
             {
@@ -105,13 +105,13 @@ class EasyPostFactory:
         }
 
     @staticmethod
-    def error(message: str = "API Error", status_code: int = 500) -> Dict[str, Any]:
+    def error(message: str = "API Error", status_code: int = 500) -> dict[str, Any]:
         """Create a mock error response."""
         return {
             "status": "error",
             "message": message,
             "code": status_code,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
     @staticmethod
@@ -120,10 +120,10 @@ class EasyPostFactory:
         street1: str = "123 Main St",
         city: str = "Anytown",
         state: str = "CA",
-        zip: str = "12345",
+        zip: str = "12345",  # noqa: A002 - Test factory, matches EasyPost API field name
         country: str = "US",
         **kwargs,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """Create a mock address."""
         base = {
             "name": name,
@@ -143,14 +143,14 @@ class EasyPostFactory:
         height: float = 6.0,
         weight: float = 2.0,
         **kwargs,
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """Create a mock parcel."""
         base = {"length": length, "width": width, "height": height, "weight": weight}
         base.update(kwargs)
         return base
 
     @staticmethod
-    def shipment_request(**kwargs) -> Dict[str, Any]:
+    def shipment_request(**kwargs) -> dict[str, Any]:
         """Create a complete shipment request."""
         base = {
             "to_address": EasyPostFactory.address(),

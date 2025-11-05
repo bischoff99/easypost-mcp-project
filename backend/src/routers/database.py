@@ -1,7 +1,7 @@
 """Database-backed endpoints for persistent data access."""
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, HTTPException, Request
 from slowapi import Limiter
@@ -78,7 +78,7 @@ async def get_shipments_db(
                     },
                 },
                 "message": f"Retrieved {len(shipments)} shipments",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
     except Exception as e:
@@ -121,7 +121,7 @@ async def get_shipment_by_id(request: Request, shipment_id: int):
                 "status": "success",
                 "data": shipment.to_dict(),
                 "message": f"Retrieved shipment {shipment_id}",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
     except HTTPException:
@@ -191,7 +191,7 @@ async def get_addresses_db(
                     },
                 },
                 "message": f"Retrieved {len(addresses)} addresses",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
     except Exception as e:
@@ -244,7 +244,7 @@ async def get_analytics_dashboard_db(request: Request, days: int = 30):
                     "top_routes": top_routes,
                 },
                 "message": f"Analytics data for last {days} days",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
     except Exception as e:
@@ -308,7 +308,7 @@ async def get_batch_operations_db(
                     },
                 },
                 "message": f"Retrieved {len(batch_operations)} batch operations",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
     except Exception as e:
@@ -368,7 +368,7 @@ async def get_user_activity_db(
                     },
                 },
                 "message": f"Retrieved {len(activities)} user activities",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
     except Exception as e:

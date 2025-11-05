@@ -39,7 +39,7 @@ class Settings:
     DATABASE_CONNECT_TIMEOUT: int = int(os.getenv("DATABASE_CONNECT_TIMEOUT", "10"))
 
     # Server
-    MCP_HOST: str = os.getenv("MCP_HOST", "0.0.0.0")
+    MCP_HOST: str = os.getenv("MCP_HOST", "0.0.0.0")  # noqa: S104 - Required for Docker
     MCP_PORT: int = int(os.getenv("MCP_PORT", "8000"))
     MCP_LOG_LEVEL: str = os.getenv("MCP_LOG_LEVEL", "INFO")
 

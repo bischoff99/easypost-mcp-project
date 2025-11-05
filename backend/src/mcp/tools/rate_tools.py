@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastmcp import Context
 from pydantic import ValidationError
@@ -12,7 +12,7 @@ from src.services.easypost_service import AddressModel, ParcelModel
 logger = logging.getLogger(__name__)
 
 
-def register_rate_tools(mcp, easypost_service=None):
+def register_rate_tools(mcp, easypost_service=None):  # noqa: ARG001 - Uses Context instead
     """Register rate-related tools with MCP server."""
 
     @mcp.tool(tags=["rates", "shipping", "core"])
@@ -49,13 +49,13 @@ def register_rate_tools(mcp, easypost_service=None):
                 await ctx.report_progress(1, 1)
 
             return result
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.error("Rates calculation timed out after 20 seconds")
             return {
                 "status": "error",
                 "data": None,
                 "message": "Rates calculation timed out. Please try again.",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
         except ValidationError as e:
             logger.error(f"Validation error: {str(e)}")
@@ -63,7 +63,7 @@ def register_rate_tools(mcp, easypost_service=None):
                 "status": "error",
                 "data": None,
                 "message": f"Validation error: {str(e)}",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
         except Exception as e:
             logger.error(f"Tool error: {str(e)}")
@@ -71,5 +71,5 @@ def register_rate_tools(mcp, easypost_service=None):
                 "status": "error",
                 "data": None,
                 "message": "Failed to retrieve rates",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }

@@ -2,7 +2,7 @@
 
 import asyncio
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -59,7 +59,7 @@ class MockEasyPostService:
             "data": {
                 "tracking_number": tracking_number,
                 "status_detail": "in_transit",
-                "updated_at": datetime.now(timezone.utc).isoformat(),
+                "updated_at": datetime.now(UTC).isoformat(),
             },
         }
 
@@ -116,14 +116,14 @@ async def test_sequential_vs_parallel_creation():
     # Calculate speedup
     speedup = seq_duration / par_duration
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("BULK SHIPMENT CREATION BENCHMARK (M3 Max)")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     print(f"Shipments: {num_shipments}")
-    print(f"Sequential: {seq_duration:.2f}s ({num_shipments/seq_duration:.1f} shipments/s)")
-    print(f"Parallel:   {par_duration:.2f}s ({num_shipments/par_duration:.1f} shipments/s)")
+    print(f"Sequential: {seq_duration:.2f}s ({num_shipments / seq_duration:.1f} shipments/s)")
+    print(f"Parallel:   {par_duration:.2f}s ({num_shipments / par_duration:.1f} shipments/s)")
     print(f"Speedup:    {speedup:.1f}x")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
     # Note: For CPU-bound tasks like analytics processing, parallel processing
     # in Python may not provide speedup due to GIL overhead. This test demonstrates
@@ -158,14 +158,14 @@ async def test_sequential_vs_parallel_tracking():
     # Calculate speedup
     speedup = seq_duration / par_duration
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("BATCH TRACKING BENCHMARK (M3 Max)")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     print(f"Packages: {num_packages}")
-    print(f"Sequential: {seq_duration:.2f}s ({num_packages/seq_duration:.1f} packages/s)")
-    print(f"Parallel:   {par_duration:.2f}s ({num_packages/par_duration:.1f} packages/s)")
+    print(f"Sequential: {seq_duration:.2f}s ({num_packages / seq_duration:.1f} packages/s)")
+    print(f"Parallel:   {par_duration:.2f}s ({num_packages / par_duration:.1f} packages/s)")
     print(f"Speedup:    {speedup:.1f}x")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
     # Note: Analytics processing is CPU-bound, so parallel processing in Python
     # may not provide speedup due to GIL limitations. This test demonstrates
@@ -185,7 +185,7 @@ async def test_analytics_parallel_processing():
             "id": f"shp_{i}",
             "carrier": ["USPS", "FedEx", "UPS"][i % 3],
             "cost": 8.50 + (i % 10),
-            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
             "from_address": {"city": "Los Angeles"},
             "to_address": {"city": ["New York", "Chicago", "Miami"][i % 3]},
         }
@@ -234,14 +234,18 @@ async def test_analytics_parallel_processing():
     # Calculate speedup
     speedup = seq_duration / par_duration
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("ANALYTICS PROCESSING BENCHMARK (M3 Max)")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     print(f"Shipments: {num_shipments}")
-    print(f"Sequential: {seq_duration*1000:.1f}ms ({num_shipments/seq_duration:.0f} shipments/s)")
-    print(f"Parallel:   {par_duration*1000:.1f}ms ({num_shipments/par_duration:.0f} shipments/s)")
+    print(
+        f"Sequential: {seq_duration * 1000:.1f}ms ({num_shipments / seq_duration:.0f} shipments/s)"
+    )
+    print(
+        f"Parallel:   {par_duration * 1000:.1f}ms ({num_shipments / par_duration:.0f} shipments/s)"
+    )
     print(f"Speedup:    {speedup:.1f}x")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
     # Verify results match
     assert carrier_stats_seq == carrier_stats_par, "Results should match"
@@ -279,17 +283,23 @@ def test_parsing_performance():
 
     total_duration = parse_duration + dims_duration + weight_duration
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("PARSING PERFORMANCE BENCHMARK")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     print(f"Iterations: {num_lines}")
-    print(f"parse_spreadsheet_line: {parse_duration*1000:.2f}ms ({num_lines/parse_duration:.0f}/s)")
-    print(f"parse_dimensions:       {dims_duration*1000:.2f}ms ({num_lines/dims_duration:.0f}/s)")
     print(
-        f"parse_weight:           {weight_duration*1000:.2f}ms ({num_lines/weight_duration:.0f}/s)"
+        f"parse_spreadsheet_line: {parse_duration * 1000:.2f}ms ({num_lines / parse_duration:.0f}/s)"
     )
-    print(f"Total:                  {total_duration*1000:.2f}ms ({num_lines/total_duration:.0f}/s)")
-    print(f"{'='*60}\n")
+    print(
+        f"parse_dimensions:       {dims_duration * 1000:.2f}ms ({num_lines / dims_duration:.0f}/s)"
+    )
+    print(
+        f"parse_weight:           {weight_duration * 1000:.2f}ms ({num_lines / weight_duration:.0f}/s)"
+    )
+    print(
+        f"Total:                  {total_duration * 1000:.2f}ms ({num_lines / total_duration:.0f}/s)"
+    )
+    print(f"{'=' * 60}\n")
 
     # Assert reasonable performance
     assert parse_duration < 1.0, "Parsing should be fast"

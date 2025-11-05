@@ -17,7 +17,7 @@ max_line_length = 100
 
 [*.{js,jsx,ts,tsx}]
 indent_size = 2
-max_line_length = 120
+max_line_length = 100
 
 [*.{yml,yaml}]
 indent_size = 2
@@ -38,3 +38,23 @@ indent_style = tab
 [{package.json,*.yml}]
 indent_size = 2
 
+
+[*.pyi]
+indent_size = 4
+max_line_length = 120
+
+[*.sql]
+indent_size = 2
+max_line_length = 0
+
+[*.toml]
+indent_size = 2
+
+[*.{graphql,gql}]
+indent_size = 2
+
+[Dockerfile*]
+indent_size = 4
+
+[*.csv]
+trim_trailing_whitespace = false

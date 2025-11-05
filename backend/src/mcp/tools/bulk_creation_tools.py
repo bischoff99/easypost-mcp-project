@@ -7,9 +7,8 @@ Optimized for I/O-bound EasyPost API calls
 import asyncio
 import logging
 import multiprocessing
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from time import time
-from typing import List
 
 from fastmcp import Context
 
@@ -75,7 +74,7 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
         Returns:
             Dictionary with created shipments, rates, and shipment IDs for approval
         """
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
 
         try:
             if ctx:
@@ -113,7 +112,7 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                     "status": "error",
                     "data": None,
                     "message": "No data provided",
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 }
 
             total_lines = len(lines)
@@ -214,7 +213,7 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                         ],
                     },
                     "message": f"Dry-run: {len(valid_shipments)}/{len(validation_results)} valid",
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 }
 
             if not valid_shipments:
@@ -222,7 +221,7 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                     "status": "error",
                     "data": None,
                     "message": "No valid shipments to create",
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 }
 
             # Phase 2: Create shipments in parallel - M3 Max: 32 workers with semaphore
@@ -318,16 +317,15 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                             "recipient": to_address["name"],
                             "destination": f"{data['city']}, {data['state']}",
                         }
-                    else:
-                        return {
-                            "line": line_number,
-                            "status": "error",
-                            "error": result.get("message", "Unknown error"),
-                            "recipient": to_address["name"],
-                            "destination": f"{data['city']}, {data['state']}",
-                        }
+                    return {
+                        "line": line_number,
+                        "status": "error",
+                        "error": result.get("message", "Unknown error"),
+                        "recipient": to_address["name"],
+                        "destination": f"{data['city']}, {data['state']}",
+                    }
 
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     return {
                         "line": validation_result["line"],
                         "status": "error",
@@ -381,7 +379,7 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                             )
 
             # Calculate summary
-            end_time = datetime.now(timezone.utc)
+            end_time = datetime.now(UTC)
             duration = (end_time - start_time).total_seconds()
 
             successful = [r for r in results if r.get("status") == "success"]
@@ -408,7 +406,7 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                         "successful_items": len(successful),
                         "failed_items": len(failed),
                         "status": "completed",
-                        "completed_at": datetime.now(timezone.utc),
+                        "completed_at": datetime.now(UTC),
                         "total_processing_time": duration,
                         "errors": [
                             {"line": r.get("line"), "error": r.get("error")} for r in failed
@@ -551,7 +549,7 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                     f"Created {len(successful)}/{len(valid_shipments)} shipments "
                     f"in {duration:.1f}s ({len(valid_shipments) / duration:.1f} shipments/s)"
                 ),
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
         except Exception as e:
@@ -560,13 +558,13 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                 "status": "error",
                 "data": None,
                 "message": f"Bulk creation failed: {str(e)}",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
     @mcp.tool(tags=["bulk", "purchase", "shipping", "m3-optimized"])
     async def buy_bulk_shipments(
-        shipment_ids: List[str],
-        customs_data: List[dict] = None,
+        shipment_ids: list[str],
+        customs_data: list[dict] = None,
         carrier: str = None,
         ctx: Context = None,
     ) -> dict:
@@ -588,7 +586,7 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
         Returns:
             Purchased labels with tracking numbers
         """
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
 
         try:
             if ctx:
@@ -679,7 +677,7 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
             successful = [r for r in results if r.get("status") == "success"]
             failed = [r for r in results if r.get("status") == "error"]
             total_cost = sum(float(s["cost"]) for s in successful)
-            duration = (datetime.now(timezone.utc) - start_time).total_seconds()
+            duration = (datetime.now(UTC) - start_time).total_seconds()
 
             if ctx:
                 await ctx.info(f"✅ Purchased {len(successful)}/{total} labels - ${total_cost:.2f}")
@@ -698,7 +696,7 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                     },
                 },
                 "message": f"Purchased {len(successful)}/{total} labels - ${total_cost:.2f}",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
         except Exception as e:
@@ -706,5 +704,5 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
             return {
                 "status": "error",
                 "message": str(e),
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }

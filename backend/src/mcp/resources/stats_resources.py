@@ -3,7 +3,7 @@
 import asyncio
 import json
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +16,7 @@ def register_stats_resources(mcp, easypost_service):
         """Get shipping statistics overview calculated from real EasyPost data."""
         try:
             # Fetch recent shipments (last 30 days worth, up to 100)
-            thirty_days_ago = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+            thirty_days_ago = (datetime.now(UTC) - timedelta(days=30)).isoformat()
 
             # Add timeout to prevent SSE timeout errors
             result = await asyncio.wait_for(
@@ -62,20 +62,20 @@ def register_stats_resources(mcp, easypost_service):
                 "carriers_used": sorted(carriers_used_set),
                 "delivery_success_rate": delivery_success_rate,
                 "period": "last_30_days",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
             return json.dumps(
                 {"status": "success", "data": stats, "message": "Statistics calculated"},
                 indent=2,
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.error("Stats calculation timed out after 20 seconds")
             return json.dumps(
                 {
                     "status": "error",
                     "message": "Stats calculation timed out. Please try again.",
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 },
                 indent=2,
             )
@@ -85,7 +85,7 @@ def register_stats_resources(mcp, easypost_service):
                 {
                     "status": "error",
                     "message": f"Failed to calculate stats: {str(e)}",
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 },
                 indent=2,
             )

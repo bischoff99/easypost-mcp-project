@@ -3,8 +3,8 @@
 import asyncio
 import logging
 import re
-from datetime import datetime, timezone
-from typing import Any, Dict
+from datetime import UTC, datetime
+from typing import Any
 
 from fastmcp import Context
 from pydantic import BaseModel
@@ -203,7 +203,7 @@ def get_warehouse_address(state: str, category: str) -> dict:
     return state_warehouses.get("default", state_warehouses[list(state_warehouses.keys())[0]])
 
 
-def parse_spreadsheet_line(line: str) -> Dict[str, Any]:
+def parse_spreadsheet_line(line: str) -> dict[str, Any]:
     """
     Parse a tab-separated line from spreadsheet.
 
@@ -244,7 +244,7 @@ def register_bulk_tools(mcp, easypost_service=None):
     @mcp.tool(tags=["bulk", "rates", "shipping"])
     async def parse_and_get_bulk_rates(
         spreadsheet_data: str,
-        from_city: str = None,
+        from_city: str = None,  # noqa: ARG001 - Future filtering feature
         ctx: Context = None,
     ) -> dict:
         """
@@ -276,7 +276,7 @@ def register_bulk_tools(mcp, easypost_service=None):
                     "status": "error",
                     "data": None,
                     "message": "No data provided",
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 }
 
             results = []
@@ -397,7 +397,7 @@ def register_bulk_tools(mcp, easypost_service=None):
                     f"Processed {len(results)} shipments from {len(used_warehouses)} warehouses "
                     f"({successful} successful, {failed} failed)"
                 ),
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
         except Exception as e:
@@ -406,5 +406,5 @@ def register_bulk_tools(mcp, easypost_service=None):
                 "status": "error",
                 "data": None,
                 "message": f"Failed to process bulk rates: {str(e)}",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }

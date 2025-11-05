@@ -1,7 +1,5 @@
 """Request models for FastAPI endpoints."""
 
-from typing import Optional
-
 from pydantic import BaseModel
 
 from src.services.easypost_service import AddressModel, ParcelModel
@@ -14,7 +12,7 @@ class ShipmentRequest(BaseModel):
     from_address: AddressModel
     parcel: ParcelModel
     carrier: str = "USPS"
-    service: Optional[str] = None  # Specific service (e.g., "FEDEX_GROUND", "Priority")
+    service: str | None = None  # Specific service (e.g., "FEDEX_GROUND", "Priority")
 
 
 class RatesRequest(BaseModel):
@@ -32,3 +30,9 @@ class BuyShipmentRequest(BaseModel):
     to_address: AddressModel
     parcel: ParcelModel
     rate_id: str
+
+
+class BulkShipmentsRequest(BaseModel):
+    """Request model for creating shipments in bulk."""
+
+    shipments: list[ShipmentRequest]

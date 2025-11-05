@@ -19,7 +19,11 @@
       "Bash(chmod:*)",
       "Bash(git mv:*)",
       "Bash(awk:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(pre-commit install:*)",
+      "Bash(cat:*)",
+      "Bash(make dev:*)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []

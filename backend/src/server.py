@@ -4,13 +4,17 @@ import asyncio
 import logging
 import uuid
 from collections import defaultdict
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
-# M3 Max Optimization: Use uvloop for 2-4x faster async I/O
-import uvloop
+# M3 Max Optimization: Use uvloop for 2-4x faster async I/O (optional on non-Windows)
+try:
+    import uvloop  # type: ignore[import]
 
-# Install uvloop for faster async I/O (2-4x performance improvement)
-uvloop.install()
+    _uvloop_available = True
+except ModuleNotFoundError:
+    uvloop = None  # type: ignore[assignment]
+    _uvloop_available = False
 
 from fastapi import FastAPI, HTTPException, Request
 from pydantic import ValidationError
@@ -32,7 +36,12 @@ from src.models.analytics import (
     ShipmentMetricsResponse,
     VolumeMetrics,
 )
-from src.models.requests import BuyShipmentRequest, RatesRequest, ShipmentRequest
+from src.models.requests import (
+    BulkShipmentsRequest,
+    BuyShipmentRequest,
+    RatesRequest,
+    ShipmentRequest,
+)
 from src.services.database_service import DatabaseService
 from src.services.webhook_service import WebhookService
 from src.utils.config import settings
@@ -47,6 +56,12 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
+
+if _uvloop_available and uvloop is not None:
+    uvloop.install()
+    logger.info("uvloop installed successfully")
+else:
+    logger.info("uvloop not available for this platform; falling back to default event loop")
 
 # Validate settings on startup
 try:
@@ -114,13 +129,15 @@ app.add_middleware(RequestIDMiddleware)
 app.mount("/mcp", mcp.http_app())
 
 # Add error handling middleware to MCP
+import contextlib
+
 from fastmcp.server.middleware.error_handling import ErrorHandlingMiddleware
 
 mcp.add_middleware(
     ErrorHandlingMiddleware(
         include_traceback=settings.DEBUG if hasattr(settings, "DEBUG") else False,
         transform_errors=True,
-        error_callback=lambda e: metrics.record_error(),
+        error_callback=lambda e: metrics.record_error(),  # noqa: ARG005 - Interface requirement
     )
 )
 
@@ -297,6 +314,125 @@ async def buy_shipment(request: Request, buy_request: BuyShipmentRequest, servic
         ) from e
 
 
+@app.post("/bulk-shipments")
+@limiter.limit("5/minute")
+async def create_bulk_shipments(
+    request: Request, bulk_request: BulkShipmentsRequest, service: EasyPostDep
+):
+    """Create multiple shipments concurrently."""
+    request_id = getattr(request.state, "request_id", "unknown")
+
+    try:
+        logger.info(
+            f"[{request_id}] Bulk shipment request received ({len(bulk_request.shipments)} items)"
+        )
+
+        shipments = bulk_request.shipments
+        if not shipments:
+            metrics.track_api_call("bulk_create_shipments", True)
+            return {
+                "status": "success",
+                "data": {
+                    "total": 0,
+                    "successful": 0,
+                    "failed": 0,
+                    "errors": [],
+                    "results": [],
+                },
+                "timestamp": datetime.now(UTC).isoformat(),
+            }
+
+        concurrency = min(8, len(shipments))
+        semaphore = asyncio.Semaphore(concurrency)
+
+        async def process(index: int, shipment_req: ShipmentRequest):
+            async with semaphore:
+                payload = shipment_req.model_dump()
+                try:
+                    result = await service.create_shipment(
+                        to_address=payload["to_address"],
+                        from_address=payload["from_address"],
+                        parcel=payload["parcel"],
+                        carrier=payload.get("carrier", "USPS"),
+                        service=payload.get("service"),
+                        buy_label=False,
+                    )
+                    return index, result, None
+                except Exception as exc:
+                    return index, None, str(exc)
+
+        tasks = [
+            asyncio.create_task(process(idx, shipment)) for idx, shipment in enumerate(shipments)
+        ]
+        raw_results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        successes = 0
+        errors: list[dict[str, Any]] = []
+        results: list[dict[str, Any]] = []
+
+        for outcome in raw_results:
+            if isinstance(outcome, Exception):
+                errors.append(
+                    {"index": len(errors) + 1, "message": str(outcome)[:MAX_REQUEST_LOG_SIZE]}
+                )
+                continue
+
+            index, result, error = outcome
+            if error:
+                errors.append({"index": index + 1, "message": error[:MAX_REQUEST_LOG_SIZE]})
+            else:
+                results.append({"index": index + 1, "result": result})
+                if result.get("status") == "success":
+                    successes += 1
+                else:
+                    errors.append(
+                        {
+                            "index": index + 1,
+                            "message": result.get("message", "Unknown error")[
+                                :MAX_REQUEST_LOG_SIZE
+                            ],
+                        }
+                    )
+
+        failed = len(errors)
+        metrics.track_api_call("bulk_create_shipments", failed == 0)
+
+        response_payload = {
+            "total": len(shipments),
+            "successful": successes,
+            "failed": failed,
+            "errors": errors,
+            "results": results,
+        }
+
+        status_message = (
+            "All shipments created successfully"
+            if failed == 0
+            else "Bulk shipment processing completed with errors"
+        )
+
+        logger.info(
+            f"[{request_id}] Bulk shipment processing complete "
+            f"(success={successes}, failed={failed})"
+        )
+
+        return {
+            "status": "success",
+            "message": status_message,
+            "data": response_payload,
+            "timestamp": datetime.now(UTC).isoformat(),
+        }
+
+    except Exception as e:
+        error_msg = str(e)[:MAX_REQUEST_LOG_SIZE]
+        logger.error(f"[{request_id}] Bulk shipment error: {error_msg}")
+        metrics.track_api_call("bulk_create_shipments", False)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error processing bulk shipments: {error_msg}",
+        ) from e
+
+
 @app.get("/shipments")
 async def list_shipments(
     request: Request, service: EasyPostDep, page_size: int = 20, before_id: str | None = None
@@ -324,8 +460,41 @@ async def list_shipments(
         ) from e
 
 
-# Removed /shipments/{shipment_id} endpoint - not implemented in EasyPostService
-# Use /shipments list endpoint instead
+@app.get("/shipments/{shipment_id}")
+@limiter.limit("10/minute")
+async def get_shipment_detail(request: Request, shipment_id: str, service: EasyPostDep):
+    """Retrieve detailed information for a single shipment."""
+    request_id = getattr(request.state, "request_id", "unknown")
+
+    try:
+        logger.info(f"[{request_id}] Retrieve shipment {shipment_id}")
+
+        result = await service.retrieve_shipment(shipment_id=shipment_id)
+        status_value = result.get("status")
+
+        if status_value != "success" or not result.get("data"):
+            detail = result.get("message", "Failed to retrieve shipment")
+            status_code = (
+                status.HTTP_404_NOT_FOUND
+                if isinstance(detail, str) and "not found" in detail.lower()
+                else status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+            metrics.track_api_call("get_shipment_detail", False)
+            raise HTTPException(status_code=status_code, detail=detail)
+
+        metrics.track_api_call("get_shipment_detail", True)
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        error_msg = str(e)[:MAX_REQUEST_LOG_SIZE]
+        logger.error(f"[{request_id}] Error retrieving shipment {shipment_id}: {error_msg}")
+        metrics.track_api_call("get_shipment_detail", False)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving shipment: {error_msg}",
+        ) from e
 
 
 @app.get("/tracking/{tracking_number}")
@@ -390,18 +559,18 @@ async def get_analytics(
 
         async def calculate_carrier_stats(shipments_chunk):
             """Calculate carrier statistics for a chunk."""
-            stats = defaultdict(lambda: {"count": 0, "cost": 0.0})
+            stats = defaultdict(lambda: {"count": 0, "cost": 0.0, "delivered": 0})
             for shipment in shipments_chunk:
                 # Extract actual cost from shipment rate
                 cost = 0.0
                 if "rate" in shipment and shipment["rate"]:
-                    try:
+                    with contextlib.suppress(ValueError, TypeError):
                         cost = float(shipment["rate"])
-                    except (ValueError, TypeError):
-                        pass
                 carrier = shipment.get("carrier", "Unknown")
                 stats[carrier]["count"] += 1
                 stats[carrier]["cost"] += cost
+                if shipment.get("status", "").lower() == "delivered":
+                    stats[carrier]["delivered"] += 1
             return stats
 
         async def calculate_date_stats(shipments_chunk):
@@ -411,11 +580,9 @@ async def get_analytics(
                 # Extract actual cost from shipment rate
                 cost = 0.0
                 if "rate" in shipment and shipment["rate"]:
-                    try:
+                    with contextlib.suppress(ValueError, TypeError):
                         cost = float(shipment["rate"])
-                    except (ValueError, TypeError):
-                        pass
-                created_at = shipment.get("created_at", datetime.now(timezone.utc))
+                created_at = shipment.get("created_at", datetime.now(UTC))
                 if isinstance(created_at, str):
                     created_at = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
                 date_key = created_at.strftime("%Y-%m-%d")
@@ -430,10 +597,8 @@ async def get_analytics(
                 # Extract actual cost from shipment rate
                 cost = 0.0
                 if "rate" in shipment and shipment["rate"]:
-                    try:
+                    with contextlib.suppress(ValueError, TypeError):
                         cost = float(shipment["rate"])
-                    except (ValueError, TypeError):
-                        pass
                 from_city = shipment.get("from_address", {}).get("city", "Unknown")
                 to_city = shipment.get("to_address", {}).get("city", "Unknown")
                 route_key = f"{from_city} → {to_city}"
@@ -441,37 +606,44 @@ async def get_analytics(
                 stats[route_key]["cost"] += cost
             return stats
 
-        # Split shipments into chunks for parallel processing (16 chunks for 16 cores)
-        chunk_size = max(1, len(shipments) // 16)
-        chunks = [shipments[i : i + chunk_size] for i in range(0, len(shipments), chunk_size)]
+        # Split shipments into chunks for parallel processing (up to 16 chunks)
+        if shipments:
+            max_chunks = min(16, len(shipments))
+            chunk_size = max(1, (len(shipments) + max_chunks - 1) // max_chunks)
+            chunks = [shipments[i : i + chunk_size] for i in range(0, len(shipments), chunk_size)]
+        else:
+            chunks = []
 
         # Process all chunks in parallel (carrier, date, route stats simultaneously)
         carrier_tasks = [calculate_carrier_stats(chunk) for chunk in chunks]
         date_tasks = [calculate_date_stats(chunk) for chunk in chunks]
         route_tasks = [calculate_route_stats(chunk) for chunk in chunks]
 
-        # Execute all 48 tasks in parallel (16 chunks × 3 stat types)
+        # Execute all tasks in parallel
         all_results = await asyncio.gather(*carrier_tasks, *date_tasks, *route_tasks)
+        chunk_count = len(chunks)
 
         # Aggregate results from chunks
-        carrier_stats = defaultdict(lambda: {"count": 0, "cost": 0.0})
+        carrier_stats = defaultdict(lambda: {"count": 0, "cost": 0.0, "delivered": 0})
         date_stats = defaultdict(lambda: {"count": 0, "cost": 0.0})
         route_stats = defaultdict(lambda: {"count": 0, "cost": 0.0})
 
-        # Merge carrier stats (first 16 results)
-        for chunk_result in all_results[:16]:
+        carrier_results = all_results[:chunk_count]
+        date_results = all_results[chunk_count : chunk_count * 2]
+        route_results = all_results[chunk_count * 2 :]
+
+        for chunk_result in carrier_results:
             for carrier, stats in chunk_result.items():
                 carrier_stats[carrier]["count"] += stats["count"]
                 carrier_stats[carrier]["cost"] += stats["cost"]
+                carrier_stats[carrier]["delivered"] += stats.get("delivered", 0)
 
-        # Merge date stats (next 16 results)
-        for chunk_result in all_results[16:32]:
+        for chunk_result in date_results:
             for date_key, stats in chunk_result.items():
                 date_stats[date_key]["count"] += stats["count"]
                 date_stats[date_key]["cost"] += stats["cost"]
 
-        # Merge route stats (last 16 results)
-        for chunk_result in all_results[32:48]:
+        for chunk_result in route_results:
             for route_key, stats in chunk_result.items():
                 route_stats[route_key]["count"] += stats["count"]
                 route_stats[route_key]["cost"] += stats["cost"]
@@ -488,50 +660,61 @@ async def get_analytics(
             total_cost=round(total_cost, 2),
             average_cost=round(avg_cost, 2),
             date_range={
-                "start": (datetime.now(timezone.utc) - timedelta(days=days)).isoformat(),
-                "end": datetime.now(timezone.utc).isoformat(),
+                "start": (datetime.now(UTC) - timedelta(days=days)).isoformat(),
+                "end": datetime.now(UTC).isoformat(),
             },
         )
 
         # Carrier metrics
-        by_carrier = [
-            CarrierMetrics(
-                carrier=carrier,
-                shipments=stats["count"],
-                total_cost=round(stats["cost"], 2),
-                avg_cost=round(
-                    stats["cost"] / stats["count"] if stats["count"] > 0 else 0.0,
-                    2,
-                ),
-                success_rate=100.0,  # Placeholder - calculate from actual success/failure data
+        by_carrier = []
+        for carrier, stats in sorted(
+            carrier_stats.items(), key=lambda x: x[1]["count"], reverse=True
+        ):
+            shipment_count = stats["count"]
+            total_cost_for_carrier = stats["cost"]
+            delivered = stats.get("delivered", 0)
+            avg_cost = total_cost_for_carrier / shipment_count if shipment_count > 0 else 0.0
+            percentage_of_total = (
+                (shipment_count / total_shipments) * 100 if total_shipments > 0 else 0.0
             )
-            for carrier, stats in sorted(
-                carrier_stats.items(), key=lambda x: x[1]["count"], reverse=True
+            success_rate = (delivered / shipment_count) * 100 if shipment_count > 0 else 0.0
+
+            by_carrier.append(
+                CarrierMetrics(
+                    carrier=carrier,
+                    shipment_count=shipment_count,
+                    total_cost=round(total_cost_for_carrier, 2),
+                    average_cost=round(avg_cost, 2),
+                    percentage_of_total=round(percentage_of_total, 1),
+                    success_rate=round(success_rate, 1),
+                )
             )
-        ]
 
         # Volume by date
-        by_date = [
-            VolumeMetrics(
-                date=date,
-                shipments=stats["count"],
-                cost=round(stats["cost"], 2),
+        by_date = []
+        for date, stats in sorted(date_stats.items()):
+            by_date.append(
+                VolumeMetrics(
+                    date=date,
+                    shipment_count=stats["count"],
+                    total_cost=round(stats["cost"], 2),
+                )
             )
-            for date, stats in sorted(date_stats.items())
-        ]
 
         # Top routes
-        top_routes = [
-            RouteMetrics(
-                origin=route.split(" → ")[0],
-                destination=route.split(" → ")[1],
-                shipment_count=stats["count"],
-                total_cost=round(stats["cost"], 2),
+        top_routes = []
+        for route, stats in sorted(route_stats.items(), key=lambda x: x[1]["count"], reverse=True)[
+            :10
+        ]:
+            origin, _, destination = route.partition(" → ")
+            top_routes.append(
+                RouteMetrics(
+                    origin=origin,
+                    destination=destination,
+                    shipment_count=stats["count"],
+                    total_cost=round(stats["cost"], 2),
+                )
             )
-            for route, stats in sorted(
-                route_stats.items(), key=lambda x: x[1]["count"], reverse=True
-            )[:10]
-        ]
 
         analytics_data = AnalyticsData(
             summary=summary.model_dump(),
@@ -550,7 +733,7 @@ async def get_analytics(
             status="success",
             data=analytics_data.model_dump(),
             message=f"Analytics for {total_shipments} shipments over {days} days",
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
         )
 
     except Exception as e:
@@ -560,7 +743,7 @@ async def get_analytics(
         return AnalyticsResponse(
             status="error",
             message=f"Error calculating analytics: {error_msg}",
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
         )
 
 
@@ -596,10 +779,8 @@ async def get_dashboard_stats(request: Request, service: EasyPostDep):
             # Extract cost from shipment rate
             cost = 0.0
             if "rate" in shipment and shipment["rate"]:
-                try:
+                with contextlib.suppress(ValueError, TypeError):
                     cost = float(shipment["rate"])
-                except (ValueError, TypeError):
-                    pass
             total_cost += cost
 
             # Count active deliveries (in_transit, pre_transit)
@@ -648,7 +829,7 @@ async def get_dashboard_stats(request: Request, service: EasyPostDep):
         return {
             "status": "success",
             "data": stats_data,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
     except Exception as e:
@@ -728,7 +909,7 @@ async def get_carrier_performance(request: Request, service: EasyPostDep):
         return {
             "status": "success",
             "data": performance_data,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
     except Exception as e:
@@ -802,7 +983,7 @@ async def get_shipments_db(
                     },
                 },
                 "message": f"Retrieved {len(shipments)} shipments",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
     except Exception as e:
@@ -845,7 +1026,7 @@ async def get_shipment_by_id(request: Request, shipment_id: int):
                 "status": "success",
                 "data": shipment.to_dict(),
                 "message": f"Retrieved shipment {shipment_id}",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
     except HTTPException:
@@ -915,7 +1096,7 @@ async def get_addresses_db(
                     },
                 },
                 "message": f"Retrieved {len(addresses)} addresses",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
     except Exception as e:
@@ -968,7 +1149,7 @@ async def get_analytics_dashboard_db(request: Request, days: int = 30):
                     "top_routes": top_routes,
                 },
                 "message": f"Analytics data for last {days} days",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
     except Exception as e:
@@ -1032,7 +1213,7 @@ async def get_batch_operations_db(
                     },
                 },
                 "message": f"Retrieved {len(batch_operations)} batch operations",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
     except Exception as e:
@@ -1092,7 +1273,7 @@ async def get_user_activity_db(
                     },
                 },
                 "message": f"Retrieved {len(activities)} user activities",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
     except Exception as e:
@@ -1178,7 +1359,7 @@ if __name__ == "__main__":
     # M3 Max optimization: (2 * 16 cores) + 1 = 33 workers
     uvicorn.run(
         "src.server:app",
-        host="0.0.0.0",
+        host="0.0.0.0",  # noqa: S104 - Required for Docker deployment
         port=8000,
         workers=33,
         log_level="info",

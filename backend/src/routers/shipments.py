@@ -1,6 +1,9 @@
 """Shipment management endpoints."""
 
+import asyncio
 import logging
+from datetime import UTC, datetime
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
 from slowapi import Limiter
@@ -8,7 +11,12 @@ from slowapi.util import get_remote_address
 from starlette import status
 
 from src.dependencies import EasyPostDep
-from src.models.requests import BuyShipmentRequest, RatesRequest, ShipmentRequest
+from src.models.requests import (
+    BulkShipmentsRequest,
+    BuyShipmentRequest,
+    RatesRequest,
+    ShipmentRequest,
+)
 from src.utils.monitoring import metrics
 
 logger = logging.getLogger(__name__)
@@ -156,6 +164,125 @@ async def buy_shipment(request: Request, buy_request: BuyShipmentRequest, servic
         ) from e
 
 
+@router.post("/bulk-shipments")
+@limiter.limit("5/minute")
+async def create_bulk_shipments(
+    request: Request, bulk_request: BulkShipmentsRequest, service: EasyPostDep
+):
+    """Create multiple shipments concurrently."""
+    request_id = getattr(request.state, "request_id", "unknown")
+
+    try:
+        logger.info(
+            f"[{request_id}] Bulk shipment request received ({len(bulk_request.shipments)} items)"
+        )
+
+        shipments = bulk_request.shipments
+        if not shipments:
+            metrics.track_api_call("bulk_create_shipments", True)
+            return {
+                "status": "success",
+                "data": {
+                    "total": 0,
+                    "successful": 0,
+                    "failed": 0,
+                    "errors": [],
+                    "results": [],
+                },
+                "timestamp": datetime.now(UTC).isoformat(),
+            }
+
+        concurrency = min(8, len(shipments))
+        semaphore = asyncio.Semaphore(concurrency)
+
+        async def process(index: int, shipment_req: ShipmentRequest):
+            async with semaphore:
+                payload = shipment_req.model_dump()
+                try:
+                    result = await service.create_shipment(
+                        to_address=payload["to_address"],
+                        from_address=payload["from_address"],
+                        parcel=payload["parcel"],
+                        carrier=payload.get("carrier", "USPS"),
+                        service=payload.get("service"),
+                        buy_label=False,
+                    )
+                    return index, result, None
+                except Exception as exc:
+                    return index, None, str(exc)
+
+        tasks = [
+            asyncio.create_task(process(idx, shipment)) for idx, shipment in enumerate(shipments)
+        ]
+        raw_results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        successes = 0
+        errors: list[dict[str, Any]] = []
+        results: list[dict[str, Any]] = []
+
+        for outcome in raw_results:
+            if isinstance(outcome, Exception):
+                errors.append(
+                    {"index": len(errors) + 1, "message": str(outcome)[:MAX_REQUEST_LOG_SIZE]}
+                )
+                continue
+
+            index, result, error = outcome
+            if error:
+                errors.append({"index": index + 1, "message": error[:MAX_REQUEST_LOG_SIZE]})
+            else:
+                results.append({"index": index + 1, "result": result})
+                if result.get("status") == "success":
+                    successes += 1
+                else:
+                    errors.append(
+                        {
+                            "index": index + 1,
+                            "message": result.get("message", "Unknown error")[
+                                :MAX_REQUEST_LOG_SIZE
+                            ],
+                        }
+                    )
+
+        failed = len(errors)
+        metrics.track_api_call("bulk_create_shipments", failed == 0)
+
+        response_payload = {
+            "total": len(shipments),
+            "successful": successes,
+            "failed": failed,
+            "errors": errors,
+            "results": results,
+        }
+
+        status_message = (
+            "All shipments created successfully"
+            if failed == 0
+            else "Bulk shipment processing completed with errors"
+        )
+
+        logger.info(
+            f"[{request_id}] Bulk shipment processing complete "
+            f"(success={successes}, failed={failed})"
+        )
+
+        return {
+            "status": "success",
+            "message": status_message,
+            "data": response_payload,
+            "timestamp": datetime.now(UTC).isoformat(),
+        }
+
+    except Exception as e:
+        error_msg = str(e)[:MAX_REQUEST_LOG_SIZE]
+        logger.error(f"[{request_id}] Bulk shipment error: {error_msg}")
+        metrics.track_api_call("bulk_create_shipments", False)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error processing bulk shipments: {error_msg}",
+        ) from e
+
+
 @router.post("/shipments/{shipment_id}/refund")
 @limiter.limit("10/minute")
 async def refund_shipment(request: Request, shipment_id: str, service: EasyPostDep):
@@ -210,4 +337,39 @@ async def list_shipments(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error listing shipments: {error_msg}",
+        ) from e
+
+
+@router.get("/shipments/{shipment_id}")
+@limiter.limit("10/minute")
+async def get_shipment_detail(request: Request, shipment_id: str, service: EasyPostDep):
+    """Retrieve detailed information for a single shipment."""
+    request_id = getattr(request.state, "request_id", "unknown")
+
+    try:
+        logger.info(f"[{request_id}] Retrieve shipment {shipment_id}")
+
+        result = await service.retrieve_shipment(shipment_id)
+        if result.get("status") != "success" or not result.get("data"):
+            detail = result.get("message", "Failed to retrieve shipment")
+            status_code = (
+                status.HTTP_404_NOT_FOUND
+                if isinstance(detail, str) and "not found" in detail.lower()
+                else status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+            metrics.track_api_call("get_shipment_detail", False)
+            raise HTTPException(status_code=status_code, detail=detail)
+
+        metrics.track_api_call("get_shipment_detail", True)
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        error_msg = str(e)[:MAX_REQUEST_LOG_SIZE]
+        logger.error(f"[{request_id}] Error retrieving shipment {shipment_id}: {error_msg}")
+        metrics.track_api_call("get_shipment_detail", False)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving shipment: {error_msg}",
         ) from e

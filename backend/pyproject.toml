@@ -1,22 +1,29 @@
 [tool.black]
 line-length = 100
-target-version = ['py310', 'py311', 'py312']
+target-version = ['py313']
 include = '\.pyi?$'
 
 [tool.ruff]
 line-length = 100
-target-version = "py310"
+target-version = "py313"
 
 [tool.ruff.lint]
 select = [
-    "E",  # pycodestyle errors
-    "W",  # pycodestyle warnings
-    "F",  # pyflakes
-    "I",  # isort
-    "B",  # flake8-bugbear
-    "C4", # flake8-comprehensions
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade - upgrade to newer Python syntax
+    "S",   # flake8-bandit - security issues
+    "A",   # flake8-builtins - builtin shadowing
+    "SIM", # flake8-simplify - simplification suggestions
+    "RET", # flake8-return - return statement issues
+    "ARG", # flake8-unused-arguments
+    "PTH", # flake8-use-pathlib - use pathlib instead of os.path
 ]
-ignore = ["E741", "E402", "C401"]  # Allow ambiguous names, imports after code, unnecessary generators
+ignore = ["E741", "E402", "C401", "S101"]  # Allow ambiguous names, imports after code, unnecessary generators, asserts
 
 [tool.mypy]
 python_version = "3.10"
@@ -24,8 +31,17 @@ warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
 
-
 [tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = ["E501", "E741", "E402", "C401"]  # Ignore line length, ambiguous names, import order, generators in tests
+"tests/**/*.py" = ["E501", "E741", "E402", "C401", "S101", "ARG", "PTH"]  # Relaxed rules for tests
 ".ai-templates/**/*.py" = ["F821", "E501"]  # Ignore undefined names in templates
 "src/server.py" = ["E402"]  # Allow uvloop.install() before imports
+"**/migrations/**/*.py" = ["E501"]  # Alembic migrations can be long
+
+[tool.ruff.lint.isort]
+known-first-party = ["src"]
+known-third-party = ["fastapi", "pydantic", "sqlalchemy", "easypost"]
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+
+[tool.bandit]
+exclude_dirs = ["tests", "venv", ".pytest_cache"]
+skips = ["B101"]  # Skip assert warnings

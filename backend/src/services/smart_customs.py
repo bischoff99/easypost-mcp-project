@@ -6,7 +6,7 @@ M3 MAX OPTIMIZED: Uses caching and pattern matching for instant customs generati
 
 import logging
 import re
-from typing import Dict, Optional, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -107,18 +107,17 @@ def estimate_believable_value(parcel_weight_oz: float, category: str = "jeans") 
     if weight_lbs < 2:
         # Light items: use base value
         return base_value
-    elif weight_lbs < 10:
+    if weight_lbs < 10:
         # Medium items: scale proportionally
         # 2-10 lbs range: 1x to 2.5x base value
         scale = 1.0 + (weight_lbs - 2) * 0.2
         return round(base_value * scale, 2)
-    else:
-        # Heavy items: cap at 3x base value
-        scale = min(3.0, 1.0 + (weight_lbs - 2) * 0.15)
-        return round(base_value * scale, 2)
+    # Heavy items: cap at 3x base value
+    scale = min(3.0, 1.0 + (weight_lbs - 2) * 0.15)
+    return round(base_value * scale, 2)
 
 
-def detect_hs_code_from_description(description: str) -> Tuple[str, str, float]:
+def detect_hs_code_from_description(description: str) -> tuple[str, str, float]:
     """
     Smart HTS code detection from item description.
 
@@ -138,8 +137,8 @@ def detect_hs_code_from_description(description: str) -> Tuple[str, str, float]:
 
 
 def extract_customs_smart(
-    contents: str, weight_oz: float, easypost_client, default_value: Optional[float] = None
-) -> Optional[any]:
+    contents: str, weight_oz: float, easypost_client, default_value: float | None = None
+) -> Any | None:
     """
     Smart customs extraction with auto-fill for missing data.
 
@@ -185,7 +184,7 @@ def extract_customs_smart(
 
         # Calculate believable value based on weight
         category = "jeans"  # Default category
-        for keyword in HTS_CODE_PATTERNS.keys():
+        for keyword in HTS_CODE_PATTERNS:
             if keyword in contents.lower():
                 category = keyword
                 break
@@ -215,8 +214,7 @@ def extract_customs_smart(
             value=value,
             weight=item_weight,  # Item weight (not parcel weight)
         )
-        customs_info = easypost_client.customs_info.create(customs_items=[customs_item])
-        return customs_info
+        return easypost_client.customs_info.create(customs_items=[customs_item])
 
     except Exception as e:
         logger.error(f"Failed to create customs: {str(e)}")
@@ -224,12 +222,12 @@ def extract_customs_smart(
 
 
 # Customs cache for performance (M3 Max: 128GB RAM)
-_smart_customs_cache: Dict[str, any] = {}
+_smart_customs_cache: dict[str, Any] = {}
 
 
 def get_or_create_customs(
-    contents: str, weight_oz: float, easypost_client, value: Optional[float] = None
-) -> Optional[any]:
+    contents: str, weight_oz: float, easypost_client, value: float | None = None
+) -> Any | None:
     """
     Get cached customs or create new with smart defaults.
 

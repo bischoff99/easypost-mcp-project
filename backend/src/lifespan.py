@@ -23,7 +23,7 @@ class AppResources:
 
 
 @asynccontextmanager
-async def app_lifespan(server):
+async def app_lifespan(server):  # noqa: ARG001 - FastAPI lifespan interface
     """
     Manage application startup and shutdown lifecycle.
 

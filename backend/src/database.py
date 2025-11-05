@@ -3,7 +3,7 @@ Database configuration and session management for EasyPost MCP.
 """
 
 import logging
-from typing import AsyncGenerator, Optional
+from collections.abc import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -24,7 +24,7 @@ class Base(DeclarativeBase):
     pass
 
 
-def create_engine() -> Optional[AsyncEngine]:
+def create_engine() -> AsyncEngine | None:
     """
     Create async database engine with error handling.
 
@@ -93,7 +93,7 @@ if engine:
     )
 
 
-async def get_db() -> AsyncGenerator[AsyncSession, None]:
+async def get_db() -> AsyncGenerator[AsyncSession]:
     """
     Dependency for getting async database session.
 

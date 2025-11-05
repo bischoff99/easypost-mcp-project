@@ -19,8 +19,12 @@ Please:
    - Current location
    - Estimated delivery date
    - Last update timestamp
-3. Format the information in a clear, customer-friendly way{'''
+3. Format the information in a clear, customer-friendly way{
+            '''
 4. Draft an email notification with:
    - Subject line
    - Body with tracking details
-   - Next steps for recipient''' if recipient_email else ''}"""
+   - Next steps for recipient'''
+            if recipient_email
+            else ""
+        }"""

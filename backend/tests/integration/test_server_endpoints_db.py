@@ -14,7 +14,6 @@ class TestDatabaseBackedEndpoints:
             patch("src.server.get_db") as mock_get_db,
             patch("src.server.DatabaseService") as mock_db_service_class,
         ):
-
             # Mock empty database - async generator pattern
             mock_session = MagicMock()
 
@@ -42,7 +41,6 @@ class TestDatabaseBackedEndpoints:
             patch("src.server.get_db") as mock_get_db,
             patch("src.server.DatabaseService") as mock_db_service_class,
         ):
-
             # Mock database with data - async generator pattern
             mock_session = MagicMock()
 
@@ -82,7 +80,6 @@ class TestDatabaseBackedEndpoints:
             patch("src.server.get_db") as mock_get_db,
             patch("src.server.DatabaseService") as mock_db_service_class,
         ):
-
             # Mock database - async generator pattern
             mock_session = MagicMock()
 
@@ -118,7 +115,6 @@ class TestDatabaseBackedEndpoints:
             patch("src.server.get_db") as mock_get_db,
             patch("src.server.DatabaseService") as mock_db_service_class,
         ):
-
             # Mock database - async generator pattern
             mock_session = MagicMock()
 
@@ -143,7 +139,6 @@ class TestDatabaseBackedEndpoints:
             patch("src.server.get_db") as mock_get_db,
             patch("src.server.DatabaseService") as mock_db_service_class,
         ):
-
             # Mock database - async generator pattern
             mock_session = MagicMock()
 
@@ -184,7 +179,6 @@ class TestDatabaseBackedEndpoints:
             patch("src.server.get_db") as mock_get_db,
             patch("src.server.DatabaseService") as mock_db_service_class,
         ):
-
             # Mock database - async generator pattern
             mock_session = MagicMock()
 
@@ -248,7 +242,6 @@ class TestDatabaseBackedEndpoints:
             patch("src.server.get_db") as mock_get_db,
             patch("src.server.DatabaseService") as mock_db_service_class,
         ):
-
             # Mock database - async generator pattern
             mock_session = MagicMock()
 
@@ -289,7 +282,6 @@ class TestDatabaseBackedEndpoints:
             patch("src.server.get_db") as mock_get_db,
             patch("src.server.DatabaseService") as mock_db_service_class,
         ):
-
             # Mock database - async generator pattern
             mock_session = MagicMock()
 
@@ -347,7 +339,6 @@ class TestDatabaseBackedEndpoints:
             patch("src.server.get_db") as mock_get_db,
             patch("src.server.DatabaseService") as mock_db_service_class,
         ):
-
             # Mock database - async generator pattern
             mock_session = MagicMock()
 
@@ -377,7 +368,6 @@ class TestDatabaseBackedEndpoints:
             patch("src.server.get_db") as mock_get_db,
             patch("src.server.DatabaseService") as mock_db_service_class,
         ):
-
             # Mock database - async generator pattern
             mock_session = MagicMock()
 

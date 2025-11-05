@@ -6,8 +6,8 @@ Implements non-blocking background sync to keep PostgreSQL in sync with EasyPost
 
 import asyncio
 import logging
-from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import select
@@ -28,7 +28,7 @@ class SyncService:
     """
 
     @staticmethod
-    async def sync_shipment(shipment_data: Dict[str, Any]) -> Optional[UUID]:
+    async def sync_shipment(shipment_data: dict[str, Any]) -> UUID | None:
         """
         Sync shipment from EasyPost to PostgreSQL.
 
@@ -57,13 +57,12 @@ class SyncService:
                     await db_service.update_shipment(existing.id, update_data)
                     logger.info(f"Synced shipment update: {shipment_data.get('id')}")
                     return existing.id
-                else:
-                    # Create new shipment (if we have all required data)
-                    # This would require syncing addresses first
-                    logger.info(
-                        f"Shipment {shipment_data.get('id')} not in database (addresses required)"
-                    )
-                    return None
+                # Create new shipment (if we have all required data)
+                # This would require syncing addresses first
+                logger.info(
+                    f"Shipment {shipment_data.get('id')} not in database (addresses required)"
+                )
+                return None
 
         except Exception as e:
             # Non-blocking sync should never fail the main request
@@ -71,7 +70,7 @@ class SyncService:
             return None
 
     @staticmethod
-    async def sync_address(address_data: Dict[str, Any]) -> Optional[UUID]:
+    async def sync_address(address_data: dict[str, Any]) -> UUID | None:
         """
         Sync address from EasyPost to PostgreSQL.
 
@@ -122,7 +121,7 @@ class SyncService:
             return None
 
     @staticmethod
-    async def sync_tracking_event(shipment_easypost_id: str, event_data: Dict[str, Any]) -> bool:
+    async def sync_tracking_event(shipment_easypost_id: str, event_data: dict[str, Any]) -> bool:
         """
         Sync tracking event to PostgreSQL.
 
@@ -155,7 +154,7 @@ class SyncService:
                     description=event_data.get("description"),
                     carrier_status=event_data.get("carrier_detail", {}).get("status"),
                     tracking_location=event_data.get("tracking_location"),
-                    event_datetime=event_data.get("datetime") or datetime.now(timezone.utc),
+                    event_datetime=event_data.get("datetime") or datetime.now(UTC),
                 )
 
                 session.add(event)
@@ -169,7 +168,7 @@ class SyncService:
             return False
 
     @staticmethod
-    def sync_shipment_async(shipment_data: Dict[str, Any]) -> None:
+    def sync_shipment_async(shipment_data: dict[str, Any]) -> None:
         """
         Non-blocking wrapper for sync_shipment.
 
@@ -179,7 +178,7 @@ class SyncService:
         asyncio.create_task(SyncService.sync_shipment(shipment_data))
 
     @staticmethod
-    def sync_address_async(address_data: Dict[str, Any]) -> None:
+    def sync_address_async(address_data: dict[str, Any]) -> None:
         """
         Non-blocking wrapper for sync_address.
 
@@ -189,7 +188,7 @@ class SyncService:
         asyncio.create_task(SyncService.sync_address(address_data))
 
     @staticmethod
-    def sync_tracking_event_async(shipment_id: str, event_data: Dict[str, Any]) -> None:
+    def sync_tracking_event_async(shipment_id: str, event_data: dict[str, Any]) -> None:
         """
         Non-blocking wrapper for sync_tracking_event.
 

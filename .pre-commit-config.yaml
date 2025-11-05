@@ -20,6 +20,13 @@ repos:
         types: [python]
         pass_filenames: false
 
+      - id: bandit
+        name: bandit (security check)
+        entry: bash -c 'cd backend && source venv/bin/activate && bandit -r src/ -f json -o bandit-report.json || (cat bandit-report.json && exit 1)'
+        language: system
+        types: [python]
+        pass_filenames: false
+
       - id: pytest-fast
         name: pytest (changed files only)
         entry: bash -c 'cd backend && source venv/bin/activate && pytest tests/ -n 16 --lf --ff -x'

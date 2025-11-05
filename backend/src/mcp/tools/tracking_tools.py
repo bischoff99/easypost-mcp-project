@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastmcp import Context
 
@@ -41,13 +41,13 @@ def register_tracking_tools(mcp, easypost_service=None):
                 await ctx.report_progress(1, 1)
 
             return result
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.error("Tracking lookup timed out after 20 seconds")
             return {
                 "status": "error",
                 "data": None,
                 "message": "Tracking lookup timed out. Please try again.",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
         except Exception as e:
             logger.error(f"Tool error: {str(e)}")
@@ -55,5 +55,5 @@ def register_tracking_tools(mcp, easypost_service=None):
                 "status": "error",
                 "data": None,
                 "message": "Failed to retrieve tracking information",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }

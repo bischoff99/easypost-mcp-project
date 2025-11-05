@@ -2,8 +2,8 @@ import asyncio
 import logging
 import multiprocessing
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 import easypost
 from pydantic import BaseModel, Field
@@ -16,14 +16,14 @@ class AddressModel(BaseModel):
 
     name: str = Field(..., max_length=100, description="Recipient name")
     street1: str = Field(..., max_length=200, description="Street address line 1")
-    street2: Optional[str] = Field(None, max_length=200, description="Street address line 2")
+    street2: str | None = Field(None, max_length=200, description="Street address line 2")
     city: str = Field(..., max_length=100, description="City name")
     state: str = Field(..., max_length=50, description="State or province")
     zip: str = Field(..., max_length=20, description="Postal/ZIP code")
     country: str = Field(default="US", max_length=2, description="2-letter ISO country code")
-    phone: Optional[str] = Field(None, max_length=20, description="Contact phone")
-    email: Optional[str] = Field(None, max_length=100, description="Contact email")
-    company: Optional[str] = Field(None, max_length=100, description="Company name")
+    phone: str | None = Field(None, max_length=20, description="Contact phone")
+    email: str | None = Field(None, max_length=100, description="Contact email")
+    company: str | None = Field(None, max_length=100, description="Company name")
 
 
 class ParcelModel(BaseModel):
@@ -37,32 +37,32 @@ class ParcelModel(BaseModel):
 
 class ShipmentResponse(BaseModel):
     status: str
-    shipment_id: Optional[str] = None
-    tracking_number: Optional[str] = None
-    label_url: Optional[str] = None
-    rate: Optional[str] = None
-    carrier: Optional[str] = None
-    error: Optional[str] = None
+    shipment_id: str | None = None
+    tracking_number: str | None = None
+    label_url: str | None = None
+    rate: str | None = None
+    carrier: str | None = None
+    error: str | None = None
 
 
 class TrackingEvent(BaseModel):
     timestamp: str
     status: str
     message: str
-    location: Optional[str] = None
+    location: str | None = None
 
 
 class TrackingResponse(BaseModel):
     status: str
-    data: Optional[Dict[str, Any]] = None
-    message: Optional[str] = None
+    data: dict[str, Any] | None = None
+    message: str | None = None
     timestamp: str
 
 
 class RatesResponse(BaseModel):
     status: str
-    data: Optional[List[Dict[str, Any]]] = None
-    message: Optional[str] = None
+    data: list[dict[str, Any]] | None = None
+    message: str | None = None
     timestamp: str
 
 
@@ -133,14 +133,14 @@ class EasyPostService:
 
     async def create_shipment(
         self,
-        to_address: Dict[str, Any],
-        from_address: Dict[str, Any],
-        parcel: Dict[str, Any],
+        to_address: dict[str, Any],
+        from_address: dict[str, Any],
+        parcel: dict[str, Any],
         carrier: str = "USPS",
-        service: Optional[str] = None,
+        service: str | None = None,
         buy_label: bool = True,
-        customs_info: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        customs_info: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """
         Create a shipment and optionally purchase label.
 
@@ -158,7 +158,7 @@ class EasyPostService:
         """
         try:
             loop = asyncio.get_running_loop()
-            result = await loop.run_in_executor(
+            return await loop.run_in_executor(
                 self.executor,
                 self._create_shipment_sync,
                 to_address,
@@ -169,21 +169,20 @@ class EasyPostService:
                 buy_label,
                 customs_info,
             )
-            return result
         except Exception as e:
             self.logger.error(f"Error creating shipment: {self._sanitize_error(e)}")
             return {"status": "error", "message": "Failed to create shipment"}
 
     def _create_shipment_sync(
         self,
-        to_address: Dict[str, Any],
-        from_address: Dict[str, Any],
-        parcel: Dict[str, Any],
+        to_address: dict[str, Any],
+        from_address: dict[str, Any],
+        parcel: dict[str, Any],
         carrier: str,
-        service: Optional[str],
+        service: str | None,
         buy_label: bool,
-        customs_info: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        customs_info: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Synchronous shipment creation with optional label purchase."""
         try:
             service_info = f" / {service}" if service else ""
@@ -278,7 +277,7 @@ class EasyPostService:
             # Include full error details for debugging
             return {"status": "error", "message": error_msg, "error_type": type(e).__name__}
 
-    async def refund_shipment(self, shipment_id: str) -> Dict[str, Any]:
+    async def refund_shipment(self, shipment_id: str) -> dict[str, Any]:
         """
         Refund a shipment.
 
@@ -290,19 +289,18 @@ class EasyPostService:
         """
         try:
             loop = asyncio.get_running_loop()
-            result = await loop.run_in_executor(
+            return await loop.run_in_executor(
                 self.executor, self._refund_shipment_sync, shipment_id
             )
-            return result
         except Exception as e:
             self.logger.error(f"Error refunding shipment: {self._sanitize_error(e)}")
             return {
                 "status": "error",
                 "message": "Failed to refund shipment",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
-    def _refund_shipment_sync(self, shipment_id: str) -> Dict[str, Any]:
+    def _refund_shipment_sync(self, shipment_id: str) -> dict[str, Any]:
         """Synchronous shipment refund."""
         try:
             self.logger.info(f"Refunding shipment {shipment_id}")
@@ -323,17 +321,17 @@ class EasyPostService:
                     "amount": shipment.selected_rate.rate if shipment.selected_rate else "unknown",
                 },
                 "message": "Refund request submitted successfully",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
         except Exception as e:
             self.logger.error(f"Failed to refund shipment: {self._sanitize_error(e)}")
             return {
                 "status": "error",
                 "message": str(e),
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
-    async def buy_shipment(self, shipment_id: str, rate_id: str) -> Dict[str, Any]:
+    async def buy_shipment(self, shipment_id: str, rate_id: str) -> dict[str, Any]:
         """
         Purchase a label for an existing shipment.
 
@@ -346,19 +344,18 @@ class EasyPostService:
         """
         try:
             loop = asyncio.get_running_loop()
-            result = await loop.run_in_executor(
+            return await loop.run_in_executor(
                 self.executor, self._buy_shipment_sync, shipment_id, rate_id
             )
-            return result
         except Exception as e:
             self.logger.error(f"Error buying shipment: {self._sanitize_error(e)}")
             return {
                 "status": "error",
                 "message": "Failed to purchase label",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
-    def _buy_shipment_sync(self, shipment_id: str, rate_id: str) -> Dict[str, Any]:
+    def _buy_shipment_sync(self, shipment_id: str, rate_id: str) -> dict[str, Any]:
         """Synchronous label purchase."""
         try:
             self.logger.info(f"Buying label for shipment {shipment_id}")
@@ -375,17 +372,17 @@ class EasyPostService:
                     "carrier": shipment.selected_rate.carrier,
                 },
                 "message": "Label purchased successfully",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
         except Exception as e:
             self.logger.error(f"Failed to buy shipment: {self._sanitize_error(e)}")
             return {
                 "status": "error",
                 "message": str(e),
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
-    async def get_tracking(self, tracking_number: str) -> Dict[str, Any]:
+    async def get_tracking(self, tracking_number: str) -> dict[str, Any]:
         """
         Get tracking information for a shipment.
 
@@ -397,20 +394,19 @@ class EasyPostService:
         """
         try:
             loop = asyncio.get_running_loop()
-            result = await loop.run_in_executor(
+            return await loop.run_in_executor(
                 self.executor, self._get_tracking_sync, tracking_number
             )
-            return result
         except Exception as e:
             self.logger.error(f"Error getting tracking: {self._sanitize_error(e)}")
             return {
                 "status": "error",
                 "data": None,
                 "message": "Failed to retrieve tracking information",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
-    def _get_tracking_sync(self, tracking_number: str) -> Dict[str, Any]:
+    def _get_tracking_sync(self, tracking_number: str) -> dict[str, Any]:
         """Synchronous tracking retrieval."""
         try:
             self.logger.info(f"Fetching tracking for {tracking_number}")
@@ -441,7 +437,7 @@ class EasyPostService:
                     ),
                 },
                 "message": "Tracking retrieved successfully",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
         except Exception as e:
             self.logger.error(f"Failed to get tracking: {self._sanitize_error(e)}")
@@ -449,12 +445,12 @@ class EasyPostService:
                 "status": "error",
                 "data": None,
                 "message": "Failed to retrieve tracking information",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
     async def get_rates(
-        self, to_address: Dict[str, Any], from_address: Dict[str, Any], parcel: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, to_address: dict[str, Any], from_address: dict[str, Any], parcel: dict[str, Any]
+    ) -> dict[str, Any]:
         """
         Get available shipping rates.
 
@@ -475,7 +471,7 @@ class EasyPostService:
                 "status": "success",
                 "data": rates,
                 "message": "Rates retrieved successfully",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
         except Exception as e:
             self.logger.error(f"Error getting rates: {self._sanitize_error(e)}")
@@ -483,12 +479,12 @@ class EasyPostService:
                 "status": "error",
                 "data": None,
                 "message": "Failed to retrieve rates",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
     def _get_rates_sync(
-        self, to_address: Dict[str, Any], from_address: Dict[str, Any], parcel: Dict[str, Any]
-    ) -> List[Dict[str, Any]]:
+        self, to_address: dict[str, Any], from_address: dict[str, Any], parcel: dict[str, Any]
+    ) -> list[dict[str, Any]]:
         """Synchronous rates retrieval."""
         try:
             self.logger.info("Calculating rates...")
@@ -514,10 +510,10 @@ class EasyPostService:
         self,
         page_size: int = 10,
         purchased: bool = True,
-        start_datetime: Optional[str] = None,
-        end_datetime: Optional[str] = None,
-        before_id: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        start_datetime: str | None = None,
+        end_datetime: str | None = None,
+        before_id: str | None = None,  # noqa: ARG002 - Reserved for pagination
+    ) -> dict[str, Any]:
         """
         Get list of shipments from EasyPost API.
 
@@ -542,9 +538,9 @@ class EasyPostService:
         self,
         page_size: int = 10,
         purchased: bool = True,
-        start_datetime: Optional[str] = None,
-        end_datetime: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        start_datetime: str | None = None,
+        end_datetime: str | None = None,
+    ) -> dict[str, Any]:
         """
         Get list of shipments from EasyPost API (legacy name).
 
@@ -559,7 +555,7 @@ class EasyPostService:
         """
         try:
             loop = asyncio.get_running_loop()
-            result = await loop.run_in_executor(
+            return await loop.run_in_executor(
                 self.executor,
                 self._get_shipments_list_sync,
                 page_size,
@@ -567,23 +563,46 @@ class EasyPostService:
                 start_datetime,
                 end_datetime,
             )
-            return result
         except Exception as e:
             self.logger.error(f"Error getting shipments list: {self._sanitize_error(e)}")
             return {
                 "status": "error",
                 "data": [],
                 "message": "Failed to retrieve shipments list",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
+            }
+
+    async def retrieve_shipment(self, shipment_id: str) -> dict[str, Any]:
+        """
+        Retrieve detailed shipment information from EasyPost.
+
+        Args:
+            shipment_id: EasyPost shipment ID
+
+        Returns:
+            Dict with shipment details
+        """
+        try:
+            loop = asyncio.get_running_loop()
+            return await loop.run_in_executor(
+                self.executor, self._retrieve_shipment_sync, shipment_id
+            )
+        except Exception as e:
+            self.logger.error(f"Error retrieving shipment: {self._sanitize_error(e)}")
+            return {
+                "status": "error",
+                "data": None,
+                "message": "Failed to retrieve shipment",
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
     def _get_shipments_list_sync(
         self,
         page_size: int,
         purchased: bool,
-        start_datetime: Optional[str],
-        end_datetime: Optional[str],
-    ) -> Dict[str, Any]:
+        start_datetime: str | None,
+        end_datetime: str | None,
+    ) -> dict[str, Any]:
         """Synchronous shipment list retrieval."""
         try:
             self.logger.info(
@@ -605,32 +624,9 @@ class EasyPostService:
             shipments_response = self.client.shipment.all(**params)
 
             # Transform shipments to our format
-            shipments = []
-            for shipment in shipments_response.shipments:
-                shipment_data = {
-                    "id": shipment.id,
-                    "tracking_number": getattr(shipment, "tracking_code", None) or "",
-                    "status": getattr(shipment, "status", "unknown"),
-                    "created_at": (
-                        str(shipment.created_at) if hasattr(shipment, "created_at") else None
-                    ),
-                    "carrier": (
-                        getattr(shipment, "selected_rate", {}).get("carrier", "")
-                        if hasattr(shipment, "selected_rate") and shipment.selected_rate
-                        else ""
-                    ),
-                    "service": (
-                        getattr(shipment, "selected_rate", {}).get("service", "")
-                        if hasattr(shipment, "selected_rate") and shipment.selected_rate
-                        else ""
-                    ),
-                    "rate": (
-                        getattr(shipment, "selected_rate", {}).get("rate", "")
-                        if hasattr(shipment, "selected_rate") and shipment.selected_rate
-                        else ""
-                    ),
-                }
-                shipments.append(shipment_data)
+            shipments = [
+                self._shipment_to_dict(shipment) for shipment in shipments_response.shipments
+            ]
 
             self.logger.info(f"Retrieved {len(shipments)} shipments from EasyPost")
 
@@ -639,7 +635,7 @@ class EasyPostService:
                 "data": shipments,
                 "message": f"Successfully retrieved {len(shipments)} shipments",
                 "has_more": len(shipments) == page_size,  # Simple heuristic
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
         except Exception as e:
@@ -648,8 +644,87 @@ class EasyPostService:
                 "status": "error",
                 "data": [],
                 "message": "Failed to retrieve shipments list",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
+
+    def _retrieve_shipment_sync(self, shipment_id: str) -> dict[str, Any]:
+        """Synchronous shipment retrieval."""
+        try:
+            self.logger.info(f"Retrieving shipment {shipment_id}")
+            shipment = self.client.shipment.retrieve(shipment_id)
+            shipment_data = self._shipment_to_dict(shipment)
+
+            return {
+                "status": "success",
+                "data": shipment_data,
+                "message": f"Shipment {shipment_id} retrieved",
+                "timestamp": datetime.now(UTC).isoformat(),
+            }
+        except Exception as e:
+            self.logger.error(f"Failed to retrieve shipment: {self._sanitize_error(e)}")
+            return {
+                "status": "error",
+                "data": None,
+                "message": str(e),
+                "timestamp": datetime.now(UTC).isoformat(),
+            }
+
+    def _shipment_to_dict(self, shipment: Any) -> dict[str, Any]:
+        """Normalize EasyPost shipment object to serializable dict."""
+
+        def address_to_dict(address_obj: Any) -> dict[str, Any]:
+            if not address_obj:
+                return {}
+            return {
+                "name": getattr(address_obj, "name", "") or "",
+                "company": getattr(address_obj, "company", "") or "",
+                "street1": getattr(address_obj, "street1", "") or "",
+                "street2": getattr(address_obj, "street2", "") or "",
+                "city": getattr(address_obj, "city", "") or "",
+                "state": getattr(address_obj, "state", "") or "",
+                "zip": getattr(address_obj, "zip", "") or "",
+                "country": getattr(address_obj, "country", "") or "",
+                "phone": getattr(address_obj, "phone", "") or "",
+                "email": getattr(address_obj, "email", "") or "",
+            }
+
+        selected_rate = getattr(shipment, "selected_rate", None)
+        parcel = getattr(shipment, "parcel", None)
+        from_address = address_to_dict(getattr(shipment, "from_address", None))
+        to_address = address_to_dict(getattr(shipment, "to_address", None))
+
+        def location_string(address: dict[str, Any]) -> str:
+            city = address.get("city", "")
+            state = address.get("state", "")
+            if city and state:
+                return f"{city}, {state}"
+            return city or state or ""
+
+        return {
+            "id": getattr(shipment, "id", ""),
+            "tracking_number": getattr(shipment, "tracking_code", "") or "",
+            "status": getattr(shipment, "status", "unknown") or "unknown",
+            "created_at": (
+                str(shipment.created_at)
+                if hasattr(shipment, "created_at") and shipment.created_at is not None
+                else None
+            ),
+            "carrier": getattr(selected_rate, "carrier", "") if selected_rate else "",
+            "service": getattr(selected_rate, "service", "") if selected_rate else "",
+            "rate": getattr(selected_rate, "rate", "") if selected_rate else "",
+            "from_address": from_address,
+            "to_address": to_address,
+            "parcel": {
+                "length": getattr(parcel, "length", None) if parcel else None,
+                "width": getattr(parcel, "width", None) if parcel else None,
+                "height": getattr(parcel, "height", None) if parcel else None,
+                "weight": getattr(parcel, "weight", None) if parcel else None,
+            },
+            "tracking_url": getattr(shipment, "public_url", None),
+            "label_url": getattr(getattr(shipment, "postage_label", None), "label_url", None),
+            "from": location_string(from_address),
+            "to": location_string(to_address),
+        }
 
     def _sanitize_error(self, error: Exception) -> str:
         """
