@@ -29,7 +29,7 @@ def register_stats_resources(mcp, easypost_service):
             if result["status"] == "error":
                 return json.dumps(result, indent=2)
 
-            shipments = result.get("data", {}).get("shipments", [])
+            shipments = result.get("data", [])  # data is direct list, not {"shipments": [...]}
 
             # Calculate real statistics
             total_shipments = len(shipments)

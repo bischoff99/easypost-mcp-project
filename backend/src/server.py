@@ -525,7 +525,7 @@ async def track_shipment(request: Request, tracking_number: str, service: EasyPo
 @app.get("/analytics", response_model=AnalyticsResponse)
 @limiter.limit("20/minute")
 async def get_analytics(
-    request: Request, service: EasyPostDep, days: int = 30, include_test: bool = False
+    request: Request, service: EasyPostDep, days: int = 30, include_test: bool = False  # noqa: ARG001 - Future use
 ):
     """
     Get shipping analytics and metrics.
