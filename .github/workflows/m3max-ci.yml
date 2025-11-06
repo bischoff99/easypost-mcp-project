@@ -53,7 +53,7 @@ jobs:
           pytest tests/ -n auto --tb=short --maxfail=5
 
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always()
         with:
           name: test-results-${{ matrix.test-group }}
@@ -136,7 +136,7 @@ jobs:
           ./benchmark.sh
 
       - name: Upload benchmark results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: benchmark-results
           path: benchmark-results.json
