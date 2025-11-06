@@ -12,7 +12,9 @@
         "--host",
         "0.0.0.0",
         "--port",
-        "8000"
+        "8000",
+        "--log-level",
+        "debug"
       ],
       "cwd": "${workspaceFolder}/backend",
       "envFile": "${workspaceFolder}/backend/.env",
@@ -26,7 +28,7 @@
       "module": "src.mcp",
       "cwd": "${workspaceFolder}/backend",
       "envFile": "${workspaceFolder}/backend/.env",
-      "console": "integratedTerminal",
+      "console": "externalTerminal",
       "justMyCode": false
     },
     {
@@ -44,9 +46,48 @@
       "request": "launch",
       "module": "pytest",
       "args": [
-        "-v",
+        "-vv",
         "-s",
+        "--tb=short",
+        "--no-cov",
+        "-n",
+        "0",
         "${file}"
+      ],
+      "cwd": "${workspaceFolder}/backend",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
+      "name": "Python: Debug Unit Tests Only",
+      "type": "python",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/unit",
+        "-vv",
+        "-s",
+        "--tb=short",
+        "--no-cov",
+        "-n",
+        "0"
+      ],
+      "cwd": "${workspaceFolder}/backend",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
+      "name": "Python: Debug Integration Tests",
+      "type": "python",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/integration",
+        "-vv",
+        "-s",
+        "--tb=short",
+        "-n",
+        "0"
       ],
       "cwd": "${workspaceFolder}/backend",
       "console": "integratedTerminal",
@@ -57,31 +98,27 @@
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "npm",
-      "runtimeArgs": [
-        "run",
-        "dev"
-      ],
+      "runtimeArgs": ["run", "dev"],
       "cwd": "${workspaceFolder}/frontend",
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen"
     },
     {
-      "name": "Python: Backend (Production Mode)",
+      "name": "Python: Backend (Production Simulation)",
       "type": "python",
       "request": "launch",
       "module": "uvicorn",
       "args": [
         "src.server:app",
-        "--reload",
-        "--host", "0.0.0.0",
-        "--port", "8000",
-        "--workers", "1"
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000",
+        "--log-level",
+        "info"
       ],
       "cwd": "${workspaceFolder}/backend",
-      "env": {
-        "ENVIRONMENT": "production",
-        "PYTHONPATH": "${workspaceFolder}/backend"
-      },
+      "envFile": "${workspaceFolder}/.env.production",
       "console": "integratedTerminal",
       "justMyCode": false
     },
@@ -95,7 +132,11 @@
         "-vv",
         "-s",
         "--tb=short",
-        "-k", "${input:testName}"
+        "--no-cov",
+        "-n",
+        "0",
+        "-k",
+        "${input:testName}"
       ],
       "cwd": "${workspaceFolder}/backend",
       "console": "integratedTerminal",
@@ -126,6 +167,41 @@
           "remoteRoot": "."
         }
       ]
+    },
+    {
+      "name": "Python: Attach to Docker Backend",
+      "type": "python",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5678
+      },
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}/backend/src",
+          "remoteRoot": "/app/backend/src"
+        }
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "Python: Run Specific Test",
+      "type": "python",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "-vv",
+        "-s",
+        "--tb=long",
+        "--no-cov",
+        "-n",
+        "0",
+        "-k",
+        "${input:testPattern}"
+      ],
+      "cwd": "${workspaceFolder}/backend",
+      "console": "integratedTerminal",
+      "justMyCode": false
     }
   ],
   "compounds": [
@@ -141,13 +217,32 @@
         "order": 1
       },
       "stopAll": true
+    },
+    {
+      "name": "Debug All Tests",
+      "configurations": [
+        "Python: Debug Unit Tests Only",
+        "Python: Debug Integration Tests"
+      ],
+      "presentation": {
+        "hidden": false,
+        "group": "test",
+        "order": 2
+      },
+      "stopAll": true
     }
   ],
   "inputs": [
     {
       "id": "testName",
       "type": "promptString",
-      "description": "Test name pattern to run",
+      "description": "Test name pattern to run (e.g., test_create_shipment)",
+      "default": ""
+    },
+    {
+      "id": "testPattern",
+      "type": "promptString",
+      "description": "Test pattern to match (pytest -k syntax)",
       "default": ""
     }
   ]
