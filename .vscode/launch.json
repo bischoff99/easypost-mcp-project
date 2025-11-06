@@ -45,15 +45,7 @@
       "type": "python",
       "request": "launch",
       "module": "pytest",
-      "args": [
-        "-vv",
-        "-s",
-        "--tb=short",
-        "--no-cov",
-        "-n",
-        "0",
-        "${file}"
-      ],
+      "args": ["-vv", "-s", "--tb=short", "--no-cov", "-n", "0", "${file}"],
       "cwd": "${workspaceFolder}/backend",
       "console": "integratedTerminal",
       "justMyCode": false
@@ -63,15 +55,7 @@
       "type": "python",
       "request": "launch",
       "module": "pytest",
-      "args": [
-        "tests/unit",
-        "-vv",
-        "-s",
-        "--tb=short",
-        "--no-cov",
-        "-n",
-        "0"
-      ],
+      "args": ["tests/unit", "-vv", "-s", "--tb=short", "--no-cov", "-n", "0"],
       "cwd": "${workspaceFolder}/backend",
       "console": "integratedTerminal",
       "justMyCode": false
@@ -81,14 +65,7 @@
       "type": "python",
       "request": "launch",
       "module": "pytest",
-      "args": [
-        "tests/integration",
-        "-vv",
-        "-s",
-        "--tb=short",
-        "-n",
-        "0"
-      ],
+      "args": ["tests/integration", "-vv", "-s", "--tb=short", "-n", "0"],
       "cwd": "${workspaceFolder}/backend",
       "console": "integratedTerminal",
       "justMyCode": false
@@ -108,15 +85,7 @@
       "type": "python",
       "request": "launch",
       "module": "uvicorn",
-      "args": [
-        "src.server:app",
-        "--host",
-        "0.0.0.0",
-        "--port",
-        "8000",
-        "--log-level",
-        "info"
-      ],
+      "args": ["src.server:app", "--host", "0.0.0.0", "--port", "8000", "--log-level", "info"],
       "cwd": "${workspaceFolder}/backend",
       "envFile": "${workspaceFolder}/.env.production",
       "console": "integratedTerminal",
@@ -189,16 +158,7 @@
       "type": "python",
       "request": "launch",
       "module": "pytest",
-      "args": [
-        "-vv",
-        "-s",
-        "--tb=long",
-        "--no-cov",
-        "-n",
-        "0",
-        "-k",
-        "${input:testPattern}"
-      ],
+      "args": ["-vv", "-s", "--tb=long", "--no-cov", "-n", "0", "-k", "${input:testPattern}"],
       "cwd": "${workspaceFolder}/backend",
       "console": "integratedTerminal",
       "justMyCode": false
@@ -207,10 +167,7 @@
   "compounds": [
     {
       "name": "Full Stack Debug",
-      "configurations": [
-        "Python: Start Backend Server",
-        "Node: Start Frontend Dev Server"
-      ],
+      "configurations": ["Python: Start Backend Server", "Node: Start Frontend Dev Server"],
       "presentation": {
         "hidden": false,
         "group": "debug",
@@ -220,10 +177,7 @@
     },
     {
       "name": "Debug All Tests",
-      "configurations": [
-        "Python: Debug Unit Tests Only",
-        "Python: Debug Integration Tests"
-      ],
+      "configurations": ["Python: Debug Unit Tests Only", "Python: Debug Integration Tests"],
       "presentation": {
         "hidden": false,
         "group": "test",
