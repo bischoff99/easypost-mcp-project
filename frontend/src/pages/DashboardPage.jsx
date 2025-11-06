@@ -201,7 +201,8 @@ export default function DashboardPage() {
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
         <p className="text-muted-foreground">
-          Live snapshot from EasyPost API • Last 100 shipments • Historical trends require database storage
+          Live snapshot from EasyPost API • Last 100 shipments • Historical trends require database
+          storage
         </p>
       </div>
 

@@ -23,9 +23,7 @@ export const getErrorMessage = (error) => {
 
     // FastAPI error format
     if (data.detail) {
-      return typeof data.detail === 'string'
-        ? data.detail
-        : JSON.stringify(data.detail);
+      return typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail);
     }
 
     // Custom API error format
@@ -75,4 +73,3 @@ export const logError = (error, context = {}) => {
   //   window.Sentry.captureException(error, { contexts: { custom: context } });
   // }
 };
-

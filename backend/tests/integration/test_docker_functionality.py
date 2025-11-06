@@ -343,9 +343,9 @@ async def test_concurrent_requests(client: httpx.AsyncClient) -> bool:
 
 async def run_all_tests():
     """Run all functionality tests."""
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print(f"{Colors.BLUE}🐳 Docker Stack Functionality Test Suite{Colors.RESET}")
-    print(f"{'='*70}\n")
+    print(f"{'=' * 70}\n")
     print(f"Backend:  {BASE_URL}")
     print(f"Frontend: {FRONTEND_URL}")
     print(f"Time:     {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
@@ -384,25 +384,31 @@ async def run_all_tests():
     elapsed = time.time() - start_time
 
     # Summary
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print(f"{Colors.BLUE}📊 Test Results Summary{Colors.RESET}")
-    print(f"{'='*70}\n")
+    print(f"{'=' * 70}\n")
 
     passed = sum(1 for v in results.values() if v)
     total = len(results)
     success_rate = (passed / total) * 100
 
     for test_name, result in results.items():
-        status = f"{Colors.GREEN}✅ PASS{Colors.RESET}" if result else f"{Colors.RED}❌ FAIL{Colors.RESET}"
+        status = (
+            f"{Colors.GREEN}✅ PASS{Colors.RESET}"
+            if result
+            else f"{Colors.RED}❌ FAIL{Colors.RESET}"
+        )
         print(f"{status}  {test_name.replace('_', ' ').title()}")
 
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print(f"Total Tests: {total}")
     print(f"Passed: {Colors.GREEN}{passed}{Colors.RESET}")
     print(f"Failed: {Colors.RED}{total - passed}{Colors.RESET}")
-    print(f"Success Rate: {Colors.GREEN if success_rate >= 80 else Colors.YELLOW}{success_rate:.1f}%{Colors.RESET}")
+    print(
+        f"Success Rate: {Colors.GREEN if success_rate >= 80 else Colors.YELLOW}{success_rate:.1f}%{Colors.RESET}"
+    )
     print(f"Time: {elapsed:.2f}s")
-    print(f"{'='*70}\n")
+    print(f"{'=' * 70}\n")
 
     if success_rate >= 80:
         print_success("🎉 Docker stack fully functional!")

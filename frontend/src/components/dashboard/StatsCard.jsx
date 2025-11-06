@@ -4,7 +4,16 @@ import PropTypes from 'prop-types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { cn } from '@/lib/utils';
 
-export default function StatsCard({ title, name, value, note, change, trend, icon: Icon, delay = 0 }) {
+export default function StatsCard({
+  title,
+  name,
+  value,
+  note,
+  change,
+  trend,
+  icon: Icon,
+  delay = 0,
+}) {
   // Support both 'title' and 'name' props for compatibility
   const displayTitle = title || name;
   const isPositive = trend === 'up';
@@ -31,7 +40,10 @@ export default function StatsCard({ title, name, value, note, change, trend, ico
                 <TrendingDown className="h-4 w-4 text-red-600" />
               )}
               <p
-                className={cn('text-xs font-medium', isPositive ? 'text-green-600' : 'text-red-600')}
+                className={cn(
+                  'text-xs font-medium',
+                  isPositive ? 'text-green-600' : 'text-red-600'
+                )}
               >
                 {change} from last month
               </p>
@@ -46,12 +58,12 @@ export default function StatsCard({ title, name, value, note, change, trend, ico
 }
 
 StatsCard.propTypes = {
-  title: PropTypes.string,  // Optional, falls back to name
-  name: PropTypes.string,  // Alternative to title
+  title: PropTypes.string, // Optional, falls back to name
+  name: PropTypes.string, // Alternative to title
   value: PropTypes.string.isRequired,
-  note: PropTypes.string,  // Optional note instead of trend
-  change: PropTypes.string,  // Optional change percentage
-  trend: PropTypes.oneOf(['up', 'down']),  // Optional trend
+  note: PropTypes.string, // Optional note instead of trend
+  change: PropTypes.string, // Optional change percentage
+  trend: PropTypes.oneOf(['up', 'down']), // Optional trend
   icon: PropTypes.elementType.isRequired,
   delay: PropTypes.number,
 };
