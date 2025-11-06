@@ -72,9 +72,16 @@ async def run_async_migrations() -> None:
     and associate a connection with the context.
 
     """
+    # Get config and ensure we use async driver
+    alembic_config = config.get_section(config.config_ini_section, {})
+    if "sqlalchemy.url" in alembic_config:
+        # Replace postgresql:// with postgresql+asyncpg://
+        alembic_config["sqlalchemy.url"] = alembic_config["sqlalchemy.url"].replace(
+            "postgresql://", "postgresql+asyncpg://"
+        )
 
     connectable = async_engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        alembic_config,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
