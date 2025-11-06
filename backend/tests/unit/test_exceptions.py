@@ -3,13 +3,13 @@
 import pytest
 
 from src.exceptions import (
-    EasyPostMCPError,
-    ShipmentCreationError,
-    RateLimitExceededError,
-    TrackingNotFoundError,
-    InvalidAddressError,
-    DatabaseConnectionError,
     BulkOperationError,
+    DatabaseConnectionError,
+    EasyPostMCPError,
+    InvalidAddressError,
+    RateLimitExceededError,
+    ShipmentCreationError,
+    TrackingNotFoundError,
 )
 
 
