@@ -17,7 +17,7 @@ pytest-asyncio>=0.21.1,<1.0.0
 pytest-cov>=4.0.0,<5.0.0
 pytest-watch>=4.2.0,<5.0.0
 pytest-xdist>=3.5.0,<4.0.0
-psutil>=5.9.0,<6.0.0
+psutil>=5.9.0,<8.0.0
 
 # Code Quality (allow minor updates)
 ruff>=0.1.0,<1.0.0
