@@ -1,13 +1,11 @@
 """Unit tests for smart customs generation."""
 
-import pytest
-
 from src.services.smart_customs import (
-    calculate_item_weight,
-    estimate_believable_value,
-    detect_hs_code_from_description,
     HTS_CODE_PATTERNS,
     VALUE_ESTIMATES,
+    calculate_item_weight,
+    detect_hs_code_from_description,
+    estimate_believable_value,
 )
 
 
@@ -185,7 +183,7 @@ class TestHTSCodePatterns:
 
     def test_all_patterns_have_tuples(self):
         """Test all HTS patterns are (code, description) tuples."""
-        for key, value in HTS_CODE_PATTERNS.items():
+        for _key, value in HTS_CODE_PATTERNS.items():
             assert isinstance(value, tuple)
             assert len(value) == 2
             code, description = value
@@ -194,7 +192,7 @@ class TestHTSCodePatterns:
 
     def test_hts_codes_valid_format(self):
         """Test HTS codes have valid format (10 digits with periods)."""
-        for key, (code, description) in HTS_CODE_PATTERNS.items():
+        for key, (code, _description) in HTS_CODE_PATTERNS.items():
             digits_only = code.replace(".", "")
             assert len(digits_only) == 10, f"Invalid HTS code for {key}: {code}"
             assert digits_only.isdigit(), f"HTS code contains non-digits for {key}: {code}"

@@ -75,9 +75,10 @@ def parse_human_readable_shipment(text: str) -> dict | None:
     # Parse address lines (first non-metadata lines)
     address_lines = []
     for line in lines:
-        if not any(kw in line.lower() for kw in ["email", "phone", "dimension", "weight", "@"]):
-            if not re.search(r"\+?\d{10,}", line):  # Skip phone-only lines
-                address_lines.append(line)
+        if not any(
+            kw in line.lower() for kw in ["email", "phone", "dimension", "weight", "@"]
+        ) and not re.search(r"\+?\d{10,}", line):  # Skip phone-only lines
+            address_lines.append(line)
 
     if len(address_lines) >= 4:
         # Detect company (first line with business indicators)
