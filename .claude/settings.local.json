@@ -23,7 +23,10 @@
       "Bash(pre-commit install:*)",
       "Bash(cat:*)",
       "Bash(make dev:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(timeout 3 python:*)",
+      "Bash(psql:*)",
+      "Bash(python3:*)"
     ],
     "deny": [],
     "ask": []
