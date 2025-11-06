@@ -1,0 +1,21 @@
+# Code Owners - Automatically request reviews
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for everything
+* @andrejs
+
+# Backend
+/backend/ @andrejs
+/backend/src/mcp/ @andrejs
+
+# Frontend
+/frontend/ @andrejs
+
+# Infrastructure
+/docker-compose*.yml @andrejs
+/Dockerfile* @andrejs
+/.github/ @andrejs
+
+# Documentation
+/docs/ @andrejs
+/*.md @andrejs
