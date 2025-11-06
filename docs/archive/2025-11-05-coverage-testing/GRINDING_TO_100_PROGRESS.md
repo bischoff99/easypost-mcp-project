@@ -1,8 +1,8 @@
 # Grinding to 100% Coverage - Live Progress
 
-**Started:** 53% (1,618 lines covered)  
-**Current:** 54% (1,640 lines covered)  
-**Target:** 100% (3,056 lines)  
+**Started:** 53% (1,618 lines covered)
+**Current:** 54% (1,640 lines covered)
+**Target:** 100% (3,056 lines)
 **Remaining:** 1,416 lines (46 percentage points)
 
 ## Progress Log

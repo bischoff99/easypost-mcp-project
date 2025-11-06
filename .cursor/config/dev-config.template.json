@@ -14,7 +14,7 @@
     "backend": {
       "language": "python|javascript|typescript|go|rust|java",
       "framework": "fastapi|django|express|nest|gin|actix",
-      "version": "3.12",
+      "version": "3.13",
       "orm": "sqlalchemy|prisma|sequelize|gorm|none",
       "features": ["async", "rest-api", "graphql", "websockets", "mcp-tools"]
     },
