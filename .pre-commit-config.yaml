@@ -26,7 +26,7 @@ repos:
         language: system
         types: [python]
         pass_filenames: false
-        stages: [commit]
+        stages: [pre-commit]
 
   # JavaScript/React frontend
   - repo: local
@@ -63,5 +63,5 @@ default_language_version:
   node: '18.0.0'
 
 # Parallel execution (M3 Max optimized)
-default_stages: [commit]
+default_stages: [pre-commit]
 fail_fast: false  # Run all hooks even if one fails
