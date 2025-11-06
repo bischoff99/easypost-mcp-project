@@ -111,7 +111,6 @@ ssl/
 
 # Script backups
 scripts/*.backup-*
-.roo/*.backup-*
 
 # Personal/local configs
 .claude/settings.local.json
