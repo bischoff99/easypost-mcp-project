@@ -116,3 +116,7 @@ scripts/*.backup-*
 # Personal/local configs
 .claude/settings.local.json
 .dev-config.local.json
+
+# Archive backups
+docs/archive-backup.tar.gz
+docs/*.tar.gz
