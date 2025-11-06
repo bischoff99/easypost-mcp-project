@@ -21,7 +21,7 @@ psutil>=5.9.0,<6.0.0
 
 # Code Quality (allow minor updates)
 ruff>=0.1.0,<1.0.0
-black>=23.0.0,<25.0.0
+black>=23.0.0,<26.0.0
 
 # Database (conservative pinning)
 sqlalchemy>=2.0.0,<3.0.0
