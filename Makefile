@@ -38,7 +38,7 @@ help:
 dev:
 	@echo "🚀 Starting development servers..."
 	@trap 'kill 0' EXIT; \
-	(cd backend && source venv/bin/activate && uvicorn src.server:app --reload --log-level warning) & \
+	(cd backend && ./venv/bin/uvicorn src.server:app --reload --log-level warning) & \
 	(cd frontend && npm run dev) & \
 	wait
 
@@ -46,13 +46,13 @@ dev:
 dev-mock:
 	@echo "🎭 Starting with mock EasyPost API..."
 	@trap 'kill 0' EXIT; \
-	(cd backend && source venv/bin/activate && MOCK_MODE=true uvicorn src.server:app --reload) & \
+	(cd backend && MOCK_MODE=true ./venv/bin/uvicorn src.server:app --reload) & \
 	(cd frontend && npm run dev) & \
 	wait
 
 # Backend only
 backend:
-	@cd backend && source venv/bin/activate && uvicorn src.server:app --reload
+	@cd backend && ./venv/bin/uvicorn src.server:app --reload
 
 # Frontend only
 frontend:
@@ -61,27 +61,27 @@ frontend:
 # Run all tests
 test:
 	@echo "🧪 Running all tests..."
-	@cd backend && source venv/bin/activate && pytest tests/ -v
+	@cd backend && ./venv/bin/pytest tests/ -v
 	@cd frontend && npm test -- --run
 
 # Fast tests (changed files only, parallel execution)
 test-fast:
 	@echo "⚡ Running fast tests..."
-	@cd backend && source venv/bin/activate && pytest tests/ -v --lf --ff -n auto
+	@cd backend && ./venv/bin/pytest tests/ -v --lf --ff -n auto
 	@cd frontend && npm test -- --run --changed
 
 # Watch mode for tests
 test-watch:
 	@echo "👀 Starting test watch mode..."
 	@trap 'kill 0' EXIT; \
-	(cd backend && source venv/bin/activate && pytest-watch tests/ --clear) & \
+	(cd backend && ./venv/bin/pytest-watch tests/ --clear) & \
 	(cd frontend && npm test) & \
 	wait
 
 # Coverage report
 test-cov:
 	@echo "📊 Running tests with coverage..."
-	@cd backend && source venv/bin/activate && pytest tests/ -v --cov=src --cov-report=term-missing --cov-report=html
+	@cd backend && ./venv/bin/pytest tests/ -v --cov=src --cov-report=term-missing --cov-report=html
 	@cd frontend && npm run test:coverage
 	@echo "✅ Coverage reports generated:"
 	@echo "   Backend:  backend/htmlcov/index.html"
@@ -91,7 +91,7 @@ test-cov:
 build:
 	@echo "📦 Building production bundles..."
 	@cd frontend && npm run build
-	@cd backend && source venv/bin/activate && python -m compileall src/
+	@cd backend && ./venv/bin/python -m compileall src/
 	@echo "✅ Build complete!"
 	@du -sh frontend/dist
 
@@ -104,13 +104,13 @@ build-docker:
 # Linting
 lint:
 	@echo "🔍 Running linters..."
-	@cd backend && source venv/bin/activate && ruff check src/ tests/
+	@cd backend && ./venv/bin/ruff check src/ tests/
 	@cd frontend && npm run lint
 
 # Auto-format
 format:
 	@echo "✨ Formatting code..."
-	@cd backend && source venv/bin/activate && black src/ tests/ && ruff check src/ tests/ --fix
+	@cd backend && ./venv/bin/black src/ tests/ && ./venv/bin/ruff check src/ tests/ --fix
 	@cd frontend && npx prettier --write src/
 
 # Full quality check
@@ -140,18 +140,18 @@ health:
 	@curl -s http://localhost:8000/health | python -m json.tool || echo "❌ Backend not running"
 	@curl -s http://localhost:5173 > /dev/null && echo "✅ Frontend: OK" || echo "❌ Frontend not running"
 
-# Database operations (when implemented)
+# Database operations
 db-reset:
 	@echo "🔄 Resetting database..."
-	@cd backend && source venv/bin/activate && alembic downgrade base && alembic upgrade head
+	@cd backend && ./venv/bin/alembic downgrade base && ./venv/bin/alembic upgrade head
 	@echo "✅ Database reset complete!"
 
 db-migrate:
 	@echo "📝 Creating migration..."
-	@cd backend && source venv/bin/activate && alembic revision --autogenerate -m "$(m)"
+	@cd backend && ./venv/bin/alembic revision --autogenerate -m "$(m)"
 
 db-upgrade:
-	@cd backend && source venv/bin/activate && alembic upgrade head
+	@cd backend && ./venv/bin/alembic upgrade head
 
 # Performance benchmark
 benchmark:
