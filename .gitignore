@@ -120,3 +120,6 @@ scripts/*.backup-*
 # Archive backups
 docs/archive-backup.tar.gz
 docs/*.tar.gz
+
+# MCP setup guide (contains credentials)
+.env.mcp-setup-guide.txt
