@@ -9,9 +9,9 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install to user site-packages
+# Copy requirements and install to /usr/local (system-wide)
 COPY requirements.txt .
-RUN pip install --user --no-cache-dir --no-warn-script-location -r requirements.txt
+RUN pip install --no-cache-dir --no-warn-script-location -r requirements.txt
 
 # Production stage - minimal runtime
 FROM python:3.13-slim
@@ -24,16 +24,17 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy Python dependencies from builder
-COPY --from=builder /root/.local /root/.local
+# Copy Python dependencies from builder (system-wide location)
+COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Make sure scripts in .local are usable
-ENV PATH=/root/.local/bin:$PATH
+# Set PYTHONPATH so imports work correctly
+ENV PYTHONPATH=/app
 
 # Copy application code
 COPY . .
 
-# Create non-root user and switch
+# Create non-root user and switch (after copying app files)
 RUN useradd -m -u 1000 appuser && \
     chown -R appuser:appuser /app
 USER appuser
