@@ -117,7 +117,7 @@ npm run dev
 
 # MCP server only (for MCP client integration)
 cd backend && source venv/bin/activate
-python -m src.mcp
+python run_mcp.py                      # Correct: Uses run_mcp.py entry point
 ```
 
 ### Environment Management
@@ -286,7 +286,7 @@ The project implements the Model Context Protocol for AI integration:
 **Running MCP Server**:
 ```bash
 cd backend && source venv/bin/activate
-python -m src.mcp
+python run_mcp.py  # Starts in STDIO mode for Claude Desktop/Roo Code
 ```
 
 **Available MCP Tools**:

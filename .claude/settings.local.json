@@ -26,7 +26,10 @@
       "Bash(curl:*)",
       "Bash(timeout 3 python:*)",
       "Bash(psql:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(timeout 5 python:*)",
+      "Bash(lsof:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

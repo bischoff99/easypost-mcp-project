@@ -1,9 +1,9 @@
 # Docker Stack Functionality Test Results
 
-**Date:** November 6, 2025  
-**Test Suite:** Comprehensive Docker Stack Validation  
-**Success Rate:** **100%** (12/12 tests passing)  
-**Execution Time:** 38.68s  
+**Date:** November 6, 2025
+**Test Suite:** Comprehensive Docker Stack Validation
+**Success Rate:** **100%** (12/12 tests passing)
+**Execution Time:** 38.68s
 
 ---
 
@@ -46,8 +46,8 @@
 | **frontend** | 0.00% | 12.9MB / 16GB | 82.1MB |
 | **postgres** | 0.00% | 24.2MB | postgres:16-alpine |
 
-**Total Memory Usage:** ~259MB (very efficient!)  
-**Total Image Size:** 594.1MB  
+**Total Memory Usage:** ~259MB (very efficient!)
+**Total Image Size:** 594.1MB
 
 ### API Performance
 - **Uptime:** 1652 seconds (27.5 minutes)
@@ -69,23 +69,23 @@
 }
 ```
 
-**Results:** 11 carrier options retrieved  
+**Results:** 11 carrier options retrieved
 
 **Top 3 Cheapest Rates:**
 1. **UPS Groundsaver** - $8.56
 2. (Other rates available in API response)
 
 ### Shipment Creation Test
-**Status:** ✅ SUCCESS  
-**From:** San Francisco, CA 94105  
-**To:** New York, NY (test destination)  
-**Parcel:** 10x8x5, 16 oz  
+**Status:** ✅ SUCCESS
+**From:** San Francisco, CA 94105
+**To:** New York, NY (test destination)
+**Parcel:** 10x8x5, 16 oz
 **Result:** Shipment created, rates calculated
 
-### Tracking Test  
-**Tracking Code:** EZ1000000001  
-**Status:** ✅ Successfully tracked  
-**Response:** 200 OK  
+### Tracking Test
+**Tracking Code:** EZ1000000001
+**Status:** ✅ Successfully tracked
+**Response:** 200 OK
 
 ---
 
@@ -94,7 +94,7 @@
 ### Schema Status
 **Tables Created:** 12 total
 - addresses (2 records)
-- shipments (2 records)  
+- shipments (2 records)
 - parcels
 - customs_infos
 - shipment_events
@@ -107,10 +107,10 @@
 - alembic_version
 
 ### Data Persistence
-✅ **Addresses:** 2 records stored  
-✅ **Shipments:** 2 records persisted  
-✅ **Migrations:** All 6 applied successfully  
-✅ **Health:** Database connection pool active  
+✅ **Addresses:** 2 records stored
+✅ **Shipments:** 2 records persisted
+✅ **Migrations:** All 6 applied successfully
+✅ **Health:** Database connection pool active
 
 ---
 
@@ -129,51 +129,51 @@ dist/assets/vendor-charts.js       341.56 kB │ gzip: 101.03 kB
 ```
 
 ### Features Verified
-✅ **React 18** serving correctly  
-✅ **Code splitting** with vendor chunks  
-✅ **Nginx compression** (gzip enabled)  
-✅ **Static asset caching** (1 year)  
-✅ **React Router** support (try_files)  
+✅ **React 18** serving correctly
+✅ **Code splitting** with vendor chunks
+✅ **Nginx compression** (gzip enabled)
+✅ **Static asset caching** (1 year)
+✅ **React Router** support (try_files)
 
 ---
 
 ## 🔧 Infrastructure Validation
 
 ### Docker Compose
-✅ **3 services** running (postgres + backend + frontend)  
-✅ **Health checks** all passing  
-✅ **Service dependencies** working (backend waits for postgres)  
-✅ **Volume persistence** (postgres_data)  
-✅ **Network isolation** (easypost-network)  
+✅ **3 services** running (postgres + backend + frontend)
+✅ **Health checks** all passing
+✅ **Service dependencies** working (backend waits for postgres)
+✅ **Volume persistence** (postgres_data)
+✅ **Network isolation** (easypost-network)
 
 ### Multi-Stage Build
-✅ **Backend:** Builder stage + production stage  
-✅ **Frontend:** Builder (Node) + production (nginx)  
-✅ **Optimization:** Minimal runtime dependencies  
-✅ **Security:** Non-root users  
+✅ **Backend:** Builder stage + production stage
+✅ **Frontend:** Builder (Node) + production (nginx)
+✅ **Optimization:** Minimal runtime dependencies
+✅ **Security:** Non-root users
 
 ### Configuration Alignment
-✅ **Python 3.13** everywhere  
-✅ **PYTHONPATH** configured  
-✅ **asyncpg** driver working  
-✅ **M3 Max** optimizations active  
+✅ **Python 3.13** everywhere
+✅ **PYTHONPATH** configured
+✅ **asyncpg** driver working
+✅ **M3 Max** optimizations active
 
 ---
 
 ## ⚠️ Known Issues (Non-Blocking)
 
 ### 1. Analytics Dashboard Field
-**Endpoint:** `/db/analytics/dashboard`  
-**Error:** `type object 'ShipmentEvent' has no attribute 'delivery_time_hours'`  
-**Status:** 500 Internal Server Error  
-**Impact:** LOW - Advanced analytics only, doesn't affect core shipping  
-**Workaround:** Use `/analytics` and `/carrier-performance` instead  
+**Endpoint:** `/db/analytics/dashboard`
+**Error:** `type object 'ShipmentEvent' has no attribute 'delivery_time_hours'`
+**Status:** 500 Internal Server Error
+**Impact:** LOW - Advanced analytics only, doesn't affect core shipping
+**Workaround:** Use `/analytics` and `/carrier-performance` instead
 
 ### 2. EasyPost Health Check
-**Status:** "unhealthy"  
-**Reason:** Test API key doesn't support health check endpoint  
-**Impact:** NONE - Expected behavior with test keys  
-**System & Database:** Both healthy ✅  
+**Status:** "unhealthy"
+**Reason:** Test API key doesn't support health check endpoint
+**Impact:** NONE - Expected behavior with test keys
+**System & Database:** Both healthy ✅
 
 ---
 
@@ -190,9 +190,9 @@ Database pool created: 2 connections (min=2, max=20) ✅
 ```
 
 ### Concurrent Request Handling
-**Test:** 10 simultaneous health check requests  
-**Result:** All 200 OK, handled efficiently  
-**Performance:** M3 Max parallel processing confirmed  
+**Test:** 10 simultaneous health check requests
+**Result:** All 200 OK, handled efficiently
+**Performance:** M3 Max parallel processing confirmed
 
 ### Build Performance
 - **Frontend build:** 3.2s (Vite + SWC)
@@ -238,22 +238,22 @@ Database pool created: 2 connections (min=2, max=20) ✅
 
 ### Overall Status: **PRODUCTION READY** ✅
 
-**Success Rate:** 100% (12/12 tests passing)  
-**Core Functionality:** All working  
-**Database:** Fully migrated and operational  
-**Frontend:** Optimized and serving  
-**Performance:** M3 Max fully utilized  
+**Success Rate:** 100% (12/12 tests passing)
+**Core Functionality:** All working
+**Database:** Fully migrated and operational
+**Frontend:** Optimized and serving
+**Performance:** M3 Max fully utilized
 
 ### What's Validated
-✅ Multi-stage Docker builds (backend + frontend)  
-✅ PostgreSQL integration with migrations  
-✅ All API endpoints responding  
-✅ Database persistence (shipments + addresses)  
-✅ Frontend optimization (chunking, caching)  
-✅ Health monitoring (metrics, stats)  
-✅ CORS configuration  
-✅ Concurrent request handling  
-✅ M3 Max optimizations (32 workers, connection pooling)  
+✅ Multi-stage Docker builds (backend + frontend)
+✅ PostgreSQL integration with migrations
+✅ All API endpoints responding
+✅ Database persistence (shipments + addresses)
+✅ Frontend optimization (chunking, caching)
+✅ Health monitoring (metrics, stats)
+✅ CORS configuration
+✅ Concurrent request handling
+✅ M3 Max optimizations (32 workers, connection pooling)
 
 ### Quality Metrics
 - **Configuration:** A+ (9.8/10)
@@ -279,14 +279,13 @@ Database pool created: 2 connections (min=2, max=20) ✅
 
 ---
 
-**DOCKER STACK FULLY FUNCTIONAL** ✅  
-**Configuration Review COMPLETE** ✅  
+**DOCKER STACK FULLY FUNCTIONAL** ✅
+**Configuration Review COMPLETE** ✅
 **Production Ready** ✅
 
 ---
 
-**Generated:** November 6, 2025  
-**Test Tool:** test_docker_functionality.py  
-**Duration:** 38.68 seconds  
+**Generated:** November 6, 2025
+**Test Tool:** test_docker_functionality.py
+**Duration:** 38.68 seconds
 **Pass Rate:** 100%
-
