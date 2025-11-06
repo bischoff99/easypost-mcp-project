@@ -2,20 +2,20 @@
 # https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 
 # Default owner for everything
-* @andrejs
+* @bischoff99
 
 # Backend
-/backend/ @andrejs
-/backend/src/mcp/ @andrejs
+/backend/ @bischoff99
+/backend/src/mcp/ @bischoff99
 
 # Frontend
-/frontend/ @andrejs
+/frontend/ @bischoff99
 
 # Infrastructure
-/docker-compose*.yml @andrejs
-/Dockerfile* @andrejs
-/.github/ @andrejs
+/docker-compose*.yml @bischoff99
+/Dockerfile* @bischoff99
+/.github/ @bischoff99
 
 # Documentation
-/docs/ @andrejs
-/*.md @andrejs
+/docs/ @bischoff99
+/*.md @bischoff99

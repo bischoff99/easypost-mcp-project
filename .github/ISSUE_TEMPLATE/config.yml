@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Ask a Question
+    url: https://github.com/bischoff99/easypost-mcp-project/discussions
+    about: Ask questions and discuss ideas
+  - name: 📖 Documentation
+    url: https://github.com/bischoff99/easypost-mcp-project/blob/master/README.md
+    about: Read the documentation
+  - name: 🔒 Security Issue
+    url: https://github.com/bischoff99/easypost-mcp-project/blob/master/SECURITY.md
+    about: Report a security vulnerability (private)
