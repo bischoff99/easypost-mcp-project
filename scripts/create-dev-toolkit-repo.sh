@@ -41,24 +41,24 @@ mkdir -p docs
 
 # Copy universal files
 echo -e "${GREEN}[3/6] Copying universal configuration files...${NC}"
-cp /Users/andrejs/easypost-mcp-project/.cursorrules templates/
-cp /Users/andrejs/easypost-mcp-project/.dev-config.template.json templates/
-cp /Users/andrejs/easypost-mcp-project/Makefile templates/Makefile.universal
-cp /Users/andrejs/easypost-mcp-project/.pre-commit-config.yaml templates/
-cp /Users/andrejs/easypost-mcp-project/.gitignore templates/.gitignore.universal
+cp /Users/andrejs/Developer/github/andrejs/easypost-mcp-project/.cursorrules templates/
+cp /Users/andrejs/Developer/github/andrejs/easypost-mcp-project/.dev-config.template.json templates/
+cp /Users/andrejs/Developer/github/andrejs/easypost-mcp-project/Makefile templates/Makefile.universal
+cp /Users/andrejs/Developer/github/andrejs/easypost-mcp-project/.pre-commit-config.yaml templates/
+cp /Users/andrejs/Developer/github/andrejs/easypost-mcp-project/.gitignore templates/.gitignore.universal
 
 # Copy AI templates
 echo -e "${GREEN}[4/6] Copying AI code templates...${NC}"
-cp -r /Users/andrejs/easypost-mcp-project/.ai-templates/* ai-templates/
+cp -r /Users/andrejs/Developer/github/andrejs/easypost-mcp-project/.ai-templates/* ai-templates/
 
 # Copy VS Code files
 echo -e "${GREEN}[5/6] Copying VS Code configuration...${NC}"
-cp /Users/andrejs/easypost-mcp-project/.vscode/snippets.code-snippets vscode/
-cp /Users/andrejs/easypost-mcp-project/.vscode/settings.json vscode/settings.json.template 2>/dev/null || true
+cp /Users/andrejs/Developer/github/andrejs/easypost-mcp-project/.vscode/snippets.code-snippets vscode/
+cp /Users/andrejs/Developer/github/andrejs/easypost-mcp-project/.vscode/settings.json vscode/settings.json.template 2>/dev/null || true
 
 # Copy scripts
-cp /Users/andrejs/easypost-mcp-project/scripts/benchmark.sh scripts/
-cp /Users/andrejs/easypost-mcp-project/install-universal-commands.sh ./
+cp /Users/andrejs/Developer/github/andrejs/easypost-mcp-project/scripts/benchmark.sh scripts/
+cp /Users/andrejs/Developer/github/andrejs/easypost-mcp-project/install-universal-commands.sh ./
 
 # Create main README
 echo -e "${GREEN}[6/6] Creating documentation...${NC}"

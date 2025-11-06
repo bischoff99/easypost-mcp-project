@@ -26,28 +26,28 @@ cd "$TARGET_DIR"
 
 # Copy core files
 echo -e "${GREEN}[1/5] Copying configuration files...${NC}"
-cp /Users/andrejs/easypost-mcp-project/.dev-config.template.json ./.dev-config.json
-cp /Users/andrejs/easypost-mcp-project/.cursorrules ./
-cp /Users/andrejs/easypost-mcp-project/Makefile ./
+cp /Users/andrejs/Developer/github/andrejs/easypost-mcp-project/.dev-config.template.json ./.dev-config.json
+cp /Users/andrejs/Developer/github/andrejs/easypost-mcp-project/.cursorrules ./
+cp /Users/andrejs/Developer/github/andrejs/easypost-mcp-project/Makefile ./
 
 # Copy AI templates
 echo -e "${GREEN}[2/5] Copying AI templates...${NC}"
 mkdir -p .ai-templates
-cp -r /Users/andrejs/easypost-mcp-project/.ai-templates/* .ai-templates/ 2>/dev/null || true
+cp -r /Users/andrejs/Developer/github/andrejs/easypost-mcp-project/.ai-templates/* .ai-templates/ 2>/dev/null || true
 
 # Copy VS Code config
 echo -e "${GREEN}[3/5] Copying VS Code configuration...${NC}"
 mkdir -p .vscode
-cp /Users/andrejs/easypost-mcp-project/.vscode/snippets.code-snippets .vscode/ 2>/dev/null || true
+cp /Users/andrejs/Developer/github/andrejs/easypost-mcp-project/.vscode/snippets.code-snippets .vscode/ 2>/dev/null || true
 
 # Copy scripts
 echo -e "${GREEN}[4/5] Copying utility scripts...${NC}"
 mkdir -p scripts
-cp /Users/andrejs/easypost-mcp-project/scripts/benchmark.sh scripts/ 2>/dev/null || true
+cp /Users/andrejs/Developer/github/andrejs/easypost-mcp-project/scripts/benchmark.sh scripts/ 2>/dev/null || true
 
 # Copy pre-commit config
 echo -e "${GREEN}[5/5] Copying development tools...${NC}"
-cp /Users/andrejs/easypost-mcp-project/.pre-commit-config.yaml ./ 2>/dev/null || true
+cp /Users/andrejs/Developer/github/andrejs/easypost-mcp-project/.pre-commit-config.yaml ./ 2>/dev/null || true
 
 echo ""
 echo -e "${GREEN}✅ Universal command system installed!${NC}"
@@ -71,7 +71,7 @@ echo "   ${BLUE}cat UNIVERSAL_COMMANDS.md${NC}"
 echo ""
 echo -e "${YELLOW}💡 Pro Tip:${NC}"
 echo "Create an alias in ~/.zshrc for quick installation:"
-echo "  ${BLUE}alias dev-init='bash /Users/andrejs/easypost-mcp-project/install-universal-commands.sh'${NC}"
+echo "  ${BLUE}alias dev-init='bash /Users/andrejs/Developer/github/andrejs/easypost-mcp-project/install-universal-commands.sh'${NC}"
 echo ""
 echo "Then in ANY project directory:"
 echo "  ${BLUE}dev-init${NC}"

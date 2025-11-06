@@ -172,21 +172,21 @@ Add to `~/.gitconfig`:
 [alias]
     # Quick status
     st = status -sb
-    
+
     # Better logs
     lg = log --oneline --graph --all --decorate
-    
+
     # Quick commit
     cm = commit -m
     ca = commit -am
-    
+
     # Branch management
     br = branch -v
     co = checkout
-    
+
     # Undo last commit (keep changes)
     undo = reset HEAD~1 --soft
-    
+
     # Clean up
     clean-merged = !git branch --merged | grep -v \"\\*\" | xargs -n 1 git branch -d
 ```
@@ -319,20 +319,20 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.12'
-      
+
       - name: Install dependencies
         run: |
           cd backend
           pip install -r requirements.txt
-      
+
       - name: Run tests
         run: |
           cd backend
@@ -457,4 +457,3 @@ git push origin master
 - [Git Flow](https://nvie.com/posts/a-successful-git-branching-model/)
 - [GitHub Flow](https://guides.github.com/introduction/flow/)
 - [Pro Git Book](https://git-scm.com/book/en/v2)
-

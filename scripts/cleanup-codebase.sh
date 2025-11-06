@@ -4,7 +4,7 @@
 
 set -e  # Exit on error
 
-PROJECT_ROOT="/Users/andrejs/easypost-mcp-project"
+PROJECT_ROOT="/Users/andrejs/Developer/github/andrejs/easypost-mcp-project"
 cd "$PROJECT_ROOT"
 
 echo "🧹 Starting codebase cleanup..."
