@@ -1,52 +1,81 @@
 {
   "recommendations": [
-    // Python/Backend (existing)
+    // ===================================
+    // PYTHON/BACKEND - CORE (Required)
+    // ===================================
     "ms-python.python",
-    "ms-python.vscode-pylance",
     "ms-python.debugpy",
     "ms-python.black-formatter",
+    "ms-python.isort",
     "charliermarsh.ruff",
-    
-    // Python/Backend (new - high priority)
+
+    // ===================================
+    // PYTHON/BACKEND - PRODUCTIVITY
+    // ===================================
     "njpwerner.autodocstring",
     "usernamehw.errorlens",
-    
-    // React/Frontend (existing)
+
+    // ===================================
+    // REACT/FRONTEND - CORE (Required)
+    // ===================================
     "dsznajder.es7-react-js-snippets",
     "dbaeumer.vscode-eslint",
     "esbenp.prettier-vscode",
     "bradlc.vscode-tailwindcss",
-    
-    // React/Frontend (new - high priority)
+
+    // ===================================
+    // REACT/FRONTEND - PRODUCTIVITY
+    // ===================================
     "formulahendry.auto-rename-tag",
     "formulahendry.auto-close-tag",
-    "wix.vscode-import-cost",
     "wallabyjs.console-ninja",
-    
-    // Full-Stack/Productivity (existing)
+
+    // ===================================
+    // FULL-STACK PRODUCTIVITY
+    // ===================================
     "eamodio.gitlens",
-    "thunder-client.thunder-client",
-    
-    // Full-Stack/Productivity (new - high value)
     "christian-kohler.path-intellisense",
+    "christian-kohler.npm-intellisense",
     "aaron-bond.better-comments",
     "gruntfuggly.todo-tree",
     "streetsidesoftware.code-spell-checker",
 
-    // Testing
-    "littlefoxteam.vscode-python-test-adapter",
-    "hbenl.vscode-test-explorer",
-
-    // Docker
+    // ===================================
+    // DOCKER & DEVOPS
+    // ===================================
     "ms-azuretools.vscode-docker",
 
-    // Markdown (for .cursor/ docs editing)
+    // ===================================
+    // MARKDOWN & DOCUMENTATION
+    // ===================================
     "yzhang.markdown-all-in-one",
     "davidanson.vscode-markdownlint",
 
-    // Optional but useful
+    // ===================================
+    // DEVELOPMENT TOOLS
+    // ===================================
     "tamasfe.even-better-toml",
-    "ms-vscode.makefile-tools"
+    "ms-vscode.makefile-tools",
+    "donjayamanne.githistory"
+  ],
+  "unwantedRecommendations": [
+    // Cursor has built-in Pyright (anysphere.cursorpyright)
+    "ms-python.vscode-pylance",
+
+    // Deprecated test extensions (use native VSCode Testing API)
+    "hbenl.vscode-test-explorer",
+    "ms-vscode.test-adapter-converter",
+    "littlefoxteam.vscode-python-test-adapter",
+
+    // Performance issues / unmaintained
+    "wix.vscode-import-cost",
+
+    // Redundant AI assistants (Cursor has native AI + Claude Code)
+    "github.copilot",
+    "github.copilot-chat",
+    "google.gemini-cli-vscode-ide-companion",
+    "google.geminicodeassist",
+    "openai.chatgpt",
+    "rooveterinaryinc.roo-cline"
   ]
 }
-

@@ -10,7 +10,7 @@ BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-cd /Users/andrejs/easypost-mcp-project
+cd /Users/andrejs/Developer/github/andrejs/easypost-mcp-project
 
 echo -e "${BLUE}╔═══════════════════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║           Git Commit Workflow - EasyPost MCP             ║${NC}"
@@ -253,4 +253,3 @@ echo ""
 echo "Run: git push origin master"
 echo ""
 echo -e "${GREEN}✓ All changes committed and ready to push!${NC}"
-

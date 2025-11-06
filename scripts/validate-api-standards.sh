@@ -15,7 +15,7 @@ echo -e "${BLUE}║   Reference: github.com/EasyPost/easypost-python          �
 echo -e "${BLUE}╚═══════════════════════════════════════════════════════════╝${NC}"
 echo ""
 
-cd /Users/andrejs/easypost-mcp-project
+cd /Users/andrejs/Developer/github/andrejs/easypost-mcp-project
 
 CHECKS_PASSED=0
 CHECKS_FAILED=0
@@ -327,4 +327,3 @@ echo "   - OpenAPI/Swagger documentation"
 echo ""
 
 exit 0
-

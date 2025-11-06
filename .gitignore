@@ -106,3 +106,13 @@ frontend/.env.local
 # Generated files (shipping labels, downloads, etc.)
 labels/
 downloads/
+backend/logs/
+ssl/
+
+# Script backups
+scripts/*.backup-*
+.roo/*.backup-*
+
+# Personal/local configs
+.claude/settings.local.json
+.dev-config.local.json

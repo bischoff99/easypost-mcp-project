@@ -96,7 +96,7 @@
   },
 
   "paths": {
-    "root": "/Users/andrejs/easypost-mcp-project",
+    "root": "/Users/andrejs/Developer/github/andrejs/easypost-mcp-project",
     "backend": "backend/src",
     "frontend": "frontend/src",
     "tests": {

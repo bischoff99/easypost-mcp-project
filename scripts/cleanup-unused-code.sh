@@ -39,7 +39,7 @@ export MAX_WORKERS
 
 # 1. Fix unused imports with ruff
 echo "${BLUE}1. Fixing unused imports with ruff...${NC}"
-cd /Users/andrejs/easypost-mcp-project/backend
+cd /Users/andrejs/Developer/github/andrejs/easypost-mcp-project/backend
 if [ -d "venv" ]; then
     source venv/bin/activate
 
@@ -62,7 +62,7 @@ fi
 echo ""
 echo "${BLUE}2. Cleaning orphaned cache files (parallel)...${NC}"
 STEP_START=$(date +%s%3N)
-cd /Users/andrejs/easypost-mcp-project/backend
+cd /Users/andrejs/Developer/github/andrejs/easypost-mcp-project/backend
 
 # M3 Max Optimization: Run counting and deletion in parallel
 # Use mdfind (Spotlight) for faster searching on macOS
@@ -105,7 +105,7 @@ fi
 echo ""
 echo "${BLUE}3. Moving misplaced test files...${NC}"
 STEP_START=$(date +%s%3N)
-cd /Users/andrejs/easypost-mcp-project/backend
+cd /Users/andrejs/Developer/github/andrejs/easypost-mcp-project/backend
 
 # Create integration directory if needed
 mkdir -p tests/integration tests/unit
@@ -132,7 +132,7 @@ fi
 echo ""
 echo "${BLUE}4. Verifying test discovery...${NC}"
 STEP_START=$(date +%s%3N)
-cd /Users/andrejs/easypost-mcp-project/backend
+cd /Users/andrejs/Developer/github/andrejs/easypost-mcp-project/backend
 
 if [ -d "venv" ]; then
     source venv/bin/activate
@@ -150,7 +150,7 @@ fi
 # 5. Update .gitignore if needed
 echo ""
 echo "${BLUE}5. Updating .gitignore...${NC}"
-cd /Users/andrejs/easypost-mcp-project
+cd /Users/andrejs/Developer/github/andrejs/easypost-mcp-project
 
 if ! grep -q "__pycache__/" .gitignore 2>/dev/null; then
     echo "" >> .gitignore
@@ -211,4 +211,3 @@ echo "${BLUE}💡 Performance Tip:${NC}"
 echo "   On M3 Max, expect 2-5x faster execution vs standard hardware"
 echo "   Parallel operations scale linearly with available cores"
 echo ""
-

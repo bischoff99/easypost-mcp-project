@@ -1,11 +1,18 @@
 {
-  "python.languageServer": "Pylance",
+  "python.defaultInterpreterPath": "${workspaceFolder}/backend/venv/bin/python",
+  "python.languageServer": "Default",
   "python.analysis.typeCheckingMode": "basic",
   "python.analysis.autoImportCompletions": true,
   "python.analysis.diagnosticSeverityOverrides": {
     "reportUnusedImport": "information",
-    "reportUnusedVariable": "information"
+    "reportUnusedVariable": "information",
+    "reportMissingTypeStubs": "none",
+    "reportGeneralTypeIssues": "information"
   },
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/backend/src"
+  ],
+  "python.analysis.indexing": true,
   "[python]": {
     "editor.defaultFormatter": "ms-python.black-formatter",
     "editor.formatOnSave": true,
