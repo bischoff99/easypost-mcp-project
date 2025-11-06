@@ -1,0 +1,14 @@
+# Local Git Configuration (per repository)
+# Copy to .gitconfig.local and customize
+
+[user]
+	name = bischoff99
+	email = t82k2cfs9d@proton.me
+	signingkey = 9E3E0B89E3AF9656
+
+[github]
+	user = bischoff99
+
+# Include this in .git/config:
+# [include]
+#     path = ../.gitconfig.local
