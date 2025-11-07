@@ -4,16 +4,16 @@
 class EasyPostMCPError(Exception):
     """Base exception for all EasyPost MCP errors."""
 
-    def __init__(self, message: str, details: dict = None):
+    def __init__(self, message: str, details: dict | None = None):
         super().__init__(message)
         self.message = message
-        self.details = details or {}
+        self.details = details if details is not None else {}
 
 
 class ShipmentCreationError(EasyPostMCPError):
     """Raised when shipment creation fails."""
 
-    def __init__(self, message: str, shipment_data: dict = None):
+    def __init__(self, message: str, shipment_data: dict | None = None):
         super().__init__(message, {"shipment_data": shipment_data})
         self.shipment_data = shipment_data
 
@@ -21,7 +21,7 @@ class ShipmentCreationError(EasyPostMCPError):
 class RateLimitExceededError(EasyPostMCPError):
     """Raised when EasyPost API rate limit is exceeded."""
 
-    def __init__(self, retry_after: int = None):
+    def __init__(self, retry_after: int | None = None):
         message = "EasyPost API rate limit exceeded"
         if retry_after:
             message += f". Retry after {retry_after} seconds"
@@ -42,7 +42,7 @@ class TrackingNotFoundError(EasyPostMCPError):
 class InvalidAddressError(EasyPostMCPError):
     """Raised when address validation fails."""
 
-    def __init__(self, message: str, address_data: dict = None):
+    def __init__(self, message: str, address_data: dict | None = None):
         super().__init__(message, {"address_data": address_data})
         self.address_data = address_data
 
@@ -56,9 +56,13 @@ class DatabaseConnectionError(EasyPostMCPError):
 class BulkOperationError(EasyPostMCPError):
     """Raised when bulk operation fails."""
 
-    def __init__(self, message: str, failed_items: list = None, success_count: int = 0):
+    def __init__(self, message: str, failed_items: list | None = None, success_count: int = 0):
         super().__init__(
-            message, {"failed_items": failed_items or [], "success_count": success_count}
+            message,
+            {
+                "failed_items": failed_items if failed_items is not None else [],
+                "success_count": success_count,
+            },
         )
-        self.failed_items = failed_items or []
+        self.failed_items = failed_items if failed_items is not None else []
         self.success_count = success_count

@@ -26,6 +26,8 @@ async def process_easypost_webhook(request: Request):
     - tracker.updated: Shipment tracking status changes
     - shipment.purchased: New shipment created
     - batch.updated: Batch operation status changes
+
+    SECURITY: Requires EASYPOST_WEBHOOK_SECRET to be configured.
     """
     request_id = getattr(request.state, "request_id", "unknown")
 
@@ -36,11 +38,23 @@ async def process_easypost_webhook(request: Request):
 
         # Initialize webhook service
         webhook_secret = getattr(settings, "EASYPOST_WEBHOOK_SECRET", "")
+
+        # SECURITY: Webhook secret is REQUIRED, not optional
+        if not webhook_secret:
+            logger.error(f"[{request_id}] Webhook secret not configured - rejecting webhook")
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Webhook processing not configured",
+            )
+
         webhook_service = WebhookService(webhook_secret)
 
-        # Verify signature (if webhook secret is configured)
-        if webhook_secret and not webhook_service.verify_signature(body, signature):
-            logger.warning(f"[{request_id}] Invalid webhook signature")
+        # SECURITY: ALWAYS verify signature
+        if not webhook_service.verify_signature(body, signature):
+            logger.warning(
+                f"[{request_id}] Invalid webhook signature from IP: {request.client.host}"
+            )
+            metrics.track_api_call("webhook_easypost_invalid_signature", False)
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid webhook signature",

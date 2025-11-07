@@ -2,7 +2,7 @@
 
 from unittest.mock import AsyncMock, MagicMock
 
-from src.mcp.tools.bulk_creation_tools import register_bulk_creation_tools
+from src.mcp_server.tools.bulk_creation_tools import register_bulk_creation_tools
 
 
 class TestBulkCreationToolsRegistration:

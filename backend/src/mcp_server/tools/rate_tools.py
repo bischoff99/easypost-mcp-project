@@ -29,8 +29,13 @@ def register_rate_tools(mcp, easypost_service=None):  # noqa: ARG001 - Uses Cont
             Standardized response with available rates
         """
         try:
-            # Get service from context lifespan
-            service = ctx.request_context.lifespan_context.easypost_service
+            # Get service from context lifespan (dict access)
+            lifespan_ctx = ctx.request_context.lifespan_context
+            service = (
+                lifespan_ctx.get("easypost_service")
+                if isinstance(lifespan_ctx, dict)
+                else lifespan_ctx.easypost_service
+            )
 
             # Validate inputs
             to_addr = AddressModel(**to_address)

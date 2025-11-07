@@ -17,6 +17,8 @@ except ModuleNotFoundError:
     _uvloop_available = False
 
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -73,9 +75,9 @@ except ValueError as e:
 # Initialize FastMCP server with lifespan
 from fastmcp import FastMCP
 
-from src.mcp.prompts import register_prompts
-from src.mcp.resources import register_resources
-from src.mcp.tools import register_tools
+from src.mcp_server.prompts import register_prompts
+from src.mcp_server.resources import register_resources
+from src.mcp_server.tools import register_tools
 
 mcp = FastMCP(
     name="EasyPost Shipping Server",
@@ -98,13 +100,22 @@ limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# CORS middleware
+# CORS middleware (production-safe configuration)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],  # Explicit whitelist
+    allow_headers=[
+        "Content-Type",
+        "Authorization",
+        "X-Request-ID",
+        "Accept",
+        "Origin",
+        "X-CSRF-Token",
+    ],
+    expose_headers=["X-Request-ID"],
+    max_age=600,  # Cache preflight requests for 10 minutes
 )
 
 
@@ -123,6 +134,37 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
 
 
 app.add_middleware(RequestIDMiddleware)
+
+
+# Exception handlers for better debugging
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """
+    Handle validation errors with detailed logging for debugging.
+
+    Logs validation failures to help diagnose API integration issues.
+    """
+    request_id = getattr(request.state, "request_id", "unknown")
+
+    # Log detailed validation errors for debugging
+    logger.warning(
+        f"[{request_id}] Validation error on {request.method} {request.url.path}: {exc.errors()}"
+    )
+
+    # Track validation failures
+    metrics.track_api_call("validation_error", False)
+
+    # Return user-friendly error with details
+    return JSONResponse(
+        status_code=422,
+        content={
+            "status": "error",
+            "message": "Invalid request data",
+            "errors": exc.errors(),
+            "request_id": request_id,
+        },
+    )
+
 
 # Mount MCP server at /mcp endpoint for AI integration
 # Note: MCP tools will access easypost_service via Context
@@ -315,7 +357,7 @@ async def buy_shipment(request: Request, buy_request: BuyShipmentRequest, servic
 
 
 @app.post("/bulk-shipments")
-@limiter.limit("5/minute")
+@limiter.limit("2/minute")  # SECURITY: Stricter limit for resource-intensive bulk operations
 async def create_bulk_shipments(
     request: Request, bulk_request: BulkShipmentsRequest, service: EasyPostDep
 ):
@@ -434,6 +476,7 @@ async def create_bulk_shipments(
 
 
 @app.get("/shipments")
+@limiter.limit("20/minute")
 async def list_shipments(
     request: Request, service: EasyPostDep, page_size: int = 20, before_id: str | None = None
 ):
@@ -498,6 +541,7 @@ async def get_shipment_detail(request: Request, shipment_id: str, service: EasyP
 
 
 @app.get("/tracking/{tracking_number}")
+@limiter.limit("30/minute")
 async def track_shipment(request: Request, tracking_number: str, service: EasyPostDep):
     """Track a shipment by tracking number."""
     request_id = getattr(request.state, "request_id", "unknown")
@@ -1303,6 +1347,8 @@ async def process_easypost_webhook(request: Request):
     - tracker.updated: Shipment tracking status changes
     - shipment.purchased: New shipment created
     - batch.updated: Batch operation status changes
+
+    SECURITY: Requires EASYPOST_WEBHOOK_SECRET to be configured.
     """
     request_id = getattr(request.state, "request_id", "unknown")
 
@@ -1313,11 +1359,23 @@ async def process_easypost_webhook(request: Request):
 
         # Initialize webhook service
         webhook_secret = getattr(settings, "EASYPOST_WEBHOOK_SECRET", "")
+
+        # SECURITY: Webhook secret is REQUIRED, not optional
+        if not webhook_secret:
+            logger.error(f"[{request_id}] Webhook secret not configured - rejecting webhook")
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Webhook processing not configured",
+            )
+
         webhook_service = WebhookService(webhook_secret)
 
-        # Verify signature (if webhook secret is configured)
-        if webhook_secret and not webhook_service.verify_signature(body, signature):
-            logger.warning(f"[{request_id}] Invalid webhook signature")
+        # SECURITY: ALWAYS verify signature
+        if not webhook_service.verify_signature(body, signature):
+            logger.warning(
+                f"[{request_id}] Invalid webhook signature from IP: {request.client.host}"
+            )
+            metrics.track_api_call("webhook_easypost_invalid_signature", False)
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid webhook signature",

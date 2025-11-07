@@ -99,4 +99,3 @@ result = await parse_and_get_bulk_rates(
 ## Usage in MCP
 
 Simply paste your spreadsheet data into the tool and get instant rate quotes for all shipments!
-

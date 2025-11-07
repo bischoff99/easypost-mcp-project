@@ -5,7 +5,6 @@ Tests all services, endpoints, and integrations in the Docker environment.
 """
 
 import asyncio
-import json
 import sys
 import time
 from datetime import datetime
@@ -190,7 +189,7 @@ async def test_tracking(client: httpx.AsyncClient, tracking_code: str = None) ->
         code = tracking_code or "EZ1000000001"
 
         response = await client.get(f"{BASE_URL}/tracking/{code}")
-        data = response.json()
+        response.json()
 
         # Accept both success and error (depending on test key)
         assert response.status_code in [200, 404, 422]
@@ -413,9 +412,8 @@ async def run_all_tests():
     if success_rate >= 80:
         print_success("🎉 Docker stack fully functional!")
         return 0
-    else:
-        print_warning("⚠️  Some tests failed - review logs above")
-        return 1
+    print_warning("⚠️  Some tests failed - review logs above")
+    return 1
 
 
 if __name__ == "__main__":

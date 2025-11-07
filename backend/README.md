@@ -130,6 +130,7 @@ mypy src/
 ### Pre-commit Hooks
 
 Pre-commit hooks run automatically on `git commit`:
+
 - ruff (linting)
 - black (formatting)
 - prettier (markdown/json)
@@ -155,6 +156,7 @@ View interactive docs: http://localhost:8000/docs
 The MCP server exposes tools for Claude Desktop integration:
 
 **Tools:**
+
 - `create_shipment` - Create single shipment
 - `create_bulk_shipments` - Parallel bulk creation (16 workers)
 - `track_shipment` - Track by tracking number
@@ -162,10 +164,12 @@ The MCP server exposes tools for Claude Desktop integration:
 - `get_rates` - Compare shipping rates
 
 **Resources:**
+
 - `shipment://list` - Recent shipments
 - `stats://summary` - Analytics overview
 
 **Prompts:**
+
 - Shipping optimization suggestions
 - Carrier comparison analysis
 - Package tracking assistance
@@ -219,6 +223,7 @@ The backend is optimized for M3 Max (16 cores) but adapts to available hardware:
 ### Adding a New MCP Tool
 
 1. Create tool function in `src/mcp/tools/new_tool.py`:
+
 ```python
 def register_new_tools(mcp, easypost_service):
     @mcp.tool()
@@ -229,6 +234,7 @@ def register_new_tools(mcp, easypost_service):
 ```
 
 2. Register in `src/mcp/tools/__init__.py`:
+
 ```python
 from src.mcp.tools.new_tool import register_new_tools
 
@@ -242,6 +248,7 @@ def register_tools(mcp, easypost_service):
 ### Adding a New API Endpoint
 
 1. Add route in `src/server.py`:
+
 ```python
 @app.post("/my-endpoint")
 @limiter.limit("10/minute")
@@ -258,11 +265,40 @@ async def my_endpoint(request: Request, data: MyModel):
 2. Create Pydantic model in `src/models/`
 3. Add tests in `tests/unit/`
 
+## Development Setup
+
+### Dependencies
+
+This project uses a two-file dependency system:
+
+- `requirements.in` - Core dependencies (human-edited)
+- `requirements-lock.txt` - Locked versions (generated via `pip freeze`)
+- `requirements.txt` - Legacy compatibility (kept for backwards compatibility)
+
+**Installing dependencies:**
+
+```bash
+pip install -r requirements-lock.txt
+```
+
+**Updating dependencies:**
+
+```bash
+# 1. Edit requirements.in
+# 2. Install updated packages
+pip install -r requirements.in
+# 3. Regenerate lock file
+pip freeze > requirements-lock.txt
+```
+
+**Note**: `pip-compile` not used due to Python 3.14 compatibility issues. Use `pip freeze` instead.
+
 ## Troubleshooting
 
 ### Common Issues
 
 **Import errors:**
+
 ```bash
 # Make sure virtual environment is activated
 source venv/bin/activate
@@ -271,6 +307,7 @@ pip install -r requirements.txt
 ```
 
 **EasyPost API errors:**
+
 ```bash
 # Verify API key
 python -c "import os; from dotenv import load_dotenv; load_dotenv('.env.development'); print(os.getenv('EASYPOST_API_KEY'))"
@@ -278,6 +315,7 @@ python -c "import os; from dotenv import load_dotenv; load_dotenv('.env.developm
 ```
 
 **Tests failing:**
+
 ```bash
 # Integration tests need API key
 export EASYPOST_API_KEY=your_test_key
@@ -285,6 +323,7 @@ pytest tests/integration/ -v
 ```
 
 **Performance issues:**
+
 ```bash
 # Check worker configuration
 python -c "import multiprocessing; print(f'CPU cores: {multiprocessing.cpu_count()}')"

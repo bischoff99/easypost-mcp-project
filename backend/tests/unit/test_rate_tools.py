@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from pydantic import ValidationError
 
-from src.mcp.tools.rate_tools import register_rate_tools
+from src.mcp_server.tools.rate_tools import register_rate_tools
 
 
 class TestRateTools:
@@ -74,9 +74,7 @@ class TestRateTools:
 
         # Get the registered function
         assert mock_mcp.tool.called
-        tool_func = (
-            mock_mcp.tool.call_args[1]["func"] if "func" in mock_mcp.tool.call_args[1] else None
-        )
+        tool_func = mock_mcp.tool.call_args[1].get("func", None)
 
         # If tool decorator doesn't capture func, get it directly
         if tool_func is None:
@@ -84,7 +82,7 @@ class TestRateTools:
             # Reload to get fresh registration
             import importlib
 
-            from src.mcp.tools import rate_tools
+            from src.mcp_server.tools import rate_tools
 
             importlib.reload(rate_tools)
 
@@ -208,11 +206,10 @@ class TestRateTools:
 
                 await ctx.info("Calculating rates...")
 
-                result = await asyncio.wait_for(
+                return await asyncio.wait_for(
                     service.get_rates(to_addr.dict(), from_addr.dict(), parcel_obj.dict()),
                     timeout=20.0,
                 )
-                return result
             except TimeoutError:
                 return {
                     "status": "error",
@@ -251,11 +248,10 @@ class TestRateTools:
                 from_addr = AddressModel(**from_address)
                 parcel_obj = ParcelModel(**parcel)
 
-                result = await asyncio.wait_for(
+                return await asyncio.wait_for(
                     service.get_rates(to_addr.dict(), from_addr.dict(), parcel_obj.dict()),
                     timeout=20.0,
                 )
-                return result
             except Exception:
                 return {
                     "status": "error",

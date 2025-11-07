@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from src.mcp.tools.bulk_tools import parse_dimensions, parse_spreadsheet_line, parse_weight
+from src.mcp_server.tools.bulk_tools import parse_dimensions, parse_spreadsheet_line, parse_weight
 
 
 class MockEasyPostService:

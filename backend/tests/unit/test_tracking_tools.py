@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from src.mcp.tools.tracking_tools import register_tracking_tools
+from src.mcp_server.tools.tracking_tools import register_tracking_tools
 
 
 class TestTrackingTools:
@@ -104,8 +104,7 @@ class TestTrackingTools:
             try:
                 service = ctx.request_context.lifespan_context.easypost_service
                 await ctx.info(f"Fetching tracking for {tracking_number}...")
-                result = await asyncio.wait_for(service.get_tracking(tracking_number), timeout=20.0)
-                return result
+                return await asyncio.wait_for(service.get_tracking(tracking_number), timeout=20.0)
             except TimeoutError:
                 return {
                     "status": "error",
@@ -132,8 +131,7 @@ class TestTrackingTools:
             try:
                 service = ctx.request_context.lifespan_context.easypost_service
                 await ctx.info(f"Fetching tracking for {tracking_number}...")
-                result = await asyncio.wait_for(service.get_tracking(tracking_number), timeout=20.0)
-                return result
+                return await asyncio.wait_for(service.get_tracking(tracking_number), timeout=20.0)
             except Exception:
                 return {
                     "status": "error",
@@ -195,8 +193,7 @@ class TestTrackingTools:
                 else:
                     raise ValueError("No EasyPost service available")
 
-                result = await asyncio.wait_for(service.get_tracking(tracking_number), timeout=20.0)
-                return result
+                return await asyncio.wait_for(service.get_tracking(tracking_number), timeout=20.0)
             except Exception:
                 return {
                     "status": "error",
@@ -241,8 +238,7 @@ class TestTrackingTools:
             try:
                 service = ctx.request_context.lifespan_context.easypost_service
                 await ctx.info(f"Fetching tracking for {tracking_number}...")
-                result = await asyncio.wait_for(service.get_tracking(tracking_number), timeout=20.0)
-                return result
+                return await asyncio.wait_for(service.get_tracking(tracking_number), timeout=20.0)
             except Exception:
                 return {
                     "status": "error",

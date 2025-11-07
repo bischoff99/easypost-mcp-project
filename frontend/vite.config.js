@@ -38,7 +38,7 @@ export default defineConfig({
     target: 'esnext', // Modern JS for M3 Safari
     minify: 'esbuild', // Faster than Terser, uses Go (parallelized)
     sourcemap: false, // Faster builds in dev
-    chunkSizeWarningLimit: 600,
+    chunkSizeWarningLimit: 300, // FIXED: Alert if any chunk > 300KB (was 600KB)
   },
   // Faster dev server for M3 Max
   server: {

@@ -26,7 +26,12 @@ def register_tracking_tools(mcp, easypost_service=None):
         try:
             # Get service from context or use provided
             if ctx:
-                service = ctx.request_context.lifespan_context.easypost_service
+                lifespan_ctx = ctx.request_context.lifespan_context
+                service = (
+                    lifespan_ctx.get("easypost_service")
+                    if isinstance(lifespan_ctx, dict)
+                    else lifespan_ctx.easypost_service
+                )
             elif easypost_service:
                 service = easypost_service
             else:

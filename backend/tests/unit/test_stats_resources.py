@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from src.mcp.resources.stats_resources import register_stats_resources
+from src.mcp_server.resources.stats_resources import register_stats_resources
 
 
 class TestStatsResourcesRegistration:

@@ -4,8 +4,12 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
+from pathlib import Path
 
 import asyncpg
+from alembic.config import Config
+from alembic.runtime.migration import MigrationContext
+from alembic.script import ScriptDirectory
 
 from src.services.easypost_service import EasyPostService
 from src.utils.config import settings
@@ -42,6 +46,9 @@ async def app_lifespan(server):  # noqa: ARG001 - FastAPI lifespan interface
     db_pool = None
     if hasattr(settings, "DATABASE_URL") and settings.DATABASE_URL:
         try:
+            # Verify database migrations are up to date BEFORE creating pool
+            await _check_database_migrations()
+
             # Convert SQLAlchemy-style URL to asyncpg format
             db_url = settings.DATABASE_URL.replace("postgresql+asyncpg://", "postgresql://")
             db_pool = await asyncpg.create_pool(
@@ -85,3 +92,73 @@ async def app_lifespan(server):  # noqa: ARG001 - FastAPI lifespan interface
             logger.info("Database pool closed")
 
         logger.info("Shutdown complete")
+
+
+async def _check_database_migrations():
+    """
+    Verify database migrations are up to date before starting app.
+
+    Prevents starting server with outdated database schema.
+    Raises RuntimeError if migrations are not applied.
+    """
+    try:
+        # Find alembic.ini relative to this file
+        backend_dir = Path(__file__).parent.parent
+        alembic_ini_path = backend_dir / "alembic.ini"
+
+        if not alembic_ini_path.exists():
+            logger.warning(
+                f"alembic.ini not found at {alembic_ini_path}. Skipping migration check."
+            )
+            return
+
+        # Load Alembic configuration
+        alembic_cfg = Config(str(alembic_ini_path))
+        script = ScriptDirectory.from_config(alembic_cfg)
+
+        # Get expected head revision
+        head_rev = script.get_current_head()
+
+        # Connect to database to check current revision
+        from src.database import engine
+
+        if engine is None:
+            logger.warning("Database engine not initialized. Skipping migration check.")
+            return
+
+        async with engine.begin() as conn:
+            # Get current database revision
+            current_rev = await conn.run_sync(_get_current_revision)
+
+        # Compare revisions
+        if current_rev != head_rev:
+            error_msg = (
+                f"Database migration mismatch!\n"
+                f"Current revision: {current_rev or 'None (empty database)'}\n"
+                f"Expected revision: {head_rev}\n"
+                f"Run 'alembic upgrade head' before starting the server."
+            )
+            logger.error(error_msg)
+            raise RuntimeError(error_msg)
+
+        logger.info(f"Database migrations up to date: {current_rev}")
+
+    except RuntimeError:
+        # Re-raise migration errors
+        raise
+    except Exception as e:
+        logger.warning(f"Migration check failed: {e}. Proceeding with caution.")
+
+
+def _get_current_revision(connection):
+    """
+    Get current database revision (sync helper for run_sync).
+
+    Args:
+        connection: SQLAlchemy sync connection
+
+    Returns:
+        Current revision string or None
+    """
+    context = MigrationContext.configure(connection)
+    return context.get_current_revision()

@@ -1,10 +1,21 @@
+import { lazy, Suspense } from 'react';
 import { Package, DollarSign, TrendingUp, Percent } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import MetricCard from '@/components/analytics/MetricCard';
-import ShipmentVolumeChart from '@/components/analytics/ShipmentVolumeChart';
-import CarrierDistributionChart from '@/components/analytics/CarrierDistributionChart';
-import CostBreakdownChart from '@/components/analytics/CostBreakdownChart';
+
+// PERFORMANCE: Lazy load chart components (341KB recharts bundle)
+// Only loads when user navigates to analytics page
+const ShipmentVolumeChart = lazy(() => import('@/components/analytics/ShipmentVolumeChart'));
+const CarrierDistributionChart = lazy(() => import('@/components/analytics/CarrierDistributionChart'));
+const CostBreakdownChart = lazy(() => import('@/components/analytics/CostBreakdownChart'));
+
+// Loading skeleton for charts
+const ChartSkeleton = () => (
+  <div className="flex items-center justify-center h-64 bg-muted/50 rounded-lg animate-pulse">
+    <div className="text-sm text-muted-foreground">Loading chart...</div>
+  </div>
+);
 
 const metrics = [
   {
@@ -76,13 +87,19 @@ export default function AnalyticsPage() {
 
       {/* Charts Row 1 */}
       <div className="grid gap-4 lg:grid-cols-2">
-        <ShipmentVolumeChart />
-        <CarrierDistributionChart />
+        <Suspense fallback={<ChartSkeleton />}>
+          <ShipmentVolumeChart />
+        </Suspense>
+        <Suspense fallback={<ChartSkeleton />}>
+          <CarrierDistributionChart />
+        </Suspense>
       </div>
 
       {/* Charts Row 2 */}
       <div className="grid gap-4 lg:grid-cols-3">
-        <CostBreakdownChart />
+        <Suspense fallback={<ChartSkeleton />}>
+          <CostBreakdownChart />
+        </Suspense>
 
         <Card className="lg:col-span-2">
           <CardHeader>

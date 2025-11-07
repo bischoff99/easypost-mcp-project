@@ -2,7 +2,7 @@
 
 from unittest.mock import AsyncMock, MagicMock
 
-from src.mcp.tools.shipment_tools import register_shipment_tools
+from src.mcp_server.tools.shipment_tools import register_shipment_tools
 
 
 class TestShipmentToolsRegistration:

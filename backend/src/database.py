@@ -33,13 +33,8 @@ def create_engine() -> AsyncEngine | None:
     """
     try:
         # Validate DATABASE_URL exists
-        if (
-            not settings.DATABASE_URL
-            or settings.DATABASE_URL == "postgresql://user:password@localhost/easypost_mcp"
-        ):
-            logger.warning(
-                "DATABASE_URL not configured or using default value. Database features disabled."
-            )
+        if not settings.DATABASE_URL:
+            logger.warning("DATABASE_URL not configured. Database features disabled.")
             return None
 
         # Create async engine with comprehensive optimizations for M3 Max

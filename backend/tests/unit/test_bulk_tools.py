@@ -2,7 +2,7 @@
 
 import pytest
 
-from src.mcp.tools.bulk_tools import (
+from src.mcp_server.tools.bulk_tools import (
     CA_STORE_ADDRESSES,
     parse_dimensions,
     parse_spreadsheet_line,

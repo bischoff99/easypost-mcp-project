@@ -24,15 +24,14 @@ class Settings:
     # EasyPost
     EASYPOST_API_KEY: str = os.getenv("EASYPOST_API_KEY", "")
 
-    # Database
-    DATABASE_URL: str = os.getenv(
-        "DATABASE_URL", "postgresql://user:password@localhost/easypost_mcp"
-    )
-    # Connection pool settings (optimized for M3 Max)
-    # SQLAlchemy connection pool (conservative for multi-worker deployment)
-    # With 4 workers: 4 × (5 + 10) = 60 max connections
-    DATABASE_POOL_SIZE: int = int(os.getenv("DATABASE_POOL_SIZE", "5"))
-    DATABASE_MAX_OVERFLOW: int = int(os.getenv("DATABASE_MAX_OVERFLOW", "10"))
+    # Database - NO default credentials for security
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "")
+
+    # Connection pool settings (optimized for M3 Max with 33 workers)
+    # Formula: (workers × pool_size) + max_overflow <= PostgreSQL max_connections
+    # With 33 workers: 33 × 10 + 20 = 350 connections (within PG default 400)
+    DATABASE_POOL_SIZE: int = int(os.getenv("DATABASE_POOL_SIZE", "10"))
+    DATABASE_MAX_OVERFLOW: int = int(os.getenv("DATABASE_MAX_OVERFLOW", "20"))
     DATABASE_POOL_RECYCLE: int = int(os.getenv("DATABASE_POOL_RECYCLE", "3600"))
     DATABASE_POOL_TIMEOUT: int = int(os.getenv("DATABASE_POOL_TIMEOUT", "30"))
     DATABASE_COMMAND_TIMEOUT: int = int(os.getenv("DATABASE_COMMAND_TIMEOUT", "60"))
@@ -59,8 +58,20 @@ class Settings:
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
 
     def validate(self):
+        """Validate required configuration."""
+        errors = []
+
         if not self.EASYPOST_API_KEY:
-            raise ValueError("EASYPOST_API_KEY is required")
+            errors.append("EASYPOST_API_KEY is required")
+
+        if not self.DATABASE_URL:
+            errors.append(
+                "DATABASE_URL is required (format: postgresql+asyncpg://user:pass@host/db)"
+            )
+
+        if errors:
+            raise ValueError(f"Configuration errors: {'; '.join(errors)}")
+
         return True
 
 

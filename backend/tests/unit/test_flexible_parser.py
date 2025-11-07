@@ -1,6 +1,6 @@
 """Unit tests for flexible shipment data parser."""
 
-from src.mcp.tools.flexible_parser import parse_human_readable_shipment
+from src.mcp_server.tools.flexible_parser import parse_human_readable_shipment
 
 
 class TestParseHumanReadableShipment:

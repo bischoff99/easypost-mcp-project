@@ -15,9 +15,9 @@ mcp = FastMCP(
 easypost_service = EasyPostService(api_key=settings.EASYPOST_API_KEY)
 
 # Import and register all components
-from src.mcp.prompts import register_prompts
-from src.mcp.resources import register_resources
-from src.mcp.tools import register_tools
+from src.mcp_server.prompts import register_prompts
+from src.mcp_server.resources import register_resources
+from src.mcp_server.tools import register_tools
 
 # Register all MCP components
 register_tools(mcp, easypost_service)
