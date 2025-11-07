@@ -67,6 +67,9 @@ coverage.json
 .cursor/QUICK_*.md
 .cursor/commands/v2/
 
+# Cursor research archive - track it
+!.cursor/research-archive/
+
 # OS
 .DS_Store
 Thumbs.db
