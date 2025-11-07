@@ -42,9 +42,12 @@ export default defineConfig({
   },
   // Faster dev server for M3 Max
   server: {
+    host: '0.0.0.0', // Bind to all interfaces (IPv4 + IPv6)
     port: 5173,
     hmr: {
-      overlay: true,
+      host: 'localhost',
+      port: 5173,
+      protocol: 'ws',
     },
     watch: {
       usePolling: false, // macOS native file watching

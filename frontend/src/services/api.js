@@ -1,5 +1,6 @@
 import axios from 'axios';
-import { toast } from 'sonner';
+import axiosRetry from 'axios-retry';
+import { handleApiError, ApiError } from './errors';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -11,29 +12,26 @@ const api = axios.create({
   timeout: 30000,
 });
 
+// Retry failed requests
+axiosRetry(api, {
+  retries: 3,
+  retryDelay: (retryCount) => {
+    return retryCount * 1000;
+  },
+  retryCondition: (error) => {
+    return error.code === 'ERR_NETWORK' || error.response?.status >= 500;
+  },
+});
+
 // Error interceptor with toast notifications
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log(`✓ API ${response.config.method.toUpperCase()} ${response.config.url}: ${response.status}`);
+    return response;
+  },
   (error) => {
-    const message = error.response?.data?.message || error.message || 'An error occurred';
-
-    // Show toast notification for errors
-    if (error.response?.status >= 500) {
-      toast.error('Server Error', { description: message });
-    } else if (error.response?.status >= 400) {
-      toast.error('Request Failed', { description: message });
-    } else if (error.code === 'ECONNABORTED') {
-      toast.error('Request Timeout', { description: 'The request took too long to complete' });
-    } else if (error.code === 'ERR_NETWORK') {
-      toast.error('Network Error', { description: 'Unable to connect to server' });
-    }
-
-    // Log to console in dev mode
-    if (import.meta.env.DEV) {
-      console.warn('API Error:', error.response?.data || error.message);
-    }
-
-    return Promise.reject(error);
+    const apiError = handleApiError(error);
+    return Promise.reject(apiError);
   }
 );
 
@@ -43,7 +41,7 @@ export const shipmentAPI = {
       const response = await api.post('/shipments', data);
       return response.data;
     } catch (error) {
-      throw new Error(error.response?.data?.message || 'Failed to create shipment');
+      throw error;
     }
   },
 
@@ -52,7 +50,7 @@ export const shipmentAPI = {
       const response = await api.get(`/tracking/${trackingNumber}`);
       return response.data;
     } catch (error) {
-      throw new Error(error.response?.data?.message || 'Failed to get tracking');
+      throw error;
     }
   },
 
@@ -61,7 +59,7 @@ export const shipmentAPI = {
       const response = await api.post('/rates', data);
       return response.data;
     } catch (error) {
-      throw new Error(error.response?.data?.message || 'Failed to get rates');
+      throw error;
     }
   },
 
@@ -70,7 +68,7 @@ export const shipmentAPI = {
       const response = await api.get(`/shipments?page_size=${limit}`);
       return response.data;
     } catch (error) {
-      throw new Error(error.response?.data?.message || 'Failed to get recent shipments');
+      throw error;
     }
   },
 
@@ -79,7 +77,7 @@ export const shipmentAPI = {
       const response = await api.get('/analytics');
       return response.data;
     } catch (error) {
-      throw new Error(error.response?.data?.message || 'Failed to get analytics');
+      throw error;
     }
   },
 
@@ -88,7 +86,7 @@ export const shipmentAPI = {
       const response = await api.get('/stats');
       return response.data;
     } catch (error) {
-      throw new Error(error.response?.data?.message || 'Failed to get statistics');
+      throw error;
     }
   },
 
@@ -97,7 +95,7 @@ export const shipmentAPI = {
       const response = await api.get('/carrier-performance');
       return response.data;
     } catch (error) {
-      throw new Error(error.response?.data?.message || 'Failed to get carrier performance');
+      throw error;
     }
   },
 
@@ -106,7 +104,7 @@ export const shipmentAPI = {
       const response = await api.get(`/shipments/${shipmentId}`);
       return response.data;
     } catch (error) {
-      throw new Error(error.response?.data?.message || 'Failed to get shipment details');
+      throw error;
     }
   },
 
@@ -115,7 +113,7 @@ export const shipmentAPI = {
       const response = await api.post('/shipments/buy', data);
       return response.data;
     } catch (error) {
-      throw new Error(error.response?.data?.message || 'Failed to purchase shipment');
+      throw error;
     }
   },
 
@@ -124,8 +122,8 @@ export const shipmentAPI = {
       const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
       const response = await axios.get(`${baseURL}/health`, { timeout: 5000 });
       return response.data;
-    } catch {
-      throw new Error('Backend server is not running');
+    } catch (error) {
+      throw new ApiError('Backend server is not running', 503, null);
     }
   },
 
@@ -149,7 +147,7 @@ export const shipmentAPI = {
 
       return response.data;
     } catch (error) {
-      throw new Error(error.response?.data?.message || 'Failed to create bulk shipments');
+      throw error;
     }
   },
 };

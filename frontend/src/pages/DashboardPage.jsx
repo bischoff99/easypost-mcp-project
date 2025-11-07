@@ -10,7 +10,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-// Quick Actions (static)
+// Static data for quick action cards
 const quickActions = [
   {
     title: 'Create Shipment',
@@ -35,12 +35,20 @@ const quickActions = [
   },
 ];
 
+// Color mapping for shipment statuses
 const statusColors = {
   pending: 'warning',
   in_transit: 'default',
   delivered: 'success',
 };
 
+/**
+ * DashboardPage Component
+ *
+ * This component serves as the main dashboard for the application.
+ * It displays key statistics, quick actions, recent activity, and carrier performance.
+ * The data is fetched from the API when the component mounts.
+ */
 export default function DashboardPage() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
@@ -48,20 +56,27 @@ export default function DashboardPage() {
   const [recentActivity, setRecentActivity] = useState([]);
   const [carrierPerformance, setCarrierPerformance] = useState([]);
 
-  // Fetch real data from API
+  // Fetch dashboard data from the API on component mount
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         setIsLoading(true);
+        console.log('🔄 Dashboard: Fetching data from API...');
 
-        // Fetch stats, recent shipments, and carrier performance in parallel
+        // Fetch all data in parallel for faster loading
         const [statsResponse, recentResponse, carrierResponse] = await Promise.all([
           shipmentAPI.getStats(),
           shipmentAPI.getRecentShipments(5),
           shipmentAPI.getCarrierPerformance(),
         ]);
 
-        // Transform stats data - EasyPost API provides live snapshots only
+        console.log('📊 Dashboard: API Response received', {
+          statsResponse,
+          recentResponse,
+          carrierResponse,
+        });
+
+        // Transform and set stats data
         if (statsResponse.status === 'success' && statsResponse.data) {
           const statsData = statsResponse.data;
           setStats([
@@ -97,10 +112,9 @@ export default function DashboardPage() {
           setCarrierPerformance(carrierResponse.data);
         }
 
-        // Transform recent shipments data
+        // Transform and set recent shipments data
         if (recentResponse.status === 'success' && recentResponse.data) {
           const transformedActivity = recentResponse.data.map((shipment, index) => {
-            // Extract destination city from to_address object
             let destination = 'Unknown';
             if (shipment.to_address?.city) {
               destination = shipment.to_address.state
@@ -121,9 +135,10 @@ export default function DashboardPage() {
           });
           setRecentActivity(transformedActivity);
         }
-      } catch {
-        toast.error('Failed to Load Dashboard', { description: 'Cannot connect to EasyPost API' });
-        // Fallback to empty state if API fails
+      } catch (error) {
+        console.error('❌ Dashboard: Failed to load data', error);
+        toast.error('Failed to Load Dashboard', { description: error.message });
+        // Set empty state with error messages
         setStats([
           {
             name: 'Total Shipments',
@@ -151,7 +166,6 @@ export default function DashboardPage() {
           },
         ]);
 
-        // Empty state - no mock data to avoid confusion
         setRecentActivity([]);
         setCarrierPerformance([]);
       } finally {
@@ -162,6 +176,7 @@ export default function DashboardPage() {
     fetchDashboardData();
   }, []);
 
+  // Render loading skeletons while data is being fetched
   if (isLoading) {
     return (
       <div className="space-y-6 animate-fade-in">
@@ -237,29 +252,36 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentActivity.map((activity) => (
-                <div
-                  key={activity.id}
-                  className="flex items-start gap-4 pb-4 border-b border-border last:border-0 last:pb-0"
-                >
-                  <div className="rounded-full bg-primary/10 p-2">
-                    <Package className="h-4 w-4 text-primary" />
-                  </div>
-                  <div className="flex-1 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium">{activity.message}</p>
-                      <Badge variant={statusColors[activity.status]} className="text-xs">
-                        {activity.status.replace('_', ' ')}
-                      </Badge>
+              {recentActivity.length > 0 ? (
+                recentActivity.map((activity) => (
+                  <div
+                    key={activity.id}
+                    className="flex items-start gap-4 pb-4 border-b border-border last:border-0 last:pb-0"
+                  >
+                    <div className="rounded-full bg-primary/10 p-2">
+                      <Package className="h-4 w-4 text-primary" />
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span className="font-mono">{activity.tracking}</span>
-                      <span>•</span>
-                      <span>{formatRelativeTime(activity.timestamp)}</span>
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium">{activity.message}</p>
+                        <Badge variant={statusColors[activity.status]} className="text-xs">
+                          {activity.status.replace('_', ' ')}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span className="font-mono">{activity.tracking}</span>
+                        <span>•</span>
+                        <span>{formatRelativeTime(activity.timestamp)}</span>
+                      </div>
                     </div>
                   </div>
+                ))
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground mb-4">No recent activity to display.</p>
+                  <Button onClick={() => navigate('/shipments')}>Create a Shipment</Button>
                 </div>
-              ))}
+              )}
             </div>
           </CardContent>
         </Card>
@@ -293,9 +315,10 @@ export default function DashboardPage() {
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  No carrier data available
-                </p>
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground mb-4">No carrier data available.</p>
+                  <Button onClick={() => navigate('/analytics')}>View Analytics</Button>
+                </div>
               )}
             </div>
           </CardContent>

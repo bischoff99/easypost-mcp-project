@@ -4,6 +4,7 @@ import { Toaster } from 'sonner';
 import { initializeTheme } from './stores/useThemeStore';
 import AppShell from './components/layout/AppShell';
 import DashboardPage from './pages/DashboardPage';
+import ErrorBoundary from './components/ui/ErrorBoundary';
 
 // Lazy load pages for better performance
 const ShipmentsPage = lazy(() => import('./pages/ShipmentsPage'));
@@ -26,26 +27,28 @@ function App() {
   }, []);
 
   return (
-    <BrowserRouter
-      future={{
-        v7_startTransition: true,
-        v7_relativeSplatPath: true,
-      }}
-    >
-      <Toaster position="top-right" richColors closeButton />
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
-          <Route path="/" element={<AppShell />}>
-            <Route index element={<DashboardPage />} />
-            <Route path="shipments" element={<ShipmentsPage />} />
-            <Route path="tracking" element={<TrackingPage />} />
-            <Route path="analytics" element={<AnalyticsPage />} />
-            <Route path="addresses" element={<AddressBookPage />} />
-            <Route path="settings" element={<SettingsPage />} />
-          </Route>
-        </Routes>
-      </Suspense>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
+        <Toaster position="top-right" richColors closeButton />
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/" element={<AppShell />}>
+              <Route index element={<DashboardPage />} />
+              <Route path="shipments" element={<ShipmentsPage />} />
+              <Route path="tracking" element={<TrackingPage />} />
+              <Route path="analytics" element={<AnalyticsPage />} />
+              <Route path="addresses" element={<AddressBookPage />} />
+              <Route path="settings" element={<SettingsPage />} />
+            </Route>
+          </Routes>
+        </Suspense>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 

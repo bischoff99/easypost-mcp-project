@@ -1,75 +1,33 @@
-/**
- * Centralized error handling for API requests.
- *
- * Industry Best Practice: Consistent error messages and logging
- */
+import { toast } from 'sonner';
 
-export class APIError extends Error {
-  constructor(message, status, data = null) {
+export class ApiError extends Error {
+  constructor(message, status, data) {
     super(message);
-    this.name = 'APIError';
+    this.name = 'ApiError';
     this.status = status;
     this.data = data;
   }
 }
 
-/**
- * Extract error message from various error formats.
- */
-export const getErrorMessage = (error) => {
-  // Axios error
-  if (error.response) {
-    const data = error.response.data;
+export function handleApiError(error) {
+  const message = error.response?.data?.message || error.message || 'An error occurred';
+  const status = error.response?.status;
 
-    // FastAPI error format
-    if (data.detail) {
-      return typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail);
-    }
+  console.error(`✗ API Error:`, error.config?.url, status, message);
 
-    // Custom API error format
-    if (data.message) {
-      return data.message;
-    }
-
-    return `Request failed with status ${error.response.status}`;
+  if (status >= 500) {
+    toast.error('Server Error', { description: message });
+  } else if (status >= 400) {
+    toast.error('Request Failed', { description: message });
+  } else if (error.code === 'ECONNABORTED') {
+    toast.error('Request Timeout', { description: 'The request took too long to complete' });
+  } else if (error.code === 'ERR_NETWORK') {
+    toast.error('Network Error', { description: 'Unable to connect to server' });
   }
 
-  // Network error
-  if (error.request) {
-    return 'Network error - server may be down';
+  if (import.meta.env.DEV) {
+    console.warn('API Error:', error.response?.data || error.message);
   }
 
-  // Other errors
-  return error.message || 'An unexpected error occurred';
-};
-
-/**
- * Handle API errors consistently across the application.
- */
-export const handleAPIError = (error, context = '') => {
-  const message = getErrorMessage(error);
-  console.error(`API Error ${context}:`, message, error);
-
-  // Return user-friendly error
-  return {
-    success: false,
-    message: message,
-    error: error,
-  };
-};
-
-/**
- * Log error for debugging (can be extended to send to monitoring service).
- */
-export const logError = (error, context = {}) => {
-  console.error('Error:', {
-    message: error.message,
-    stack: error.stack,
-    ...context,
-  });
-
-  // TODO: Send to monitoring service (e.g., Sentry, LogRocket)
-  // if (window.Sentry) {
-  //   window.Sentry.captureException(error, { contexts: { custom: context } });
-  // }
-};
+  return new ApiError(message, status, error.response?.data);
+}

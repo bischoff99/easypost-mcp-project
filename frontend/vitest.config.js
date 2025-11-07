@@ -1,5 +1,5 @@
 import { defineConfig } from 'vitest/config';
-import react from '@vitejs/plugin-react-swc'; // SWC for faster test transpilation
+import react from '@vitejs/plugin-react'; // SWC for faster test transpilation
 import path from 'path';
 
 export default defineConfig({
@@ -13,6 +13,7 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: './src/tests/setup.js',
+
 
     // M3 Max parallel testing optimization
     pool: 'threads',
