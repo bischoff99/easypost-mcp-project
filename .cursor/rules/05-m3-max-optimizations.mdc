@@ -1,0 +1,474 @@
+---
+description: "Hardware-specific optimizations for M3 Max (16 cores, 128GB RAM)"
+globs: []
+alwaysApply: false
+---
+
+# M3 Max Hardware Optimizations
+
+You are an expert in optimizing applications for Apple Silicon (M3 Max) with 16 CPU cores and 128GB RAM.
+
+## Hardware Specifications
+
+- **CPU**: 16 cores (12 performance + 4 efficiency)
+- **Memory**: 128GB unified memory
+- **Architecture**: ARM64 (Apple Silicon)
+- **Storage**: Fast NVMe SSD
+- **OS**: macOS
+
+## Core Principles
+
+- Leverage parallel processing with 16+ workers
+- Utilize unified memory architecture
+- Optimize for ARM64 architecture
+- Use native macOS tools and frameworks
+- Monitor resource usage to avoid bottlenecks
+- Scale operations based on available resources
+
+## Python Optimizations
+
+### Parallel Processing with asyncio
+
+```python
+import asyncio
+from typing import List, TypeVar, Callable
+
+T = TypeVar('T')
+R = TypeVar('R')
+
+async def parallel_process(
+    items: List[T],
+    process_fn: Callable[[T], R],
+    max_workers: int = 16
+) -> List[R]:
+    """
+    Process items in parallel using asyncio.
+
+    Args:
+        items: List of items to process
+        process_fn: Async function to process each item
+        max_workers: Number of concurrent workers (default: 16 for M3 Max)
+
+    Returns:
+        List of processed results
+    """
+    semaphore = asyncio.Semaphore(max_workers)
+
+    async def process_with_limit(item: T) -> R:
+        async with semaphore:
+            return await process_fn(item)
+
+    return await asyncio.gather(*[
+        process_with_limit(item) for item in items
+    ], return_exceptions=False)
+
+# Usage
+async def create_bulk_shipments(shipments: List[dict]) -> List[dict]:
+    """Create multiple shipments in parallel."""
+    results = await parallel_process(
+        shipments,
+        create_single_shipment,
+        max_workers=16
+    )
+    return results
+```
+
+### Multiprocessing for CPU-Bound Tasks
+
+```python
+from multiprocessing import Pool
+import os
+
+def cpu_intensive_task(data):
+    """CPU-intensive processing."""
+    # Complex computation here
+    return processed_data
+
+def parallel_cpu_processing(items: list, workers: int = 12):
+    """
+    Use multiprocessing for CPU-bound tasks.
+    Use 12 workers to utilize performance cores.
+    """
+    with Pool(processes=workers) as pool:
+        results = pool.map(cpu_intensive_task, items)
+    return results
+```
+
+### PostgreSQL Connection Pooling
+
+```python
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker
+
+# Optimize for M3 Max - can handle more connections
+engine = create_async_engine(
+    DATABASE_URL,
+    pool_size=40,          # Increase from default 5
+    max_overflow=80,       # Allow burst capacity
+    pool_pre_ping=True,    # Verify connections
+    pool_recycle=3600,     # Recycle connections hourly
+    echo=False,            # Disable SQL logging in production
+)
+
+async_session_maker = sessionmaker(
+    engine,
+    class_=AsyncSession,
+    expire_on_commit=False
+)
+```
+
+### Uvicorn Configuration
+
+```python
+# For development
+# uvicorn src.server:app --reload --host 0.0.0.0 --port 8000
+
+# For production - leverage all cores
+# uvicorn src.server:app \
+#   --workers 8 \           # 8 workers for FastAPI
+#   --loop uvloop \          # Faster event loop
+#   --host 0.0.0.0 \
+#   --port 8000 \
+#   --log-level info \
+#   --access-log
+
+# In code (server.py)
+import uvloop
+asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+```
+
+### Batch Operations with Chunking
+
+```python
+async def process_large_dataset(
+    items: List[dict],
+    batch_size: int = 100,
+    max_workers: int = 16
+) -> List[dict]:
+    """
+    Process large datasets in batches to avoid memory issues.
+    Even with 128GB RAM, batching is safer.
+    """
+    results = []
+
+    for i in range(0, len(items), batch_size):
+        batch = items[i:i + batch_size]
+        batch_results = await parallel_process(
+            batch,
+            process_item,
+            max_workers=max_workers
+        )
+        results.extend(batch_results)
+
+        # Optional: Clear memory between batches
+        import gc
+        gc.collect()
+
+    return results
+```
+
+## Frontend Optimizations
+
+### Vite Configuration for M3 Max
+
+```javascript
+// vite.config.js
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [react()],
+
+  build: {
+    // Optimize build for production
+    target: 'es2020',
+    minify: 'esbuild',  // Faster than terser on M3
+    cssMinify: true,
+
+    // Parallel processing
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'ui-vendor': ['zustand', 'date-fns'],
+        },
+      },
+    },
+
+    // Increase chunk size limit
+    chunkSizeWarningLimit: 1000,
+  },
+
+  server: {
+    // Development server optimizations
+    hmr: {
+      overlay: true,
+    },
+    watch: {
+      // Use native fsevents on macOS
+      usePolling: false,
+    },
+  },
+
+  optimizeDeps: {
+    // Pre-bundle dependencies
+    include: ['react', 'react-dom', 'react-router-dom'],
+  },
+});
+```
+
+### React Performance Patterns
+
+```javascript
+import { memo, useMemo, useCallback } from 'react';
+
+// Memoize expensive components
+export const ShipmentList = memo(({ shipments }) => {
+  // Memoize expensive computations
+  const sortedShipments = useMemo(() => {
+    return [...shipments].sort((a, b) =>
+      new Date(b.created_at) - new Date(a.created_at)
+    );
+  }, [shipments]);
+
+  // Memoize callbacks
+  const handleDelete = useCallback((id) => {
+    // Delete logic
+  }, []);
+
+  return (
+    <div>
+      {sortedShipments.map((shipment) => (
+        <ShipmentCard
+          key={shipment.id}
+          shipment={shipment}
+          onDelete={handleDelete}
+        />
+      ))}
+    </div>
+  );
+});
+```
+
+### Web Workers for Heavy Processing
+
+```javascript
+// worker.js
+self.onmessage = (e) => {
+  const { data } = e;
+
+  // CPU-intensive processing
+  const result = processData(data);
+
+  self.postMessage(result);
+};
+
+// Component
+import { useEffect, useState } from 'react';
+
+export const DataProcessor = ({ data }) => {
+  const [result, setResult] = useState(null);
+
+  useEffect(() => {
+    const worker = new Worker(new URL('./worker.js', import.meta.url));
+
+    worker.onmessage = (e) => {
+      setResult(e.data);
+    };
+
+    worker.postMessage(data);
+
+    return () => worker.terminate();
+  }, [data]);
+
+  return <div>{result}</div>;
+};
+```
+
+## Testing Optimizations
+
+### Pytest Parallel Execution
+
+```ini
+# pytest.ini
+[pytest]
+asyncio_mode = auto
+testpaths = tests
+addopts =
+    -v
+    -n 16                     # 16 parallel workers
+    --dist=loadgroup          # Group tests by file
+    --maxprocesses=16         # Limit to 16 processes
+    --cov=src
+    --cov-report=html
+    --cov-report=term-missing
+```
+
+### Vitest Parallel Configuration
+
+```javascript
+// vitest.config.js
+export default defineConfig({
+  test: {
+    pool: 'threads',
+    poolOptions: {
+      threads: {
+        singleThread: false,
+        minThreads: 1,
+        maxThreads: 20,  // More than CPU cores is fine for I/O
+      },
+    },
+
+    // Use all available cores
+    maxConcurrency: 20,
+
+    coverage: {
+      provider: 'v8',  // Faster than istanbul
+    },
+  },
+});
+```
+
+## Database Optimizations
+
+### PostgreSQL Configuration
+
+```sql
+-- postgresql.conf optimizations for M3 Max
+
+-- Memory settings
+shared_buffers = 8GB           -- 25% of RAM (for dedicated DB)
+effective_cache_size = 64GB    -- 50% of RAM
+work_mem = 256MB               -- Per operation memory
+maintenance_work_mem = 2GB     -- For maintenance operations
+
+-- Parallelism
+max_worker_processes = 16      -- Match CPU cores
+max_parallel_workers = 12      -- For queries
+max_parallel_workers_per_gather = 4
+
+-- Write performance
+wal_buffers = 16MB
+checkpoint_completion_target = 0.9
+```
+
+### Query Optimization
+
+```python
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload, joinedload
+
+async def get_shipments_optimized(db: AsyncSession, limit: int = 1000):
+    """
+    Optimized query with eager loading and proper indexing.
+    """
+    # Use selectinload for one-to-many relationships
+    # Use joinedload for many-to-one relationships
+    stmt = (
+        select(Shipment)
+        .options(
+            selectinload(Shipment.rates),
+            joinedload(Shipment.from_address),
+            joinedload(Shipment.to_address)
+        )
+        .limit(limit)
+    )
+
+    result = await db.execute(stmt)
+    return result.scalars().unique().all()
+```
+
+## Monitoring & Profiling
+
+### Memory Monitoring
+
+```python
+import psutil
+import logging
+
+logger = logging.getLogger(__name__)
+
+def log_memory_usage():
+    """Log current memory usage."""
+    process = psutil.Process()
+    mem_info = process.memory_info()
+    mem_percent = process.memory_percent()
+
+    logger.info(
+        "memory_usage",
+        rss_mb=mem_info.rss / 1024 / 1024,
+        vms_mb=mem_info.vms / 1024 / 1024,
+        percent=mem_percent
+    )
+```
+
+### Performance Profiling
+
+```python
+import cProfile
+import pstats
+from functools import wraps
+
+def profile(func):
+    """Decorator to profile function performance."""
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        profiler = cProfile.Profile()
+        profiler.enable()
+
+        try:
+            result = await func(*args, **kwargs)
+            return result
+        finally:
+            profiler.disable()
+            stats = pstats.Stats(profiler)
+            stats.sort_stats('cumulative')
+            stats.print_stats(20)  # Top 20 functions
+
+    return wrapper
+```
+
+## Key Performance Targets (M3 Max)
+
+### Backend
+- API response time: < 100ms (p95)
+- Bulk shipment creation (100): < 40s
+- Batch tracking (50): < 3s
+- Database query: < 50ms (simple), < 200ms (complex)
+- Test suite: 4-6s (with 16 workers)
+
+### Frontend
+- Initial page load: < 2s
+- Time to interactive: < 3s
+- Build time: < 30s
+- Test suite: < 10s (with 20 workers)
+
+### Database
+- Connection pool: 40 base + 80 overflow
+- Query parallelism: Up to 12 workers
+- Bulk insert (1000 records): < 1s
+
+## Optimization Checklist
+
+- [ ] Use async/await for all I/O operations
+- [ ] Configure connection pools for high concurrency (40+ connections)
+- [ ] Enable parallel testing (16 workers for pytest, 20 for vitest)
+- [ ] Use uvloop for faster event loop
+- [ ] Enable database query parallelism
+- [ ] Implement batch processing with proper chunking
+- [ ] Monitor memory usage (even with 128GB)
+- [ ] Use eager loading to prevent N+1 queries
+- [ ] Leverage native macOS tools (fsevents, etc.)
+- [ ] Profile performance bottlenecks regularly
+
+## Common Pitfalls to Avoid
+
+1. **Over-parallelization**: More workers ≠ better performance (diminishing returns past 16-20)
+2. **Memory leaks**: Monitor memory even with 128GB RAM
+3. **Blocking I/O**: Never use blocking operations in async context
+4. **Sequential processing**: Always use parallel processing for bulk operations
+5. **Small batches**: Batch size too small = overhead, too large = memory issues
+
+---
+
+Leverage M3 Max's power efficiently without over-engineering. Profile first, optimize second.

@@ -1,0 +1,461 @@
+---
+description: "Comprehensive testing strategy for pytest and vitest"
+globs: ["**/test_*.py", "**/tests/**/*.py", "**/*.test.js", "**/*.test.jsx"]
+alwaysApply: false
+---
+
+# Testing Best Practices
+
+You are an expert in pytest, vitest, and modern testing methodologies.
+
+## Core Principles
+
+- Write tests first (TDD when appropriate)
+- Test behavior, not implementation
+- Keep tests simple, readable, and maintainable
+- Use descriptive test names that explain what they test
+- Follow AAA pattern: Arrange, Act, Assert
+- Mock external dependencies
+- Run tests in parallel for speed (pytest-xdist, vitest workers)
+
+## Backend Testing (pytest)
+
+### Test Structure
+
+```python
+import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
+
+@pytest.mark.asyncio
+async def test_create_shipment_success(
+    client: AsyncClient,
+    db: AsyncSession,
+    test_shipment_data: dict,
+    mock_easypost
+):
+    """Test successful shipment creation."""
+    # Arrange
+    mock_easypost.create.return_value = {"id": "shp_123", "tracking_code": "EZ123"}
+
+    # Act
+    response = await client.post("/api/v1/shipments", json=test_shipment_data)
+
+    # Assert
+    assert response.status_code == 201
+    data = response.json()
+    assert data["status"] == "success"
+    assert data["data"]["tracking_code"] == "EZ123"
+
+    # Verify side effects
+    mock_easypost.create.assert_called_once()
+```
+
+### Fixtures
+
+```python
+# conftest.py
+import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from src.server import app
+from src.database import Base
+
+@pytest.fixture
+async def db():
+    """Create test database session."""
+    engine = create_async_engine("postgresql+asyncpg://test:test@localhost/test_db")
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    async with AsyncSession(engine) as session:
+        yield session
+
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+
+@pytest.fixture
+async def client():
+    """Create test HTTP client."""
+    async with AsyncClient(app=app, base_url="http://test") as ac:
+        yield ac
+
+@pytest.fixture
+def test_shipment_data():
+    """Provide test shipment data."""
+    return {
+        "to_address": {
+            "name": "John Doe",
+            "street1": "123 Main St",
+            "city": "San Francisco",
+            "state": "CA",
+            "zip": "94105"
+        },
+        "from_address": {
+            "name": "Jane Smith",
+            "street1": "456 Oak Ave",
+            "city": "Los Angeles",
+            "state": "CA",
+            "zip": "90001"
+        },
+        "parcel": {
+            "length": 10,
+            "width": 8,
+            "height": 6,
+            "weight": 12
+        }
+    }
+```
+
+### Mocking External APIs
+
+```python
+import pytest
+from unittest.mock import AsyncMock, patch
+
+@pytest.fixture
+def mock_easypost():
+    """Mock EasyPost API client."""
+    with patch('src.services.easypost_service.EasyPostService') as mock:
+        instance = mock.return_value
+        instance.create_shipment = AsyncMock(return_value={
+            "id": "shp_test123",
+            "tracking_code": "EZ1234567890"
+        })
+        instance.buy_shipment = AsyncMock(return_value={
+            "postage_label": {"label_url": "https://example.com/label.pdf"}
+        })
+        yield instance
+```
+
+### Parametrized Tests
+
+```python
+@pytest.mark.parametrize("tracking_number,expected_status", [
+    ("EZ1234567890", "in_transit"),
+    ("EZ0987654321", "delivered"),
+    ("EZ1111111111", "pre_transit"),
+])
+@pytest.mark.asyncio
+async def test_tracking_status(
+    client: AsyncClient,
+    tracking_number: str,
+    expected_status: str,
+    mock_easypost
+):
+    """Test tracking with various statuses."""
+    mock_easypost.track.return_value = {"status": expected_status}
+
+    response = await client.get(f"/api/v1/tracking/{tracking_number}")
+
+    assert response.status_code == 200
+    assert response.json()["data"]["status"] == expected_status
+```
+
+### Parallel Testing (M3 Max Optimization)
+
+```ini
+# pytest.ini
+[pytest]
+asyncio_mode = auto
+testpaths = tests
+python_files = test_*.py
+python_classes = Test*
+python_functions = test_*
+addopts =
+    -v
+    -n 16  # 16 workers for M3 Max
+    --dist=loadgroup
+    --cov=src
+    --cov-report=html
+    --cov-report=term-missing
+```
+
+### Database Testing Patterns
+
+```python
+@pytest.mark.asyncio
+async def test_shipment_cascade_delete(db: AsyncSession):
+    """Test that deleting shipment cascades to related records."""
+    # Create shipment with addresses
+    shipment = await create_test_shipment(db)
+    address_id = shipment.from_address_id
+
+    # Delete shipment
+    await db.delete(shipment)
+    await db.commit()
+
+    # Verify cascade
+    address = await db.get(Address, address_id)
+    assert address is None
+```
+
+## Frontend Testing (vitest + React Testing Library)
+
+### Component Testing
+
+```javascript
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { ShipmentForm } from './ShipmentForm';
+import * as api from '../services/api';
+
+describe('ShipmentForm', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('renders form fields', () => {
+    render(<ShipmentForm />);
+
+    expect(screen.getByLabelText(/to address/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/from address/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /create/i })).toBeInTheDocument();
+  });
+
+  it('handles form submission', async () => {
+    const mockCreate = vi.spyOn(api, 'createShipment').mockResolvedValue({
+      status: 'success',
+      data: { id: 'shp_123', tracking_code: 'EZ123' }
+    });
+
+    render(<ShipmentForm />);
+
+    // Fill form
+    fireEvent.change(screen.getByLabelText(/to address/i), {
+      target: { value: '123 Main St' }
+    });
+
+    // Submit
+    fireEvent.click(screen.getByRole('button', { name: /create/i }));
+
+    // Verify API call
+    await waitFor(() => {
+      expect(mockCreate).toHaveBeenCalled();
+    });
+
+    // Verify success message
+    expect(await screen.findByText(/shipment created/i)).toBeInTheDocument();
+  });
+
+  it('displays error message on failure', async () => {
+    vi.spyOn(api, 'createShipment').mockRejectedValue(
+      new Error('Invalid address')
+    );
+
+    render(<ShipmentForm />);
+
+    fireEvent.click(screen.getByRole('button', { name: /create/i }));
+
+    expect(await screen.findByText(/invalid address/i)).toBeInTheDocument();
+  });
+});
+```
+
+### Custom Hook Testing
+
+```javascript
+import { renderHook, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { useShipments } from './useShipments';
+import * as api from '../services/api';
+
+describe('useShipments', () => {
+  it('fetches shipments on mount', async () => {
+    const mockShipments = [
+      { id: 1, tracking_code: 'EZ123' },
+      { id: 2, tracking_code: 'EZ456' }
+    ];
+
+    vi.spyOn(api, 'getShipments').mockResolvedValue({
+      status: 'success',
+      data: mockShipments
+    });
+
+    const { result } = renderHook(() => useShipments());
+
+    expect(result.current.loading).toBe(true);
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    expect(result.current.data).toEqual(mockShipments);
+    expect(result.current.error).toBeNull();
+  });
+});
+```
+
+### Integration Testing
+
+```javascript
+import { render, screen } from '@testing-library/react';
+import { setupServer } from 'msw/node';
+import { rest } from 'msw';
+import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
+import { App } from './App';
+
+const server = setupServer(
+  rest.get('/api/v1/shipments', (req, res, ctx) => {
+    return res(
+      ctx.json({
+        status: 'success',
+        data: [{ id: 1, tracking_code: 'EZ123' }]
+      })
+    );
+  })
+);
+
+beforeAll(() => server.listen());
+afterEach(() => server.resetHandlers());
+afterAll(() => server.close());
+
+describe('App Integration', () => {
+  it('loads and displays shipments', async () => {
+    render(<App />);
+
+    expect(await screen.findByText('EZ123')).toBeInTheDocument();
+  });
+});
+```
+
+### Vitest Configuration
+
+```javascript
+// vitest.config.js
+import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: ['./src/tests/setup.js'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html', 'lcov'],
+      exclude: ['node_modules/', 'src/tests/']
+    },
+    pool: 'threads',
+    poolOptions: {
+      threads: {
+        singleThread: false,
+        minThreads: 1,
+        maxThreads: 20  // M3 Max optimization
+      }
+    }
+  }
+});
+```
+
+## MCP Tool Testing
+
+```python
+import pytest
+from unittest.mock import AsyncMock
+from src.mcp_server.tools.shipment_tools import create_shipment
+
+@pytest.mark.asyncio
+async def test_mcp_create_shipment_tool(mock_easypost):
+    """Test MCP create_shipment tool."""
+    # Arrange
+    arguments = {
+        "to_address": {"street1": "123 Main St", "city": "SF"},
+        "from_address": {"street1": "456 Oak Ave", "city": "LA"},
+        "parcel": {"weight": 12, "length": 10}
+    }
+
+    # Act
+    result = await create_shipment(arguments)
+
+    # Assert
+    assert result[0].type == "text"
+    assert "shp_" in result[0].text
+    assert "tracking" in result[0].text.lower()
+```
+
+## Performance Testing
+
+```python
+import pytest
+import asyncio
+from time import time
+
+@pytest.mark.asyncio
+async def test_bulk_shipment_creation_performance(client, mock_easypost):
+    """Test bulk creation completes within acceptable time."""
+    shipment_count = 100
+    start = time()
+
+    response = await client.post("/api/v1/shipments/bulk", json={
+        "shipments": [{"to_address": {...}} for _ in range(shipment_count)]
+    })
+
+    duration = time() - start
+
+    assert response.status_code == 200
+    assert duration < 40  # Should complete in under 40 seconds on M3 Max
+    assert len(response.json()["data"]) == shipment_count
+```
+
+## Test Coverage Goals
+
+- **Minimum**: 80% overall coverage
+- **Critical paths**: 95%+ coverage
+  - Shipment creation/buying
+  - Tracking
+  - Rate retrieval
+  - Database operations
+- **MCP tools**: 100% coverage
+
+## Common Patterns
+
+### Testing Async Functions
+```python
+@pytest.mark.asyncio
+async def test_async_function():
+    result = await my_async_function()
+    assert result == expected
+```
+
+### Testing Error Cases
+```python
+@pytest.mark.asyncio
+async def test_error_handling(client):
+    response = await client.post("/api/v1/shipments", json={})
+    assert response.status_code == 422  # Validation error
+    assert "error" in response.json()["status"]
+```
+
+### Table-Driven Tests
+```python
+@pytest.mark.parametrize("input,expected", [
+    ({"valid": "data"}, 200),
+    ({"invalid": "data"}, 422),
+    ({}, 422),
+])
+async def test_validation(client, input, expected):
+    response = await client.post("/api/v1/shipments", json=input)
+    assert response.status_code == expected
+```
+
+## CI/CD Testing
+
+```bash
+# Run all tests with coverage (parallelized)
+pytest tests/ -n 16 --cov=src --cov-report=html
+
+# Frontend tests
+npm test -- --coverage --max-workers=20
+
+# Run only fast tests (for pre-commit hooks)
+pytest tests/unit/ -n 16
+
+# Run integration tests separately
+pytest tests/integration/ -n 8
+```
+
+---
+
+Focus on testing behavior, not implementation. Keep tests fast, reliable, and maintainable.

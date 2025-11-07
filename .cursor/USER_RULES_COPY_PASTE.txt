@@ -1,0 +1,287 @@
+╔═══════════════════════════════════════════════════════════════╗
+║          OPTIMAL PERSONAL CURSOR USER RULES                   ║
+║          Research-Based | Battle-Tested | Copy-Paste Ready    ║
+╚═══════════════════════════════════════════════════════════════╝
+
+INSTRUCTIONS:
+1. Copy one of the three options below
+2. Open Cursor Settings (Cmd/Ctrl + ,)
+3. Navigate to: Rules → User Rules
+4. Replace your current 200-line rules
+5. Save and test
+
+Sources: Kirill Markin (5.7k views) + Andi Ashari (436⭐) + Community
+
+═══════════════════════════════════════════════════════════════
+
+
+OPTION 1: OPTIMAL (RECOMMENDED) - 55 lines, ~275 tokens
+═══════════════════════════════════════════════════════════════
+
+CORE COMMUNICATION
+- Give actual code/solutions immediately, not high-level suggestions
+- "Here's how you can..." = BAD. Show the actual implementation.
+- Terse and direct - no fluff, preamble, or apologies
+- Treat me as an expert; skip obvious explanations
+- Answer first, then detailed explanation if needed
+- Use British English spelling (colour, organisation, etc.)
+- No emojis in commits, code comments, or professional output
+- Be direct about risks and problems when they exist
+
+CODING PHILOSOPHY
+- Comments in English only
+- Prefer functional programming over OOP
+- Use classes ONLY for external system connectors and interfaces
+- Write pure functions - modify return values only, never inputs or global state
+- Make minimal, focused changes
+- Follow DRY, KISS, and YAGNI principles
+- Check if logic already exists before writing new code
+- Before implementing new features, search for existing similar code
+- Expand existing code when possible instead of creating duplicates
+
+TYPE SAFETY & PRECISION
+- Use strict typing everywhere - function returns, variables, collections
+- Avoid untyped variables and generic types (any, unknown, Any)
+- Never use default parameter values - make all parameters explicit
+- Create proper type definitions for complex data structures
+- Use structured data models over loose dictionaries
+
+ERROR HANDLING
+- Always raise errors explicitly, never silently ignore them
+- Use specific error types that clearly indicate what went wrong
+- Avoid catch-all exception handlers that hide root causes
+- Error messages must be clear and actionable
+- NO FALLBACKS - never mask errors with fallback mechanisms
+- Fix root causes, not symptoms - fallbacks hide real problems
+- Include context in error logs (what failed and why)
+
+DEPENDENCIES
+- Install in virtual environments, never globally
+- Add to project configs (requirements.txt, package.json, pyproject.toml)
+- Use exact versions or version ranges (not wildcards)
+- Verify package is actively maintained before recommending
+
+DOCUMENTATION
+- Document WHY, not WHAT (code shows what)
+- Use docstrings/JSDoc for exported functions
+- Include type hints for all function signatures
+- Provide examples in comments when logic is non-obvious
+
+VERSION CONTROL
+- Atomic commits: one logical change per commit
+- Format: type(scope): description
+- Reference issue numbers when relevant
+
+WHAT I DON'T WANT
+- Verbose explanations of basic concepts
+- "This is just my opinion" disclaimers
+- Preamble or repeated clarifications
+- Asking for clarification on things you can reasonably infer
+- Apologies for limitations
+
+
+═══════════════════════════════════════════════════════════════
+
+
+OPTION 2: MINIMAL (EFFICIENCY) - 35 lines, ~175 tokens
+═══════════════════════════════════════════════════════════════
+
+COMMUNICATION
+- Give actual code/solutions immediately, not high-level suggestions
+- Terse and direct - no fluff or apologies
+- Treat me as an expert; skip obvious explanations
+- Use British English spelling
+- Answer first, explanation second
+- No emojis in professional output
+
+CODING PRINCIPLES
+- Prefer functional programming over OOP
+- Use classes only for external system connectors
+- Write pure functions; avoid side effects
+- Follow DRY, KISS, and YAGNI principles
+- Strict typing everywhere (no any/unknown)
+- Never use default parameter values
+- Always raise errors explicitly; never silently ignore
+- Use specific error types with clear messages
+- NO FALLBACKS - fix root causes, not symptoms
+
+DEPENDENCIES
+- Virtual environments only, never global installs
+- Add to project configs (requirements.txt, package.json)
+
+VERSION CONTROL
+- Atomic commits: type(scope): description
+
+WHAT I DON'T WANT
+- Verbose basic explanations
+- "This is just my opinion" disclaimers
+- Preamble or filler phrases
+
+
+═══════════════════════════════════════════════════════════════
+
+
+OPTION 3: EXTENDED (COMPREHENSIVE) - 80 lines, ~400 tokens
+═══════════════════════════════════════════════════════════════
+
+CORE COMMUNICATION
+- Give actual code/solutions immediately, not high-level suggestions
+- "Here's how you can..." = BAD. Show the actual implementation.
+- Terse and direct - no fluff, preamble, or apologies
+- Treat me as an expert; skip obvious explanations
+- Answer first, then detailed explanation if needed
+- Use British English spelling (colour, organisation, etc.)
+- No emojis in commits, code comments, or professional output
+- Be direct about risks and problems when they exist
+- Challenge requirements if they seem misguided
+
+SOURCE OF TRUTH
+- Trust code over documentation
+- Code as it exists now is reality
+- When docs and code disagree, trust code
+- Verify against actual behavior, not written specs
+
+CODING PHILOSOPHY
+- Comments in English only
+- Prefer functional programming over OOP
+- Use classes ONLY for external system connectors and interfaces
+- Write pure functions - modify return values only, never inputs or global state
+- Make minimal, focused changes
+- Follow DRY, KISS, and YAGNI principles
+- Check if logic already exists before writing new code
+- Before implementing new features, search for existing similar code
+- Expand existing code when possible instead of creating duplicates
+- Improve in place: enhance and optimize existing code incrementally
+
+TYPE SAFETY & PRECISION
+- Use strict typing everywhere - function returns, variables, collections
+- Avoid untyped variables and generic types (any, unknown, Any)
+- Never use default parameter values - make all parameters explicit
+- Create proper type definitions for complex data structures
+- Use structured data models over loose dictionaries (Pydantic, interfaces)
+- Leverage language-specific type features (discriminated unions, enums)
+
+ERROR HANDLING
+- Always raise errors explicitly, never silently ignore them
+- Use specific error types that clearly indicate what went wrong
+- Avoid catch-all exception handlers that hide root causes
+- Error messages must be clear and actionable
+- NO FALLBACKS - never mask errors with fallback mechanisms
+- Fix root causes, not symptoms - fallbacks hide real problems
+- Include context in error logs (what failed and why)
+- Transparent debugging: when something fails, show exactly what and why
+
+DEPENDENCIES
+- Install in virtual environments, never globally
+- Add to project configs (requirements.txt, package.json, pyproject.toml)
+- Use exact versions or version ranges (not wildcards)
+- Verify package is actively maintained before recommending
+- Check for viable alternatives before adding new dependencies
+
+DOCUMENTATION
+- Document WHY, not WHAT (code shows what)
+- Use docstrings/JSDoc for exported functions
+- Include type hints for all function signatures
+- Provide examples in comments when logic is non-obvious
+- Update docs after code changes (keep them in sync)
+
+VERSION CONTROL
+- Atomic commits: one logical change per commit
+- Format: type(scope): description
+- Reference issue numbers when relevant
+- Write commit messages that explain why, not what
+- Keep PRs focused; avoid mixing concerns
+
+QUALITY & COMPLETION
+- Task is complete only when all related issues are resolved
+- Test integration points
+- Consider edge cases
+- No N+1 queries or memory leaks
+- Clean up temp files and debug code before committing
+
+WHAT I DON'T WANT
+- Verbose explanations of basic concepts
+- "This is just my opinion" disclaimers
+- Preamble or repeated clarifications
+- Asking for clarification on things you can reasonably infer
+- Apologies for limitations
+- Defending inadequate solutions
+
+
+═══════════════════════════════════════════════════════════════
+
+
+RECOMMENDATION: Use Option 1 (OPTIMAL)
+═══════════════════════════════════════════════════════════════
+
+WHY OPTION 1?
+✓ Preserves your "give actual code" requirement (PRIMARY)
+✓ Battle-tested by community (Kirill 5.7k + Andi 436⭐)
+✓ Right length (55 lines) per Cursor best practices
+✓ Token-efficient (saves 725 tokens per interaction)
+✓ Language-agnostic (works on all projects)
+✓ Complete coverage (communication + principles + safety + errors)
+
+WHAT'S NOW IN PROJECT RULES?
+→ FastAPI patterns: .cursor/rules/01-fastapi-python.mdc
+→ React patterns: .cursor/rules/02-react-vite-frontend.mdc
+→ Testing: .cursor/rules/03-testing-best-practices.mdc
+→ MCP development: .cursor/rules/04-mcp-development.mdc
+→ M3 Max optimization: .cursor/rules/05-m3-max-optimizations.mdc
+→ Project standards: .cursor/rules/00-core-standards.mdc
+
+These auto-attach when you work on relevant files (via globs).
+
+
+═══════════════════════════════════════════════════════════════
+
+
+TOKEN SAVINGS CALCULATION
+═══════════════════════════════════════════════════════════════
+
+Current System:
+  User Rules: 200 lines × 5 tokens/line = 1,000 tokens
+  Per 1,000 interactions = 1,000,000 tokens = $3.00
+
+Optimal System (Option 1):
+  User Rules: 55 lines × 5 tokens/line = 275 tokens
+  Per 1,000 interactions = 275,000 tokens = $0.83
+
+SAVINGS: $2.17 per 1,000 interactions (72.5% reduction)
+
+Over 10,000 interactions per year: $21.70 saved
+
+Plus: Faster responses, cleaner context, better organized.
+
+
+═══════════════════════════════════════════════════════════════
+
+
+SOURCES & ATTRIBUTION
+═══════════════════════════════════════════════════════════════
+
+1. Kirill Markin
+   Article: https://kirill-markin.com/articles/cursor-ide-rules-ai/
+   Video: https://www.youtube.com/watch?v=gw8otRr2zpw (5.7k views)
+   Contribution: Structure, "no defaults", "no fallbacks"
+
+2. Andi Ashari
+   Gist: https://gist.github.com/aashari/07cc9c1b6c0debbeb4f4d94a3a81339e (436⭐)
+   Article: https://medium.com/@aashari/getting-better-results-from-cursor-ai-with-simple-rules-cbc87346ad88
+   Contribution: "Trust code over docs", "professional output", senior engineer mindset
+
+3. cursor-best-practices
+   Repo: https://github.com/digitalchild/cursor-best-practices (69⭐)
+   Contribution: Rule types, precedence, organization patterns
+
+4. Cursor Official Documentation
+   Docs: https://docs.cursor.com/en/context/rules
+   Contribution: Official best practices (<500 lines, plain text)
+
+5. Your Current Rules
+   Contribution: "Give actual code" requirement, communication style
+
+
+═══════════════════════════════════════════════════════════════
+END OF DOCUMENT
+═══════════════════════════════════════════════════════════════

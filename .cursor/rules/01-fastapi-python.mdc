@@ -1,0 +1,277 @@
+---
+description: "Comprehensive FastAPI and Python best practices for backend development"
+globs: ["backend/**/*.py", "**/*.py"]
+alwaysApply: false
+---
+
+# FastAPI Python Best Practices
+
+You are an expert in Python, FastAPI, PostgreSQL, and scalable API development.
+
+## Core Principles
+
+- Write concise, technical responses with accurate Python examples
+- Use functional, declarative programming; avoid classes where possible except for:
+  - External system connectors (EasyPost API, PostgreSQL)
+  - Data models (Pydantic, SQLAlchemy)
+- Prefer iteration and modularization over code duplication
+- Use descriptive variable names with auxiliary verbs (e.g., `is_active`, `has_permission`)
+- Use lowercase with underscores for directories and files (e.g., `routers/user_routes.py`)
+- Favor named exports for routes and utility functions
+- Use the Receive an Object, Return an Object (RORO) pattern
+
+## Python/FastAPI Standards
+
+### Function Definitions
+- Use `def` for pure functions and `async def` for asynchronous operations
+- Use type hints for ALL function signatures
+- Prefer Pydantic models over raw dictionaries for input validation
+- Always include docstrings for public functions
+
+### File Structure
+- Exported router first
+- Sub-routes
+- Utilities
+- Static content
+- Types (models, schemas)
+
+### Conditional Statements
+- Avoid unnecessary curly braces in conditional statements
+- For single-line statements, omit braces
+- Use concise, one-line syntax: `if condition: do_something()`
+
+## Error Handling & Validation
+
+**Prioritize error handling and edge cases:**
+
+1. Handle errors at the beginning of functions
+2. Use early returns for error conditions (avoid deep nesting)
+3. Place happy path last for readability
+4. Avoid unnecessary else statements; use if-return pattern
+5. Use guard clauses for preconditions and invalid states
+6. Implement proper error logging with context
+7. Use custom error types for consistent error handling
+8. Always raise errors explicitly; never silently ignore failures
+
+**Example:**
+
+```python
+async def create_shipment(data: ShipmentCreate, ctx: Context = None) -> dict:
+    """Create a new shipment with EasyPost."""
+    if not data.to_address:
+        raise ValueError("to_address is required")
+
+    if not data.from_address:
+        raise ValueError("from_address is required")
+
+    try:
+        # Happy path
+        shipment = await easypost_service.create_shipment(data)
+        await db.save_shipment(shipment)
+        return {"status": "success", "data": shipment}
+    except EasyPostError as e:
+        logger.error(f"EasyPost API error: {str(e)}", extra={"data": data})
+        raise HTTPException(status_code=502, detail=f"EasyPost error: {str(e)}")
+    except Exception as e:
+        logger.error(f"Unexpected error creating shipment: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to create shipment")
+```
+
+## Dependencies
+
+```python
+# Core
+fastapi >= 0.104.0
+pydantic >= 2.5.0
+uvicorn[standard] >= 0.24.0
+
+# Database
+sqlalchemy >= 2.0.23
+asyncpg >= 0.29.0
+alembic >= 1.13.0
+
+# API Integration
+easypost >= 9.0.0
+httpx >= 0.25.0
+
+# Monitoring & Observability
+python-json-logger >= 2.0.7
+```
+
+## FastAPI-Specific Guidelines
+
+### Route Definitions
+- Use functional components (plain functions)
+- Use Pydantic models for input validation and response schemas
+- Use declarative route definitions with clear return type annotations
+- Use `def` for synchronous operations and `async def` for asynchronous ones
+
+### Lifecycle Management
+- Minimize `@app.on_event("startup")` and `@app.on_event("shutdown")`
+- Prefer lifespan context managers for startup/shutdown events
+- Use middleware for logging, error monitoring, and performance optimization
+
+### Performance
+- Optimize using async functions for I/O-bound tasks
+- Implement caching strategies (Redis, in-memory)
+- Use lazy loading for large datasets
+- Minimize blocking I/O operations
+
+### Error Handling
+- Use `HTTPException` for expected errors with specific HTTP responses
+- Use middleware for unexpected errors, logging, and monitoring
+- Use Pydantic's `BaseModel` for consistent input/output validation
+
+## Performance Optimization
+
+1. **Async Everything**: Use async operations for all database calls and external API requests
+2. **Caching**: Implement caching for static and frequently accessed data
+3. **Data Serialization**: Optimize with Pydantic v2
+4. **Lazy Loading**: For large datasets and API responses
+5. **Parallel Processing**: Use `asyncio.gather()` for batch operations (leverage M3 Max's 16 cores)
+
+**Example - Parallel Batch Processing:**
+
+```python
+async def batch_track_shipments(
+    tracking_numbers: List[str],
+    max_workers: int = 16
+) -> List[dict]:
+    """Track multiple shipments in parallel."""
+    async def track_one(tracking_number: str) -> dict:
+        try:
+            return await easypost_service.track_shipment(tracking_number)
+        except Exception as e:
+            logger.error(f"Error tracking {tracking_number}: {str(e)}")
+            return {"tracking_number": tracking_number, "error": str(e)}
+
+    # Process in parallel batches
+    results = await asyncio.gather(*[
+        track_one(tn) for tn in tracking_numbers
+    ])
+    return results
+```
+
+## Key Conventions
+
+1. **Dependency Injection**: Rely on FastAPI's DI system for state and resources
+2. **Performance Metrics**: Prioritize API performance (response time, latency, throughput)
+3. **Non-Blocking**: Limit blocking operations in routes
+   - Favor asynchronous flows
+   - Use dedicated async functions for database/external APIs
+   - Structure routes/dependencies clearly
+
+## Database Integration (SQLAlchemy 2.0 + PostgreSQL)
+
+### Query Optimization
+```python
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
+
+# Prevent N+1 queries - use eager loading
+async def get_shipments_with_addresses(
+    db: AsyncSession,
+    limit: int = 100
+) -> List[Shipment]:
+    """Fetch shipments with addresses efficiently."""
+    stmt = (
+        select(Shipment)
+        .options(
+            selectinload(Shipment.from_address),
+            selectinload(Shipment.to_address)
+        )
+        .limit(limit)
+    )
+    result = await db.execute(stmt)
+    return result.scalars().all()
+```
+
+### Connection Pooling
+```python
+# Use connection pooling for PostgreSQL
+engine = create_async_engine(
+    DATABASE_URL,
+    pool_size=20,  # M3 Max can handle more connections
+    max_overflow=40,
+    pool_pre_ping=True,
+    echo=False
+)
+```
+
+## Monitoring & Logging
+
+```python
+import structlog
+from pythonjsonlogger import jsonlogger
+
+# Structured logging for production
+logger = structlog.get_logger()
+
+# Log with context
+logger.info(
+    "shipment_created",
+    shipment_id=shipment.id,
+    tracking_number=shipment.tracking_code,
+    carrier=shipment.selected_rate.carrier
+)
+```
+
+## Testing
+
+```python
+import pytest
+from httpx import AsyncClient
+
+@pytest.mark.asyncio
+async def test_create_shipment(client: AsyncClient, test_shipment_data):
+    """Test shipment creation endpoint."""
+    response = await client.post("/api/v1/shipments", json=test_shipment_data)
+    assert response.status_code == 201
+    data = response.json()
+    assert data["status"] == "success"
+    assert "tracking_code" in data["data"]
+```
+
+## API Response Format
+
+**Always return standardized responses:**
+
+```python
+from typing import TypeVar, Generic
+from pydantic import BaseModel
+
+T = TypeVar('T')
+
+class APIResponse(BaseModel, Generic[T]):
+    """Standardized API response."""
+    status: str  # "success" | "error"
+    data: Optional[T] = None
+    message: Optional[str] = None
+    request_id: Optional[str] = None
+
+# Usage
+@router.post("/shipments", response_model=APIResponse[ShipmentResponse])
+async def create_shipment(
+    data: ShipmentCreate,
+    request_id: str = Header(default_factory=lambda: str(uuid4()))
+) -> APIResponse[ShipmentResponse]:
+    """Create a new shipment."""
+    shipment = await service.create_shipment(data)
+    return APIResponse(
+        status="success",
+        data=shipment,
+        request_id=request_id
+    )
+```
+
+## M3 Max Optimizations
+
+- Use 16-32 workers for parallel processing
+- Leverage asyncio for I/O-bound operations
+- Use connection pooling with higher limits (20-40 connections)
+- Enable uvicorn workers: `uvicorn main:app --workers 4 --loop uvloop`
+- Use uvloop for faster event loop performance
+
+---
+
+Refer to FastAPI documentation for Data Models, Path Operations, and Middleware for best practices.

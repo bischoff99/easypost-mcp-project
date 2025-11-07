@@ -4,162 +4,188 @@ Quick reference for all coding standards in this project.
 
 ---
 
-## Core Standards (1-6)
+## 🚀 Essential Rules (Cursor.Directory Optimized)
+
+These comprehensive rules were curated from [cursor.directory](https://cursor.directory/) and optimized for this project's FastAPI + React + PostgreSQL stack.
+
+### 01-fastapi-python.mdc ⭐
+**Comprehensive FastAPI & Python Best Practices**
+- Functional programming patterns
+- Type hints & Pydantic v2 validation
+- Error handling with early returns
+- Performance optimization (async, caching, lazy loading)
+- PostgreSQL + SQLAlchemy 2.0 patterns
+- Parallel processing with asyncio.gather
+- M3 Max optimizations (16+ workers)
+- API response standards
+- Comprehensive examples & patterns
+
+### 02-react-vite-frontend.mdc ⭐
+**Complete React + Vite Frontend Guide**
+- Functional components with hooks
+- State management (useState, Zustand)
+- API integration patterns
+- Performance optimization (memoization, code splitting)
+- TailwindCSS best practices
+- Form handling & validation
+- Testing with vitest + React Testing Library
+- Accessibility standards
+- Vite configuration for M3 Max
+
+### 03-testing-best-practices.mdc ⭐
+**Comprehensive Testing Strategy**
+- Backend: pytest with 16 parallel workers
+- Frontend: vitest with 20 parallel workers
+- AAA pattern (Arrange, Act, Assert)
+- Mocking external APIs (EasyPost)
+- Parametrized tests
+- Database testing patterns
+- Integration testing with MSW
+- Performance testing
+- Coverage goals: 80% backend, 95% critical paths
+
+### 04-mcp-development.mdc ⭐
+**MCP (Model Context Protocol) Development**
+- FastMCP server patterns
+- Tool design for AI agents
+- Batch operations with parallel processing
+- Resources & prompts
+- Error handling for AI consumption
+- Response format standards
+- Performance optimization
+- Testing MCP tools
+- Documentation standards
+- 100% coverage requirement
+
+### 05-m3-max-optimizations.mdc ⭐
+**Hardware-Specific Optimizations**
+- Leverage 16 CPU cores effectively
+- Parallel processing with asyncio (16+ workers)
+- PostgreSQL connection pooling (40+ connections)
+- Uvicorn configuration for production
+- Batch operations with chunking
+- Frontend build optimizations
+- Memory monitoring & profiling
+- Performance targets & benchmarks
+- Testing optimizations
+- Common pitfalls to avoid
+
+---
+
+## 📚 Legacy Rules (Still Valid)
+
+These rules are still relevant but covered more comprehensively in the Essential Rules above.
 
 ### 01-code-standards.mdc
-**Python & JavaScript coding conventions**
-- Python: snake_case, type hints, 100 char lines, async patterns
-- JavaScript: camelCase, ESLint + Prettier, React patterns
-- Error handling with try/except and logging
-- Examples: FastAPI handlers, React components
+**Basic coding conventions** *(See 01-fastapi-python.mdc & 02-react-vite-frontend.mdc for comprehensive coverage)*
 
 ### 02-file-structure.mdc
-**Project organization**
-- Backend: `backend/src/` (server, services, models)
-- Frontend: `frontend/src/` (pages, components, services)
-- Tests: Parallel directory structure
-- Naming: snake_case.py, PascalCase.jsx
+**Project organization** *(Structure documented in Essential Rules)*
 
 ### 03-naming-conventions.mdc
-**Naming rules**
-- Python: functions=snake_case, classes=PascalCase, constants=UPPER_SNAKE_CASE
-- JavaScript: functions=camelCase, components=PascalCase
-- Files: snake_case.py, PascalCase.jsx
-- Database: snake_case tables/columns
+**Naming rules** *(Covered in 01 & 02)*
 
 ### 04-error-handling.mdc
-**Error handling patterns**
-- Always use try/except with detailed logging
-- Standardized response format: `{status, data, message, request_id}`
-- FastAPI HTTPException for API errors
-- Request ID middleware for tracing
-- Never swallow exceptions
+**Error patterns** *(Comprehensive coverage in 01-fastapi-python.mdc)*
 
 ### 05-logging.mdc
-**Logging standards**
-- Use Python logging module
-- Format: `%(asctime)s - %(name)s - %(levelname)s - %(message)s`
-- Levels: DEBUG for dev, INFO for prod, ERROR always
-- Include request_id in all API logs
-- Log performance metrics (timing, workers)
+**Logging standards** *(Covered in 01-fastapi-python.mdc with structured logging)*
 
 ### 06-testing.mdc
-**Testing patterns**
-- pytest (backend) with 16 parallel workers
-- vitest (frontend) with 20 parallel workers
-- AAA pattern: Arrange, Act, Assert
-- Mock external dependencies (EasyPost API)
-- Integration tests marked with `@pytest.mark.integration`
-- Coverage target: 80% backend, 70% frontend
-
----
-
-## Domain Standards (7-9)
+**Testing basics** *(See 03-testing-best-practices.mdc for comprehensive guide)*
 
 ### 07-git-version-control.mdc
-**Git workflow**
-- Conventional commits: `feat:`, `fix:`, `docs:`, `refactor:`
-- Branch naming: `feature/name`, `fix/name`
-- Never force push to main/master
-- Pre-commit: format + lint + test
-- Commit messages: why not what
+**Git workflow** *(Still relevant)*
 
 ### 08-security.mdc
-**Security practices**
-- Never commit API keys (use .env)
-- Input validation with Pydantic models
-- SQL injection prevention (SQLAlchemy ORM)
-- XSS prevention (React escaping)
-- Rate limiting on API endpoints
-- API key validation in middleware
+**Security practices** *(Covered in Essential Rules + still valuable)*
 
 ### 09-api-format.mdc
-**API design standards**
-- RESTful conventions
-- Standardized responses: `{status, data, message, request_id}`
-- Pydantic models for validation
-- HTTP status codes: 200 OK, 201 Created, 400 Bad Request, 500 Internal Error
-- Rate limiting: 10 req/min (standard), 20 req/min (analytics)
-- OpenAPI documentation auto-generated
-
----
-
-## Quality Standards (10-13)
+**API standards** *(Comprehensive coverage in 01-fastapi-python.mdc)*
 
 ### 10-documentation.mdc
-**Documentation requirements**
-- Python: Google-style docstrings with Args/Returns/Raises
-- JavaScript: JSDoc comments for functions
-- API: OpenAPI/Swagger auto-docs
-- README: Setup, usage, architecture
-- Inline comments: why not what
+**Documentation requirements** *(Covered across Essential Rules)*
 
 ### 11-performance.mdc
-**Performance optimization**
-- M3 Max parallel processing: 16-32 workers
-- Async/await for all I/O operations
-- Connection pooling: 50 total (20 base + 30 overflow)
-- Database query optimization: selectinload for N+1 prevention
-- Batch operations: 150 items optimal batch size
-- uvloop for 2-4x async performance
+**Performance basics** *(See 05-m3-max-optimizations.mdc for comprehensive guide)*
 
 ### 12-deployment.mdc
-**Deployment procedures**
-- Environment files: .env.development (committed), .env.production (gitignored)
-- Database migrations: Alembic
-- PostgreSQL: M3 Max config (32GB buffers, 16 workers)
-- Uvicorn production: 33 workers (2*16+1)
-- Health checks on /health endpoint
-- Docker: Multi-stage builds
+**Deployment procedures** *(Still relevant)*
 
 ### 13-code-review.mdc
-**Code review checklist**
-- Tests pass (16 workers, 4-6s)
-- Linting clean (ruff, eslint)
-- Type hints present (Python)
-- Error handling comprehensive
-- Logging appropriate
-- Performance considered (parallel where possible)
-- Security reviewed (no secrets, validated inputs)
-- Documentation updated
-
----
-
-## Quick Reference
+**Code review checklist** *(Still relevant)*
 
 ### 14-quick-reference.mdc
-**Common patterns**
-- Standardized API response
-- Parallel processing with asyncio.gather
-- Database queries with eager loading
-- Error handling with logging
-- MCP tool structure
-- Test fixtures and mocks
+**Common patterns** *(See Essential Rules for comprehensive examples)*
 
 ---
 
-## Usage
+## 📖 Usage Guide
 
-1. **New to project**: Read 01-06 (Core Standards)
-2. **Working on feature**: Reference specific rule (e.g., 04 for errors)
-3. **Code review**: Use 13-code-review.mdc checklist
-4. **Performance work**: See 11-performance.mdc
-5. **Security audit**: Review 08-security.mdc
+### For New Developers
+**Start here (in order):**
+1. Read `01-fastapi-python.mdc` - Backend fundamentals
+2. Read `02-react-vite-frontend.mdc` - Frontend fundamentals
+3. Skim `03-testing-best-practices.mdc` - Testing overview
+4. Reference `04-mcp-development.mdc` when working with MCP tools
+5. Reference `05-m3-max-optimizations.mdc` for performance work
+
+### For Specific Tasks
+- **Backend API work**: `01-fastapi-python.mdc`
+- **Frontend UI work**: `02-react-vite-frontend.mdc`
+- **Writing tests**: `03-testing-best-practices.mdc`
+- **MCP tools**: `04-mcp-development.mdc`
+- **Performance optimization**: `05-m3-max-optimizations.mdc`
+- **Git workflow**: `07-git-version-control.mdc`
+- **Security review**: `08-security.mdc`
+- **Deployment**: `12-deployment.mdc`
+- **Code review**: `13-code-review.mdc`
+
+### Quick Patterns Reference
+All Essential Rules (01-05) include comprehensive, copy-paste-ready examples.
 
 ---
 
-## Rule Categories
+## 🎯 Rule Priority
 
-| Category | Rules | Focus |
-|----------|-------|-------|
-| Core | 01-06 | Coding standards, structure, naming |
-| Domain | 07-09 | Git, security, API design |
-| Quality | 10-13 | Documentation, performance, deployment |
-| Reference | 14 | Quick patterns and examples |
+| Priority | Rules | When to Use |
+|----------|-------|-------------|
+| **Must Read** | 01, 02, 03 | All development work |
+| **MCP Work** | 04 | When building/testing MCP tools |
+| **Performance** | 05 | Optimization, bulk operations |
+| **Reference** | 07, 08, 12, 13 | As needed for workflow |
+| **Legacy** | Older rules | When Essential Rules don't cover specifics |
 
 ---
 
-**Total**: 14 rule files + this index
-**Last updated**: 2025-11-04
+## 📊 Coverage Map
+
+| Topic | Primary Rule | Additional References |
+|-------|--------------|----------------------|
+| **FastAPI** | 01-fastapi-python.mdc | 01-code-standards.mdc |
+| **React** | 02-react-vite-frontend.mdc | 01-code-standards.mdc |
+| **Testing** | 03-testing-best-practices.mdc | 06-testing.mdc |
+| **MCP** | 04-mcp-development.mdc | - |
+| **Performance** | 05-m3-max-optimizations.mdc | 11-performance.mdc |
+| **Error Handling** | 01-fastapi-python.mdc | 04-error-handling.mdc |
+| **Security** | 01, 02, 08 | - |
+| **Git** | 07-git-version-control.mdc | - |
+| **Deployment** | 12-deployment.mdc | 05-m3-max-optimizations.mdc |
+
+---
+
+## 🔗 External Resources
+
+- **Cursor Directory**: [https://cursor.directory/](https://cursor.directory/)
+- **FastAPI Docs**: [https://fastapi.tiangolo.com/](https://fastapi.tiangolo.com/)
+- **React Docs**: [https://react.dev/](https://react.dev/)
+- **Vite Guide**: [https://vitejs.dev/guide/](https://vitejs.dev/guide/)
+- **FastMCP**: [https://github.com/jlowin/fastmcp](https://github.com/jlowin/fastmcp)
+
+---
+
+**Total**: 19 rule files (5 Essential + 14 Legacy) + this index
+**Last updated**: 2025-11-07
+**Source**: Optimized from cursor.directory + project-specific patterns
 
 *For comprehensive project documentation, see `CLAUDE.md` and `POSTGRESQL_IMPLEMENTATION_REVIEW.md`.*
