@@ -33,8 +33,10 @@ async def app_lifespan(server):  # noqa: ARG001 - FastAPI lifespan interface
 
     Initializes:
     - EasyPost API service (shared across all requests)
-    - Database connection pool (32 connections for M3 Max)
+    - Database connection pool (20 connections max for asyncpg direct queries)
     - Rate limiter semaphore (16 concurrent API calls)
+
+    Note: SQLAlchemy pool (for ORM) is configured separately in database.py
     """
     logger.info("Starting EasyPost MCP Server...")
 

@@ -130,7 +130,8 @@ class HealthCheck:
 
             client = easypost.EasyPostClient(api_key)
             # Simple API call to verify connectivity
-            await asyncio.get_event_loop().run_in_executor(None, client.carrier_account.all)
+            loop = asyncio.get_running_loop()
+            await loop.run_in_executor(None, client.carrier_account.all)
             return {"status": "healthy", "latency_ms": 0}
         except Exception as e:
             logger.error(f"EasyPost health check failed: {str(e)}")

@@ -170,10 +170,10 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 # Note: MCP tools will access easypost_service via Context
 app.mount("/mcp", mcp.http_app())
 
-# Add error handling middleware to MCP
+# Add error handling and retry middleware to MCP
 import contextlib
 
-from fastmcp.server.middleware.error_handling import ErrorHandlingMiddleware
+from fastmcp.server.middleware.error_handling import ErrorHandlingMiddleware, RetryMiddleware
 
 mcp.add_middleware(
     ErrorHandlingMiddleware(
@@ -183,13 +183,21 @@ mcp.add_middleware(
     )
 )
 
+# Add retry middleware for transient failures (FastMCP best practice)
+mcp.add_middleware(
+    RetryMiddleware(
+        max_retries=3,
+        retry_exceptions=(ConnectionError, TimeoutError, asyncio.TimeoutError),
+    )
+)
+
 # Register MCP components after mounting
 # Pass None as service since tools will use Context
 register_tools(mcp, None)  # Updated to use Context in Phase 4
 register_resources(mcp, None)
 register_prompts(mcp)
 
-logger.info("MCP server mounted at /mcp (HTTP transport) with error handling middleware")
+logger.info("MCP server mounted at /mcp (HTTP transport) with error handling and retry middleware")
 
 
 # Endpoints
@@ -356,6 +364,34 @@ async def buy_shipment(request: Request, buy_request: BuyShipmentRequest, servic
         ) from e
 
 
+@app.post("/shipments/{shipment_id}/buy")
+@limiter.limit("10/minute")
+async def buy_existing_shipment(
+    request: Request, shipment_id: str, rate_id: str, service: EasyPostDep
+):
+    """Buy an existing shipment with selected rate."""
+    request_id = getattr(request.state, "request_id", "unknown")
+
+    try:
+        logger.info(f"[{request_id}] Buy existing shipment {shipment_id} with rate {rate_id}")
+
+        buy_result = await service.buy_shipment(shipment_id=shipment_id, rate_id=rate_id)
+
+        logger.info(f"[{request_id}] Shipment purchased successfully")
+        metrics.track_api_call("buy_existing_shipment", True)
+
+        return buy_result
+
+    except Exception as e:
+        error_msg = str(e)[:MAX_REQUEST_LOG_SIZE]
+        logger.error(f"[{request_id}] Error buying shipment: {error_msg}")
+        metrics.track_api_call("buy_existing_shipment", False)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error buying shipment: {error_msg}",
+        ) from e
+
+
 @app.post("/bulk-shipments")
 @limiter.limit("2/minute")  # SECURITY: Stricter limit for resource-intensive bulk operations
 async def create_bulk_shipments(
@@ -398,6 +434,7 @@ async def create_bulk_shipments(
                         carrier=payload.get("carrier", "USPS"),
                         service=payload.get("service"),
                         buy_label=False,
+                        customs_info=payload.get("customs_info"),
                     )
                     return index, result, None
                 except Exception as exc:

@@ -139,6 +139,7 @@ class EasyPostService:
         carrier: str = "USPS",
         service: str | None = None,
         buy_label: bool = True,
+        rate_id: str | None = None,
         customs_info: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """
@@ -151,6 +152,7 @@ class EasyPostService:
             carrier: Shipping carrier preference (default: "USPS")
             service: Specific service (e.g., "FEDEX_GROUND", "Priority") - if None, uses lowest rate
             buy_label: Whether to purchase label immediately (default: True)
+            rate_id: Required if buy_label=True - the rate ID to use for purchase
             customs_info: Optional customs info for international shipments
 
         Returns:
@@ -167,6 +169,7 @@ class EasyPostService:
                 carrier,
                 service,
                 buy_label,
+                rate_id,
                 customs_info,
             )
         except Exception as e:
@@ -181,6 +184,7 @@ class EasyPostService:
         carrier: str,
         service: str | None,
         buy_label: bool,
+        rate_id: str | None = None,
         customs_info: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Synchronous shipment creation with optional label purchase."""
@@ -196,8 +200,39 @@ class EasyPostService:
             }
 
             if customs_info:
-                # Pass CustomsInfo object directly (not the ID)
-                shipment_params["customs_info"] = customs_info
+                # Create CustomsInfo object using EasyPost SDK
+                # customs_info dict should have: customs_items (list), customs_certify,
+                # customs_signer, etc.
+                # Note: EasyPost API requires 'weight' for each customs_item
+                customs_items = []
+                for item in customs_info.get("customs_items", customs_info.get("contents", [])):
+                    # Weight is REQUIRED by EasyPost API - use item weight or parcel weight
+                    item_weight = item.get("weight")
+                    if item_weight is None:
+                        # Fallback: use parcel weight if item weight not specified
+                        item_weight = parcel.get("weight", 16.0)  # Default 1 lb if missing
+
+                    customs_item = self.client.customs_item.create(
+                        description=item.get("description", "General Merchandise"),
+                        quantity=item.get("quantity", 1),
+                        value=item.get("value", 50.0),
+                        weight=item_weight,  # REQUIRED by EasyPost API
+                        hs_tariff_number=item.get("hs_tariff_number"),
+                        origin_country=item.get("origin_country", "US"),
+                    )
+                    customs_items.append(customs_item)
+
+                customs_info_obj = self.client.customs_info.create(
+                    customs_items=customs_items,
+                    customs_certify=customs_info.get("customs_certify", True),
+                    customs_signer=customs_info.get("customs_signer", ""),
+                    contents_type=customs_info.get("contents_type", "merchandise"),
+                    restriction_type=customs_info.get("restriction_type", "none"),
+                    restriction_comments=customs_info.get("restriction_comments", ""),
+                    eel_pfc=customs_info.get("eel_pfc", "NOEEI 30.37(a)"),
+                    non_delivery_option=customs_info.get("non_delivery_option", "return"),
+                )
+                shipment_params["customs_info"] = customs_info_obj
 
             shipment = self.client.shipment.create(**shipment_params)
 
@@ -220,51 +255,34 @@ class EasyPostService:
                 "rates": rates,
             }
 
-            # Optionally buy label
+            # Optionally buy label - REQUIRES explicit rate_id
             if buy_label:
-                rate = None
+                if not rate_id:
+                    raise ValueError(
+                        "rate_id is required when buy_label=True. "
+                        "Create shipment first, select a rate, then purchase with buy_shipment()."
+                    )
 
-                # If specific service requested, find matching rate
-                if service:
-                    for r in shipment.rates:
-                        # Flexible carrier matching: exact or partial match
-                        # (e.g., "FedEx" matches "FedExDefault")
-                        carrier_match = (
-                            r.carrier == carrier
-                            or carrier.lower() in r.carrier.lower()
-                            or r.carrier.lower() in carrier.lower()
-                        )
-                        if carrier_match and r.service == service:
-                            rate = r
-                            self.logger.info(
-                                f"Found matching rate: {r.carrier} {service} - ${r.rate} "
-                                f"(matched carrier '{carrier}')"
-                            )
-                            break
+                # Find the rate object matching the rate_id
+                rate_obj = None
+                for r in shipment.rates:
+                    if r.id == rate_id:
+                        rate_obj = r
+                        break
 
-                    if not rate:
-                        self.logger.warning(
-                            f"Service {service} not available for {carrier}, using lowest rate"
-                        )
+                if not rate_obj:
+                    raise ValueError(
+                        f"Rate {rate_id} not found in shipment rates. "
+                        f"Available rates: {[r.id for r in shipment.rates]}"
+                    )
 
-                # Fall back to lowest rate if service not found or not specified
-                if not rate:
-                    try:
-                        rate = shipment.lowest_rate([carrier])
-                    except Exception:
-                        # If carrier not available, use absolute lowest rate
-                        self.logger.warning(
-                            f"No rates found for {carrier}, using lowest available rate"
-                        )
-                        rate = shipment.lowest_rate()
-
-                # Buy the label using the client service
-                bought_shipment = self.client.shipment.buy(shipment.id, rate=rate)
+                # Buy the label using the selected rate
+                bought_shipment = self.client.shipment.buy(shipment.id, rate={"id": rate_id})
                 result["postage_label_url"] = bought_shipment.postage_label.label_url
                 result["purchased_rate"] = {
-                    "carrier": rate.carrier,
-                    "service": rate.service,
-                    "rate": rate.rate,
+                    "carrier": rate_obj.carrier,
+                    "service": rate_obj.service,
+                    "rate": rate_obj.rate,
                 }
                 result["tracking_code"] = bought_shipment.tracking_code
 
@@ -358,18 +376,44 @@ class EasyPostService:
     def _buy_shipment_sync(self, shipment_id: str, rate_id: str) -> dict[str, Any]:
         """Synchronous label purchase."""
         try:
-            self.logger.info(f"Buying label for shipment {shipment_id}")
+            self.logger.info(f"Buying label for shipment {shipment_id} with rate {rate_id}")
             shipment = self.client.shipment.retrieve(shipment_id)
-            shipment.buy(rate=rate_id)
 
+            # Find the rate object matching the rate_id
+            rate_obj = None
+            for rate in shipment.rates:
+                if rate.id == rate_id:
+                    rate_obj = rate
+                    break
+
+            if not rate_obj:
+                raise ValueError(f"Rate {rate_id} not found in shipment rates")
+
+            # Buy the shipment with the rate ID
+            # EasyPost API expects: { "rate": { "id": "rate_..." } }
+            # Python SDK accepts rate object or rate dict
+            bought_shipment = self.client.shipment.buy(shipment_id, rate={"id": rate_id})
+
+            # bought_shipment is the updated shipment object returned by buy()
             return {
                 "status": "success",
                 "data": {
-                    "shipment_id": shipment.id,
-                    "tracking_code": shipment.tracking_code,
-                    "postage_label_url": shipment.postage_label.label_url,
-                    "rate": shipment.selected_rate.rate,
-                    "carrier": shipment.selected_rate.carrier,
+                    "shipment_id": bought_shipment.id,
+                    "tracking_code": bought_shipment.tracking_code,
+                    "postage_label_url": bought_shipment.postage_label.label_url
+                    if bought_shipment.postage_label
+                    else None,
+                    "purchased_rate": {
+                        "rate": bought_shipment.selected_rate.rate
+                        if bought_shipment.selected_rate
+                        else None,
+                        "carrier": bought_shipment.selected_rate.carrier
+                        if bought_shipment.selected_rate
+                        else None,
+                        "service": bought_shipment.selected_rate.service
+                        if bought_shipment.selected_rate
+                        else None,
+                    },
                 },
                 "message": "Label purchased successfully",
                 "timestamp": datetime.now(UTC).isoformat(),
@@ -449,7 +493,11 @@ class EasyPostService:
             }
 
     async def get_rates(
-        self, to_address: dict[str, Any], from_address: dict[str, Any], parcel: dict[str, Any]
+        self,
+        to_address: dict[str, Any],
+        from_address: dict[str, Any],
+        parcel: dict[str, Any],
+        customs_info: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """
         Get available shipping rates.
@@ -458,6 +506,7 @@ class EasyPostService:
             to_address: Destination address dict
             from_address: Origin address dict
             parcel: Package dimensions dict
+            customs_info: Optional customs info dict for international shipments
 
         Returns:
             Dict with status, rates data, and timestamp
@@ -465,7 +514,12 @@ class EasyPostService:
         try:
             loop = asyncio.get_running_loop()
             rates = await loop.run_in_executor(
-                self.executor, self._get_rates_sync, to_address, from_address, parcel
+                self.executor,
+                self._get_rates_sync,
+                to_address,
+                from_address,
+                parcel,
+                customs_info,
             )
             return {
                 "status": "success",
@@ -483,14 +537,56 @@ class EasyPostService:
             }
 
     def _get_rates_sync(
-        self, to_address: dict[str, Any], from_address: dict[str, Any], parcel: dict[str, Any]
+        self,
+        to_address: dict[str, Any],
+        from_address: dict[str, Any],
+        parcel: dict[str, Any],
+        customs_info: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
         """Synchronous rates retrieval."""
         try:
             self.logger.info("Calculating rates...")
-            shipment = self.client.shipment.create(
-                to_address=to_address, from_address=from_address, parcel=parcel
-            )
+            shipment_params = {
+                "to_address": to_address,
+                "from_address": from_address,
+                "parcel": parcel,
+            }
+
+            # Add customs_info if provided (for international shipments)
+            if customs_info:
+                # Create CustomsInfo object using EasyPost SDK (same as _create_shipment_sync)
+                # Note: EasyPost API requires 'weight' for each customs_item
+                customs_items = []
+                for item in customs_info.get("customs_items", customs_info.get("contents", [])):
+                    # Weight is REQUIRED by EasyPost API - use item weight or parcel weight
+                    item_weight = item.get("weight")
+                    if item_weight is None:
+                        # Fallback: use parcel weight if item weight not specified
+                        item_weight = parcel.get("weight", 16.0)  # Default 1 lb if missing
+
+                    customs_item = self.client.customs_item.create(
+                        description=item.get("description", "General Merchandise"),
+                        quantity=item.get("quantity", 1),
+                        value=item.get("value", 50.0),
+                        weight=item_weight,  # REQUIRED by EasyPost API
+                        hs_tariff_number=item.get("hs_tariff_number"),
+                        origin_country=item.get("origin_country", "US"),
+                    )
+                    customs_items.append(customs_item)
+
+                customs_info_obj = self.client.customs_info.create(
+                    customs_items=customs_items,
+                    customs_certify=customs_info.get("customs_certify", True),
+                    customs_signer=customs_info.get("customs_signer", ""),
+                    contents_type=customs_info.get("contents_type", "merchandise"),
+                    restriction_type=customs_info.get("restriction_type", "none"),
+                    restriction_comments=customs_info.get("restriction_comments", ""),
+                    eel_pfc=customs_info.get("eel_pfc", "NOEEI 30.37(a)"),
+                    non_delivery_option=customs_info.get("non_delivery_option", "return"),
+                )
+                shipment_params["customs_info"] = customs_info_obj
+
+            shipment = self.client.shipment.create(**shipment_params)
 
             return [
                 {

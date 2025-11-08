@@ -190,6 +190,12 @@ class DatabaseService:
     # Batch Operations
     async def create_batch_operation(self, batch_data: dict[str, Any]) -> BatchOperation:
         """Create batch operation record."""
+        # Ensure created_at is set if not provided
+        if "created_at" not in batch_data:
+            from datetime import UTC, datetime
+
+            batch_data["created_at"] = datetime.now(UTC)
+
         batch = BatchOperation(**batch_data)
         self.session.add(batch)
         await self.session.commit()

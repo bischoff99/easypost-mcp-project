@@ -16,7 +16,7 @@ from time import time
 
 from fastmcp import Context
 
-from src.database import get_db
+from src.database import get_db, is_database_available
 from src.services.database_service import DatabaseService
 from src.services.smart_customs import get_or_create_customs
 
@@ -52,7 +52,10 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
         ctx: Context = None,
     ) -> dict:
         """
-        Create multiple shipments in parallel - M3 Max optimized (32 workers).
+        Create single or multiple shipments in parallel - M3 Max optimized (16 workers).
+
+        Handles both single shipments (1 line) and bulk operations (multiple lines).
+        Uses spreadsheet format: tab-separated columns (paste from spreadsheet).
 
         TWO-PHASE WORKFLOW (Recommended):
         1. Get rates first: create_bulk_shipments(data, purchase_labels=False)
@@ -65,9 +68,9 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
            - Charges applied
 
         Args:
-            spreadsheet_data: Tab-separated shipment data (16 columns)
+            spreadsheet_data: Tab-separated shipment data (1+ lines, 16+ columns)
             from_city: Override origin city (e.g., "Los Angeles", "Las Vegas")
-                      If None, auto-detects from origin_state column
+                      If None, auto-detects from origin_state column or uses sender address
             purchase_labels: Whether to purchase labels immediately (default: False)
                             Set False for two-phase workflow (recommended)
             carrier: Force specific carrier (e.g., "USPS", "FedEx", "UPS")
@@ -84,29 +87,38 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
             if ctx:
                 await ctx.info("🚀 Starting bulk shipment creation (16 parallel workers)...")
 
-            # Initialize database service for tracking
+            # Database tracking (optional - tool works without it)
             db_service = None
             batch_operation = None
+            db_session = None
 
-            async for session in get_db():
-                db_service = DatabaseService(session)
-
-                # Create batch operation record
-                batch_operation = await db_service.create_batch_operation(
-                    {
-                        "batch_id": f"bulk_create_{int(start_time.timestamp())}",
-                        "operation_type": "create_bulk_shipments",
-                        "total_items": 0,  # Will update after validation
-                        "source": "mcp_tool",
-                        "parameters": {
-                            "purchase_labels": purchase_labels,
-                            "carrier": carrier,
-                            "dry_run": dry_run,
-                            "from_city": from_city,
-                        },
-                    }
-                )
-                break
+            if is_database_available():
+                try:
+                    # Get database session and keep it alive for the operation
+                    db_gen = get_db()
+                    db_session = await db_gen.__anext__()
+                    db_service = DatabaseService(db_session)
+                    # Create batch operation record
+                    batch_id = f"bulk_{int(time())}"
+                    batch_operation = await db_service.create_batch_operation(
+                        {
+                            "batch_id": batch_id,
+                            "operation_type": "create_shipments",
+                            "status": "processing",
+                            "started_at": start_time,
+                            "total_items": 0,  # Will be updated after validation
+                            "source": "mcp",
+                        }
+                    )
+                    if ctx:
+                        await ctx.info(f"📊 Database tracking enabled (batch: {batch_id})")
+                except Exception as e:
+                    logger.warning(f"Database tracking unavailable: {e}")
+                    db_service = None
+                    batch_operation = None
+                    if db_session:
+                        await db_session.close()
+                    db_session = None
 
             # Parse lines
             lines = [l.strip() for l in spreadsheet_data.split("\n") if l.strip()]
@@ -159,10 +171,13 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                     errors = []
                     if weight_oz > 150 * 16:  # 150 lbs max
                         errors.append("Package exceeds 150 lbs limit")
-                    if not data["zip"] or len(data["zip"]) < 5:
-                        errors.append("Invalid ZIP code")
+                    # International postal codes can be 3-10 characters (not just US 5-digit ZIP)
+                    if not data["zip"] or len(data["zip"]) < 3:
+                        errors.append("Invalid postal code")
                     if not data["street1"]:
                         errors.append("Missing street address")
+                    if not data["country"]:
+                        errors.append("Missing country")
 
                     validation_results.append(
                         {
@@ -245,6 +260,12 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                     data = validation_result["data"]
                     line_number = validation_result["line"]
 
+                    # Use sender address if provided, otherwise use warehouse address
+                    shipment_from_address = from_address  # Default to warehouse
+                    if "sender_address" in data and data["sender_address"].get("name"):
+                        # Use provided sender address from spreadsheet data
+                        shipment_from_address = data["sender_address"]
+
                     # Build addresses and parcel
                     to_address = {
                         "name": f"{data['recipient_name']} {data['recipient_last_name']}",
@@ -266,12 +287,16 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                     }
 
                     # Check if international and create customs_info
-                    is_international = to_address["country"] != from_address["country"]
+                    is_international = to_address["country"] != shipment_from_address.get(
+                        "country", "US"
+                    )
                     customs_info = None
 
-                    if is_international and purchase_labels:
+                    if is_international:
                         # Smart customs: auto-fills missing HTS codes and values
-                        loop = asyncio.get_event_loop()
+                        # Always populate customs for international shipments,
+                        # even if not purchasing yet
+                        loop = asyncio.get_running_loop()
                         customs_info = await loop.run_in_executor(
                             None,
                             get_or_create_customs,
@@ -285,10 +310,11 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                     result = await asyncio.wait_for(
                         easypost_service.create_shipment(
                             to_address=to_address,
-                            from_address=from_address,
+                            from_address=shipment_from_address,
                             parcel=parcel,
                             carrier=carrier,
                             buy_label=purchase_labels,
+                            rate_id=None,  # Will be set if purchase_labels=True and rate selected
                             customs_info=customs_info,
                         ),
                         timeout=30.0,
@@ -300,9 +326,10 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                         rates = result.get("rates", [])
 
                         if not rate_info and purchase_labels and rates:
-                            rate_info = min(rates, key=lambda r: float(r["rate"]))
+                            rate_info = min(rates, key=lambda r: float(r.get("rate", 0) or 0))
 
-                        return {
+                        # Build result - only include cost if purchased
+                        result_dict = {
                             "line": line_number,
                             "status": "success",
                             "shipment_id": result.get("id"),  # For two-phase workflow
@@ -312,15 +339,18 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                             "label_url": (
                                 result.get("postage_label_url") if purchase_labels else None
                             ),
-                            "carrier": rate_info["carrier"] if rate_info else None,
-                            "service": rate_info["service"] if rate_info else None,
-                            "cost": rate_info["rate"] if rate_info else None,
+                            "carrier": rate_info.get("carrier") if rate_info else None,
+                            "service": rate_info.get("service") if rate_info else None,
                             "all_rates": (
                                 rates[:5] if not purchase_labels else None
                             ),  # Show top 5 rates
                             "recipient": to_address["name"],
                             "destination": f"{data['city']}, {data['state']}",
                         }
+                        # Only include cost if we have rate_info (when purchasing)
+                        if rate_info and purchase_labels:
+                            result_dict["cost"] = rate_info.get("rate")
+                        return result_dict
                     return {
                         "line": line_number,
                         "status": "error",
@@ -389,7 +419,9 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
             successful = [r for r in results if r.get("status") == "success"]
             failed = [r for r in results if r.get("status") == "error"]
 
-            total_cost = sum(float(s.get("cost", 0)) for s in successful if s.get("cost"))
+            total_cost = sum(
+                float(s.get("cost", 0)) for s in successful if s.get("cost") is not None
+            )
 
             # Carrier breakdown
             carrier_stats = {}
@@ -398,7 +430,9 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                 if carrier_name not in carrier_stats:
                     carrier_stats[carrier_name] = {"count": 0, "cost": 0}
                 carrier_stats[carrier_name]["count"] += 1
-                carrier_stats[carrier_name]["cost"] += float(s.get("cost", 0))
+                cost = s.get("cost")
+                if cost is not None:
+                    carrier_stats[carrier_name]["cost"] += float(cost)
 
             # Update batch operation with final results
             if db_service and batch_operation:
@@ -419,13 +453,13 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                 )
 
                 # Store successful shipments in database
-                if successful and not dry_run:
+                if successful and not dry_run and db_service:
                     for shipment_result in successful:
                         try:
                             shipment_id = shipment_result.get("shipment_id")
                             if shipment_id:
                                 # Get shipment details from EasyPost API
-                                loop = asyncio.get_event_loop()
+                                loop = asyncio.get_running_loop()
                                 easypost_shipment = await loop.run_in_executor(
                                     None, easypost_service.client.shipment.retrieve, shipment_id
                                 )
@@ -517,7 +551,7 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                             )
 
             if ctx:
-                throughput = len(valid_shipments) / duration if duration > 0 else 0
+                throughput = len(valid_shipments) / duration if duration > 0 else 0.0
                 await ctx.info(f"✅ Complete! {len(successful)}/{len(valid_shipments)} successful")
                 await ctx.info(f"⏱️ Total time: {duration:.1f}s")
                 await ctx.info(f"⚡ Throughput: {throughput:.2f} shipments/second")
@@ -537,12 +571,16 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                         "total_attempted": len(valid_shipments),
                         "successful": len(successful),
                         "failed": len(failed),
-                        "total_cost": round(total_cost, 2),
+                        "total_cost": round(total_cost, 2) if total_cost else 0.0,
                         "average_cost": (
-                            round(total_cost / len(successful), 2) if successful else 0
+                            round(total_cost / len(successful), 2)
+                            if successful and total_cost
+                            else 0.0
                         ),
                         "duration_seconds": round(duration, 2),
-                        "throughput": round(len(valid_shipments) / duration, 2),
+                        "throughput": (
+                            round(len(valid_shipments) / duration, 2) if duration > 0 else 0.0
+                        ),
                         "carrier_breakdown": carrier_stats,
                     },
                     "validation_errors": [
@@ -552,39 +590,72 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                 "message": (
                     f"Created {len(successful)}/{len(valid_shipments)} shipments "
                     f"in {duration:.1f}s ({len(valid_shipments) / duration:.1f} shipments/s)"
+                    if duration > 0
+                    else f"Created {len(successful)}/{len(valid_shipments)} shipments"
                 ),
                 "timestamp": datetime.now(UTC).isoformat(),
             }
 
         except Exception as e:
-            logger.error(f"Bulk creation error: {str(e)}", exc_info=True)
+            error_msg = str(e)
+            logger.error(f"Bulk creation error: {error_msg}", exc_info=True)
+
+            # Update batch operation with error status
+            if db_service and batch_operation:
+                try:
+                    await db_service.update_batch_operation(
+                        batch_operation.batch_id,
+                        {
+                            "status": "failed",
+                            "completed_at": datetime.now(UTC),
+                            "errors": [{"error": error_msg}],
+                        },
+                    )
+                except Exception as db_error:
+                    logger.error(f"Failed to update batch operation: {db_error}")
+
+            # Cleanup database session
+            if db_session:
+                import contextlib
+
+                with contextlib.suppress(Exception):
+                    await db_session.close()
+
             return {
                 "status": "error",
                 "data": None,
-                "message": f"Bulk creation failed: {str(e)}",
+                "message": f"Bulk creation failed: {error_msg}",
                 "timestamp": datetime.now(UTC).isoformat(),
             }
+
+        finally:
+            # Cleanup database session
+            if db_session:
+                import contextlib
+
+                with contextlib.suppress(Exception):
+                    await db_session.close()
 
     @mcp.tool(tags=["bulk", "purchase", "shipping", "m3-optimized"])
     async def buy_bulk_shipments(
         shipment_ids: list[str],
-        customs_data: list[dict] = None,
-        carrier: str = None,
-        ctx: Context = None,
+        rate_ids: list[str],
+        _customs_data: list[dict] | None = None,
+        ctx: Context | None = None,
     ) -> dict:
         """
-        Purchase labels for pre-created shipments with customs info (Phase 2).
+        Purchase labels for pre-created shipments using selected rates (Phase 2).
 
         WORKFLOW:
         1. create_bulk_shipments(data, purchase_labels=False) → get rates
-        2. Review and approve
-        3. buy_bulk_shipments(approved_ids, customs_data, carrier="USPS") → purchase
+        2. Review and select rates for each shipment
+        3. buy_bulk_shipments(shipment_ids, rate_ids) → purchase with selected rates
 
         Args:
-            shipment_ids: List of shipment IDs to purchase
+            shipment_ids: List of shipment IDs to purchase (must match rate_ids length)
+            rate_ids: List of rate IDs to use for each shipment (must match shipment_ids length)
             customs_data: List of customs info dicts with contents, hs_code,
                           value, and weight fields
-            carrier: Preferred carrier (default: lowest rate)
             ctx: MCP context
 
         Returns:
@@ -594,58 +665,69 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
 
         try:
             if ctx:
-                await ctx.info(f"🛒 Purchasing {len(shipment_ids)} labels...")
+                await ctx.info(f"🛒 Purchasing {len(shipment_ids)} labels with selected rates...")
+
+            # Validate inputs
+            if len(shipment_ids) != len(rate_ids):
+                return {
+                    "status": "error",
+                    "data": None,
+                    "message": (
+                        f"shipment_ids ({len(shipment_ids)}) and rate_ids ({len(rate_ids)}) "
+                        "must have the same length"
+                    ),
+                    "timestamp": datetime.now(UTC).isoformat(),
+                }
 
             semaphore = asyncio.Semaphore(MAX_CONCURRENT)
             performance_start = time()
 
-            async def buy_one(idx: int, shipment_id: str) -> dict:
+            async def buy_one(_idx: int, shipment_id: str, rate_id: str) -> dict:
                 try:
                     async with semaphore:
-                        loop = asyncio.get_event_loop()
+                        loop = asyncio.get_running_loop()
 
                         # Retrieve shipment
                         shipment = await loop.run_in_executor(
                             None, easypost_service.client.shipment.retrieve, shipment_id
                         )
 
-                        # Add customs info for international shipments
-                        # Auto-generates if customs_data not provided
-                        if shipment.to_address.country != "US":
-                            if customs_data and idx < len(customs_data):
-                                customs_dict = customs_data[idx]
-                                contents = customs_dict.get("contents", "General Merchandise")
-                                value = customs_dict.get("value")
-                            else:
-                                # Auto-generate from minimal info
-                                contents = "General Merchandise"
-                                value = 50
+                        # Verify rate exists in shipment rates
+                        rate_obj = None
+                        for r in shipment.rates:
+                            if r.id == rate_id:
+                                rate_obj = r
+                                break
 
-                            # Use smart customs generator
-                            customs_info = await loop.run_in_executor(
-                                None,
-                                get_or_create_customs,
-                                contents,
-                                (
-                                    shipment.parcel.weight
-                                    if hasattr(shipment.parcel, "weight")
-                                    else 16
+                        if not rate_obj:
+                            available_ids = [r.id for r in shipment.rates]
+                            return {
+                                "status": "error",
+                                "shipment_id": shipment_id,
+                                "error": (
+                                    f"Rate {rate_id} not found in shipment rates. "
+                                    f"Available: {available_ids}"
                                 ),
-                                easypost_service.client,
-                                value,
+                            }
+
+                        # Customs info should already be on the shipment from creation
+                        # We don't need to set it again here - just verify
+                        if (
+                            shipment.to_address.country != "US"
+                            and not shipment.customs_info
+                            and ctx
+                        ):
+                            await ctx.info(
+                                f"⚠️  Warning: Shipment {shipment_id} is international "
+                                "but missing customs info"
                             )
 
-                            if customs_info:
-                                shipment.customs_info = customs_info
-
-                        # Select rate
-                        rate = (
-                            shipment.lowest_rate([carrier]) if carrier else shipment.lowest_rate()
-                        )
-
-                        # Buy label
+                        # Buy label with selected rate
                         bought = await loop.run_in_executor(
-                            None, easypost_service.client.shipment.buy, shipment_id, rate
+                            None,
+                            easypost_service.client.shipment.buy,
+                            shipment_id,
+                            {"id": rate_id},
                         )
 
                         return {
@@ -653,16 +735,19 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                             "shipment_id": shipment_id,
                             "tracking_code": bought.tracking_code,
                             "label_url": bought.postage_label.label_url,
-                            "carrier": rate.carrier,
-                            "service": rate.service,
-                            "cost": rate.rate,
+                            "carrier": rate_obj.carrier,
+                            "service": rate_obj.service,
+                            "cost": rate_obj.rate,
                             "recipient": shipment.to_address.name,
                         }
                 except Exception as e:
                     return {"status": "error", "shipment_id": shipment_id, "error": str(e)}
 
-            # Execute - pass index for customs mapping
-            tasks = [buy_one(idx, sid) for idx, sid in enumerate(shipment_ids)]
+            # Execute - pass index, shipment_id, and rate_id
+            tasks = [
+                buy_one(idx, shipment_id, rate_ids[idx])
+                for idx, shipment_id in enumerate(shipment_ids)
+            ]
             results = []
             completed = 0
             total = len(shipment_ids)
@@ -680,7 +765,7 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
             # Summary
             successful = [r for r in results if r.get("status") == "success"]
             failed = [r for r in results if r.get("status") == "error"]
-            total_cost = sum(float(s["cost"]) for s in successful)
+            total_cost = sum(float(s["cost"]) for s in successful if s.get("cost") is not None)
             duration = (datetime.now(UTC) - start_time).total_seconds()
 
             if ctx:

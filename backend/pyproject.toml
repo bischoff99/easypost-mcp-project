@@ -1,11 +1,11 @@
 [tool.black]
 line-length = 100
-target-version = ['py313']
+target-version = ['py312']
 include = '\.pyi?$'
 
 [tool.ruff]
 line-length = 100
-target-version = "py313"
+target-version = "py312"
 
 [tool.ruff.lint]
 select = [
@@ -26,7 +26,7 @@ select = [
 ignore = ["E741", "E402", "C401", "S101"]  # Allow ambiguous names, imports after code, unnecessary generators, asserts
 
 [tool.mypy]
-python_version = "3.13"
+python_version = "3.12"
 warn_return_any = true
 warn_unused_configs = true
 # Relaxed for gradual type adoption

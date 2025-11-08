@@ -3,7 +3,7 @@ Database models for analytics and metrics tracking.
 """
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import (
     JSON,
@@ -266,7 +266,11 @@ class BatchOperation(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     batch_id = Column(String(50), unique=True, index=True, nullable=False)
     operation_type = Column(String(50), nullable=False)  # create_shipments, get_rates, etc.
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    created_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        nullable=False,
+    )
     started_at = Column(DateTime, nullable=True)
     completed_at = Column(DateTime, nullable=True)
 

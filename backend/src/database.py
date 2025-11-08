@@ -42,9 +42,10 @@ def create_engine() -> AsyncEngine | None:
         engine = create_async_engine(
             settings.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://"),
             echo=settings.ENVIRONMENT == "development",
-            # Connection pool settings
-            pool_size=settings.DATABASE_POOL_SIZE,  # 20 concurrent connections
-            max_overflow=settings.DATABASE_MAX_OVERFLOW,  # 30 burst capacity
+            # Connection pool settings (configurable via DATABASE_POOL_SIZE env var)
+            # Default: 20 base + 30 overflow = 50 total connections per worker
+            pool_size=settings.DATABASE_POOL_SIZE,  # Base pool size (default: 20)
+            max_overflow=settings.DATABASE_MAX_OVERFLOW,  # Burst capacity (default: 30)
             pool_recycle=settings.DATABASE_POOL_RECYCLE,  # 1 hour
             pool_pre_ping=True,  # Verify connections before use
             pool_timeout=30,  # Wait 30s for connection from pool

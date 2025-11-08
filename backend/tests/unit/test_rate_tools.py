@@ -114,7 +114,9 @@ class TestRateTools:
             await ctx.info("Calculating rates...")
 
             result = await asyncio.wait_for(
-                service.get_rates(to_addr.dict(), from_addr.dict(), parcel_obj.dict()),
+                service.get_rates(
+                    to_addr.model_dump(), from_addr.model_dump(), parcel_obj.model_dump()
+                ),
                 timeout=20.0,
             )
 
@@ -154,7 +156,9 @@ class TestRateTools:
                 from_addr = AddressModel(**from_address)
                 parcel_obj = ParcelModel(**parcel)
                 service = ctx.request_context.lifespan_context.easypost_service
-                return await service.get_rates(to_addr.dict(), from_addr.dict(), parcel_obj.dict())
+                return await service.get_rates(
+                    to_addr.model_dump(), from_addr.model_dump(), parcel_obj.model_dump()
+                )
             except ValidationError as e:
                 return {
                     "status": "error",
@@ -207,7 +211,9 @@ class TestRateTools:
                 await ctx.info("Calculating rates...")
 
                 return await asyncio.wait_for(
-                    service.get_rates(to_addr.dict(), from_addr.dict(), parcel_obj.dict()),
+                    service.get_rates(
+                        to_addr.model_dump(), from_addr.model_dump(), parcel_obj.model_dump()
+                    ),
                     timeout=20.0,
                 )
             except TimeoutError:
@@ -249,7 +255,9 @@ class TestRateTools:
                 parcel_obj = ParcelModel(**parcel)
 
                 return await asyncio.wait_for(
-                    service.get_rates(to_addr.dict(), from_addr.dict(), parcel_obj.dict()),
+                    service.get_rates(
+                        to_addr.model_dump(), from_addr.model_dump(), parcel_obj.model_dump()
+                    ),
                     timeout=20.0,
                 )
             except Exception:

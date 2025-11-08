@@ -7,9 +7,10 @@ import os
 import sys
 
 # Add backend directory to path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+backend_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, backend_dir)
 
-from src.mcp import mcp
+from src.mcp_server import mcp
 
 if __name__ == "__main__":
     # Run in stdio mode for Claude Desktop

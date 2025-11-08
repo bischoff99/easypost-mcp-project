@@ -92,12 +92,65 @@ WAREHOUSE_BY_CATEGORY = {
             "email": "shipping@ladistribution.com",
         },
     },
+    "New York": {
+        "bedding": {
+            "name": "NYC Home Goods Warehouse",
+            "company": "New York Home Essentials",
+            "street1": "246 E 116th St",
+            "street2": "Suite 200",
+            "city": "New York",
+            "state": "NY",
+            "zip": "10029",
+            "country": "US",
+            "phone": "646-600-6012",
+            "email": "bedding@nyhomegoods.com",
+        },
+        "sporting": {
+            "name": "NYC Outdoor Gear Hub",
+            "company": "New York Sporting Supply",
+            "street1": "246 E 116th St",
+            "street2": "Suite 300",
+            "city": "New York",
+            "state": "NY",
+            "zip": "10029",
+            "country": "US",
+            "phone": "646-600-6012",
+            "email": "sporting@nyoutdoor.com",
+        },
+        "beauty": {
+            "name": "NYC Beauty & Wellness",
+            "company": "New York Beauty Essentials",
+            "street1": "246 E 116th St",
+            "street2": "Suite 400",
+            "city": "New York",
+            "state": "NY",
+            "zip": "10029",
+            "country": "US",
+            "phone": "646-600-6012",
+            "email": "beauty@nycwellness.com",
+        },
+        "default": {
+            "name": "NYC Distribution Center",
+            "company": "New York Logistics Hub",
+            "street1": "246 E 116th St",
+            "street2": "",
+            "city": "New York",
+            "state": "NY",
+            "zip": "10029",
+            "country": "US",
+            "phone": "646-600-6012",
+            "email": "shipping@nycdistro.com",
+        },
+    },
 }
 
 # Legacy format for backward compatibility
 STORE_ADDRESSES = {
     "California": {
         "Los Angeles": WAREHOUSE_BY_CATEGORY["California"]["default"],
+    },
+    "New York": {
+        "New York": WAREHOUSE_BY_CATEGORY["New York"]["default"],
     },
     "Nevada": {
         "Las Vegas": {
@@ -139,26 +192,43 @@ def parse_dimensions(dim_str: str) -> tuple:
 
 def parse_weight(weight_str: str) -> float:
     """
-    Parse weight string like '1.8 lbs' into ounces.
+    Parse weight string like '1.8 lbs', '5LB 2oz', '2 lbs 3 oz' into ounces.
+
+    Handles formats:
+    - Single unit: "1.8 lbs", "16 oz", "2 pounds"
+    - Combined: "5LB 2oz", "2 lbs 3 oz", "1 pound 8 ounces"
 
     Args:
-        weight_str: Weight string with unit
+        weight_str: Weight string with unit(s)
 
     Returns:
         Weight in ounces
     """
-    # Extract number from string
-    match = re.search(r"([\d.]+)\s*(lbs?|oz|ounces?|pounds?)", weight_str.lower())
-    if match:
+    weight_str = weight_str.strip()
+    total_oz = 0.0
+
+    # Pattern to match: number + unit (handles both combined and single formats)
+    # Matches: "5LB", "2oz", "1.5 lbs", "3 ounces", etc.
+    pattern = r"([\d.]+)\s*(lbs?|oz|ounces?|pounds?|LB|OZ)"
+
+    # Find all matches (handles combined formats like "5LB 2oz")
+    matches = re.finditer(pattern, weight_str.lower())
+
+    for match in matches:
         value = float(match.group(1))
-        unit = match.group(2)
+        unit = match.group(2).lower()
 
         # Convert to ounces
         if "lb" in unit or "pound" in unit:
-            return value * 16.0  # 1 lb = 16 oz
-        return value  # Already in oz
+            total_oz += value * 16.0  # 1 lb = 16 oz
+        else:
+            total_oz += value  # Already in oz
 
-    return 16.0  # Default 1 lb
+    # If no matches found, return default 1 lb (16 oz)
+    if total_oz == 0.0:
+        return 16.0
+
+    return total_oz
 
 
 def detect_product_category(contents: str) -> str:
@@ -207,11 +277,33 @@ def parse_spreadsheet_line(line: str) -> dict[str, Any]:
     """
     Parse a tab-separated line from spreadsheet.
 
+    Format (16+ columns):
+    0. origin_state (or sender_name if sender address provided)
+    1. carrier_preference (or sender_street1 if sender address provided)
+    2. recipient_name
+    3. recipient_last_name
+    4. recipient_phone
+    5. recipient_email
+    6. recipient_street1
+    7. recipient_street2
+    8. recipient_city
+    9. recipient_state
+    10. recipient_zip
+    11. recipient_country
+    12. (unused)
+    13. dimensions
+    14. weight
+    15. contents
+    16+. sender fields (optional): sender_name, sender_street1, sender_city,
+        sender_state, sender_zip, sender_country, sender_phone, sender_email
+
+    If sender fields are provided (columns 16+), use those instead of warehouse lookup.
+
     Args:
         line: Tab-separated data line
 
     Returns:
-        Parsed shipment dictionary
+        Parsed shipment dictionary with optional sender_address
     """
     # Split by tabs
     parts = line.split("\t")
@@ -219,7 +311,7 @@ def parse_spreadsheet_line(line: str) -> dict[str, Any]:
     if len(parts) < 16:
         raise ValueError(f"Invalid line format: expected at least 16 columns, got {len(parts)}")
 
-    return {
+    result = {
         "origin_state": parts[0].strip(),
         "carrier_preference": parts[1].strip(),
         "recipient_name": parts[2].strip(),
@@ -236,6 +328,24 @@ def parse_spreadsheet_line(line: str) -> dict[str, Any]:
         "weight": parts[14].strip(),
         "contents": parts[15].strip(),
     }
+
+    # Check if sender address is provided (columns 16+)
+    # Format: sender_name, sender_street1, sender_street2, sender_city,
+    # sender_state, sender_zip, sender_country, sender_phone, sender_email
+    if len(parts) >= 25 and parts[16].strip():
+        result["sender_address"] = {
+            "name": parts[16].strip(),
+            "street1": parts[17].strip() if len(parts) > 17 else "",
+            "street2": parts[18].strip() if len(parts) > 18 else "",
+            "city": parts[19].strip() if len(parts) > 19 else "",
+            "state": parts[20].strip() if len(parts) > 20 else "",
+            "zip": parts[21].strip() if len(parts) > 21 else "",
+            "country": parts[22].strip() if len(parts) > 22 else "US",
+            "phone": parts[23].strip() if len(parts) > 23 else "",
+            "email": parts[24].strip() if len(parts) > 24 else "",
+        }
+
+    return result
 
 
 def parse_human_readable_shipment(text: str) -> dict | None:
@@ -355,59 +465,16 @@ def parse_human_readable_shipment(text: str) -> dict | None:
 def register_bulk_tools(mcp, easypost_service=None):
     """Register bulk shipment tools with MCP server."""
 
-    @mcp.tool(tags=["bulk", "parse", "utility"])
-    async def parse_flexible_shipment(shipment_text: str) -> dict:
-        """
-        Parse human-readable shipment data into standard format.
-
-        Accepts various formats:
-        - Tab-separated spreadsheet data
-        - Human-readable structured text
-        - Mixed formats
-
-        Automatically fills missing customs data for international shipments.
-
-        Args:
-            shipment_text: Shipment data in any readable format
-
-        Returns:
-            Standardized shipment dict ready for rate/purchase tools
-        """
-        try:
-            # Try tab-separated first
-            if "\t" in shipment_text and shipment_text.count("\t") >= 10:
-                return {
-                    "status": "success",
-                    "format": "spreadsheet",
-                    "message": "Use create_bulk_shipments for tab-separated data",
-                }
-
-            # Parse human-readable format
-            parsed = parse_human_readable_shipment(shipment_text)
-
-            if parsed:
-                return {
-                    "status": "success",
-                    "data": parsed,
-                    "message": "Parsed successfully - ready for get_rates or create_shipment",
-                }
-            return {
-                "status": "error",
-                "message": "Could not parse shipment data. Please check format.",
-            }
-
-        except Exception as e:
-            logger.error(f"Parse error: {str(e)}")
-            return {"status": "error", "message": f"Parse failed: {str(e)}"}
-
     @mcp.tool(tags=["bulk", "rates", "shipping", "m3-optimized"])
     async def parse_and_get_bulk_rates(
         spreadsheet_data: str,
-        from_city: str = None,  # noqa: ARG001 - Future filtering feature
         ctx: Context = None,
     ) -> dict:
         """
-        Parse spreadsheet data and get shipping rates for multiple shipments - M3 Max Optimized.
+        Get shipping rates for single or multiple shipments - M3 Max Optimized.
+
+        Handles both single shipments (1 line) and bulk operations (multiple lines).
+        Uses spreadsheet format: tab-separated columns (paste from spreadsheet).
 
         M3 MAX OPTIMIZATION (16 cores, 128GB RAM):
         - Parallel rate calculations: 16 concurrent API calls
@@ -420,9 +487,11 @@ def register_bulk_tools(mcp, easypost_service=None):
         - Beauty products → Beauty & Wellness
         - Default → General Warehouse
 
+        Supports sender addresses: Include sender info in columns 16+ to use custom sender
+        instead of warehouse lookup.
+
         Args:
-            spreadsheet_data: Tab-separated shipment data (paste from spreadsheet)
-            from_city: DEPRECATED - Now auto-detects warehouse per item
+            spreadsheet_data: Tab-separated shipment data (1+ lines, paste from spreadsheet)
             ctx: MCP context for progress reporting
 
         Returns:
@@ -463,12 +532,22 @@ def register_bulk_tools(mcp, easypost_service=None):
                         # Parse line
                         data = parse_spreadsheet_line(line)
 
-                        # Detect product category from contents
+                        # Detect product category from contents (always needed for reporting)
                         category = detect_product_category(data["contents"])
 
-                        # Get appropriate warehouse address
-                        from_address = get_warehouse_address(data["origin_state"], category)
-                        warehouse_key = f"{from_address['company']}"
+                        # Use sender address if provided, otherwise use warehouse lookup
+                        if "sender_address" in data and data["sender_address"].get("name"):
+                            # Use provided sender address
+                            from_address = data["sender_address"]
+                            warehouse_key = f"{from_address.get('name', 'Custom Sender')}"
+                        else:
+                            # Get appropriate warehouse address
+                            from_address = get_warehouse_address(data["origin_state"], category)
+                            company_or_name = from_address.get("company") or from_address.get(
+                                "name", "Unknown"
+                            )
+                            warehouse_key = f"{company_or_name}"
+
                         used_warehouses.add(warehouse_key)
 
                         # Parse dimensions and weight
@@ -496,9 +575,37 @@ def register_bulk_tools(mcp, easypost_service=None):
                             "weight": weight_oz,
                         }
 
-                        # Get rates with timeout
+                        # Check if international and auto-generate customs if needed
+                        is_international = to_address["country"] != from_address.get(
+                            "country", "US"
+                        )
+                        customs_info = None
+
+                        if is_international:
+                            # Auto-generate customs info for international shipments
+                            from src.services.smart_customs import get_or_create_customs
+
+                            loop = asyncio.get_running_loop()
+                            customs_info = await loop.run_in_executor(
+                                None,
+                                get_or_create_customs,
+                                data["contents"],
+                                weight_oz,
+                                easypost_service.client,
+                                None,  # Auto-detect value from description
+                            )
+
+                            if ctx and customs_info:
+                                await ctx.info(
+                                    f"✅ Auto-generated customs for international shipment "
+                                    f"({to_address['country']})"
+                                )
+
+                        # Get rates with timeout (customs included for international)
                         rates_result = await asyncio.wait_for(
-                            easypost_service.get_rates(to_address, from_address, parcel),
+                            easypost_service.get_rates(
+                                to_address, from_address, parcel, customs_info=customs_info
+                            ),
                             timeout=20.0,
                         )
 
@@ -510,8 +617,10 @@ def register_bulk_tools(mcp, easypost_service=None):
                             "dimensions": f"{length} x {width} x {height} in",
                             "contents": data["contents"][:100],
                             "category": category,
-                            "from_warehouse": from_address["company"],
-                            "from_city": from_address["city"],
+                            "from_warehouse": (
+                                from_address.get("company", from_address.get("name", "Unknown"))
+                            ),
+                            "from_city": from_address.get("city", "Unknown"),
                             "rates": (
                                 rates_result.get("data", [])
                                 if rates_result.get("status") == "success"

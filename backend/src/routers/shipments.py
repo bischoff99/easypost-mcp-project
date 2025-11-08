@@ -283,6 +283,34 @@ async def create_bulk_shipments(
         ) from e
 
 
+@router.post("/shipments/{shipment_id}/buy")
+@limiter.limit("10/minute")
+async def buy_existing_shipment(
+    request: Request, shipment_id: str, rate_id: str, service: EasyPostDep
+):
+    """Buy an existing shipment with selected rate."""
+    request_id = getattr(request.state, "request_id", "unknown")
+
+    try:
+        logger.info(f"[{request_id}] Buy existing shipment {shipment_id} with rate {rate_id}")
+
+        buy_result = await service.buy_shipment(shipment_id=shipment_id, rate_id=rate_id)
+
+        logger.info(f"[{request_id}] Shipment purchased successfully")
+        metrics.track_api_call("buy_existing_shipment", True)
+
+        return buy_result
+
+    except Exception as e:
+        error_msg = str(e)[:MAX_REQUEST_LOG_SIZE]
+        logger.error(f"[{request_id}] Error buying shipment: {error_msg}")
+        metrics.track_api_call("buy_existing_shipment", False)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error buying shipment: {error_msg}",
+        ) from e
+
+
 @router.post("/shipments/{shipment_id}/refund")
 @limiter.limit("10/minute")
 async def refund_shipment(request: Request, shipment_id: str, service: EasyPostDep):

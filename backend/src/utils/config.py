@@ -29,9 +29,11 @@ class Settings:
 
     # Connection pool settings (optimized for M3 Max with 33 workers)
     # Formula: (workers × pool_size) + max_overflow <= PostgreSQL max_connections
-    # With 33 workers: 33 × 10 + 20 = 350 connections (within PG default 400)
-    DATABASE_POOL_SIZE: int = int(os.getenv("DATABASE_POOL_SIZE", "10"))
-    DATABASE_MAX_OVERFLOW: int = int(os.getenv("DATABASE_MAX_OVERFLOW", "20"))
+    # Default: 20 base + 30 overflow = 50 total per worker
+    # With 33 workers: 33 × 20 + 30 = 690 connections (requires PG max_connections ≥ 700)
+    # For production: Set DATABASE_POOL_SIZE=20, DATABASE_MAX_OVERFLOW=30 in .env.production
+    DATABASE_POOL_SIZE: int = int(os.getenv("DATABASE_POOL_SIZE", "20"))
+    DATABASE_MAX_OVERFLOW: int = int(os.getenv("DATABASE_MAX_OVERFLOW", "30"))
     DATABASE_POOL_RECYCLE: int = int(os.getenv("DATABASE_POOL_RECYCLE", "3600"))
     DATABASE_POOL_TIMEOUT: int = int(os.getenv("DATABASE_POOL_TIMEOUT", "30"))
     DATABASE_COMMAND_TIMEOUT: int = int(os.getenv("DATABASE_COMMAND_TIMEOUT", "60"))

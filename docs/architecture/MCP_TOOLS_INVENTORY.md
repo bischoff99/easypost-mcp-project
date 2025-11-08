@@ -6,15 +6,75 @@
 
 ---
 
-## 🔧 Tools (3)
+## 🔧 Tools (4)
 
-### 1. `create_shipment`
+### 1. `get_tracking`
+**Purpose**: Get real-time tracking information for a shipment
+
+**Parameters**:
+- `tracking_number` (str) - The tracking number to look up
+
+**Returns**:
+```json
+{
+  "status": "success",
+  "data": {
+    "tracking_number": "EZ1234567890",
+    "status": "in_transit",
+    "carrier": "USPS",
+    "est_delivery": "2025-11-05",
+    "tracking_history": [...]
+  },
+  "message": "Tracking information retrieved",
+  "timestamp": "2025-11-03T..."
+}
+```
+
+---
+
+### 2. `parse_and_get_bulk_rates`
+**Purpose**: Parse spreadsheet data and get rates for single or multiple shipments
+
+**Parameters**:
+- `spreadsheet_data` (str) - Tab-separated shipment data (1+ lines)
+- `from_city` (str, optional) - Override origin city
+
+**Returns**: Rates for all shipments with comparison table
+
+---
+
+### 3. `create_bulk_shipments`
+**Purpose**: Create single or multiple shipments in parallel (M3 Max optimized, 16 workers)
+
+**Parameters**:
+- `spreadsheet_data` (str) - Tab-separated shipment data
+- `purchase_labels` (bool) - Whether to purchase labels immediately (default: False)
+- `carrier` (str, optional) - Force specific carrier
+- `dry_run` (bool) - Validate without creating (default: False)
+
+**Returns**: Created shipments with rates and shipment IDs
+
+---
+
+### 4. `buy_bulk_shipments`
+**Purpose**: Purchase labels for pre-created shipments using selected rates
+
+**Parameters**:
+- `shipment_ids` (list[str]) - List of shipment IDs
+- `rate_ids` (list[str]) - List of rate IDs to use
+- `customs_data` (list[dict], optional) - Customs information
+
+**Returns**: Purchased labels with tracking numbers
+
+---
+
+### 5. `create_shipment` (Legacy - use bulk tools for single shipments)
 **Purpose**: Create a new shipment and purchase a shipping label
 
 **Parameters**:
 - `to_address` (dict) - Destination address
   - name, street1, city, state, zip, country (optional)
-- `from_address` (dict) - Origin address  
+- `from_address` (dict) - Origin address
   - name, street1, city, state, zip, country (optional)
 - `parcel` (dict) - Package dimensions
   - length, width, height (inches), weight (ounces)
@@ -47,37 +107,6 @@ result = await create_shipment(
 ```
 
 ---
-
-### 2. `get_tracking`
-**Purpose**: Get real-time tracking information for a shipment
-
-**Parameters**:
-- `tracking_number` (str) - The tracking number to look up
-
-**Returns**:
-```json
-{
-  "status": "success",
-  "data": {
-    "tracking_number": "EZ1234567890",
-    "status": "in_transit",
-    "carrier": "USPS",
-    "est_delivery": "2025-11-05",
-    "tracking_history": [...]
-  },
-  "message": "Tracking information retrieved",
-  "timestamp": "2025-11-03T..."
-}
-```
-
-**Example**:
-```python
-result = await get_tracking(tracking_number="EZ1234567890")
-```
-
----
-
-### 3. `get_rates`
 **Purpose**: Get shipping rates from multiple carriers
 
 **Parameters**:
@@ -152,7 +181,7 @@ stats = mcp.read_resource("easypost://stats/overview")
 
 ---
 
-## 💡 Prompts (4)
+## 💡 Prompts (5)
 
 ### 1. `compare_carriers`
 **Purpose**: Compare shipping rates across carriers
@@ -221,10 +250,10 @@ stats = mcp.read_resource("easypost://stats/overview")
 
 | Type | Count | Purpose |
 |------|-------|---------|
-| **Tools** | 3 | Core shipping operations |
+| **Tools** | 4 | Core shipping operations (tracking, rates, bulk create, bulk purchase) |
 | **Resources** | 2 | Data access (shipments, stats) |
-| **Prompts** | 4 | Guided workflows |
-| **Total** | **9** | Complete MCP integration |
+| **Prompts** | 5 | Guided workflows |
+| **Total** | **11** | Complete MCP integration |
 
 ---
 
@@ -305,4 +334,6 @@ All tools:
 
 ---
 
-**Status**: All 9 MCP tools/resources/prompts are production-ready and fully documented!
+**Status**: All 11 MCP tools/resources/prompts are production-ready and fully documented!
+
+**Note**: Bulk tools (`parse_and_get_bulk_rates`, `create_bulk_shipments`, `buy_bulk_shipments`) handle both single and multiple shipments, making separate single-shipment tools unnecessary.

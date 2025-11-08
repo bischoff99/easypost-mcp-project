@@ -1,7 +1,7 @@
 # EasyPost MCP Project - Quick Development Commands
 # Usage: make <command>
 
-.PHONY: help dev test test-fast build clean install health db-reset lint format
+.PHONY: help dev test test-fast build clean install health db-reset lint format prod prod-docker
 
 # Default target
 help:
@@ -22,6 +22,10 @@ help:
 	@echo "Building:"
 	@echo "  make build        - Build production bundles"
 	@echo "  make build-docker - Build Docker images"
+	@echo ""
+	@echo "Production:"
+	@echo "  make prod         - Start backend + frontend in production mode"
+	@echo "  make prod-docker  - Start production with Docker Compose"
 	@echo ""
 	@echo "Code Quality:"
 	@echo "  make lint         - Run linters"
@@ -100,6 +104,25 @@ build-docker:
 	@echo "🐳 Building Docker images..."
 	@docker-compose build --parallel
 	@echo "✅ Docker images built!"
+
+# Production mode (local)
+prod:
+	@echo "🚀 Starting production servers..."
+	@./scripts/start-prod.sh
+
+# Production mode (Docker)
+prod-docker:
+	@echo "🐳 Starting production with Docker..."
+	@if [ ! -f .env.production ]; then \
+		echo "⚠️  .env.production not found. Creating from .env.example..."; \
+		cp .env.example .env.production 2>/dev/null || true; \
+		echo "📝 Please edit .env.production with production values"; \
+	fi
+	@docker-compose -f docker-compose.prod.yml --env-file .env.production up -d
+	@echo "✅ Production services started!"
+	@echo "   Backend:  http://localhost:8000"
+	@echo "   Frontend: http://localhost:80"
+	@echo "   View logs: docker-compose -f docker-compose.prod.yml logs -f"
 
 # Linting
 lint:
