@@ -48,6 +48,7 @@ npm install
 - **Benefits:** Edge rate limiting, browser caching
 
 ### Documentation
+- **[CLAUDE.md](CLAUDE.md)** - Comprehensive guide for AI assistants (Claude Code, Cursor, etc.)
 - **[Complete Integration Guide](docs/guides/PROXY_AND_DATABASE_INTEGRATION.md)** - Architecture, usage patterns, deployment
 - **[Quick Reference](docs/guides/QUICK_REFERENCE.md)** - Code templates, commands, troubleshooting
 - **[Architecture Diagrams](ARCHITECTURE_DIAGRAM.md)** - Visual data flow and request patterns
