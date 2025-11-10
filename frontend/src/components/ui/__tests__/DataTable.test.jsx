@@ -129,7 +129,7 @@ describe('DataTable', () => {
     render(<DataTable columns={columnsWithRender} data={mockData} />);
 
     expect(screen.getByText('ITEM 1')).toBeInTheDocument();
-    expect(screen.getByTestId('custom-cell')).toBeInTheDocument();
+    expect(screen.getAllByTestId('custom-cell')).toHaveLength(3);
   });
 
   it('shows selected row count', () => {

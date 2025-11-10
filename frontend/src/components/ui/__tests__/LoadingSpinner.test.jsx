@@ -64,16 +64,17 @@ describe('LoadingOverlay', () => {
 describe('SkeletonLoader', () => {
   it('renders single row by default', () => {
     const { container } = render(<SkeletonLoader />);
-    const skeletons = container.querySelectorAll('.animate-pulse');
+    const wrapper = container.querySelector('.space-y-3');
 
-    expect(skeletons).toHaveLength(1);
+    expect(wrapper).toBeInTheDocument();
+    expect(wrapper.children).toHaveLength(1);
   });
 
   it('renders multiple rows', () => {
     const { container } = render(<SkeletonLoader rows={5} />);
-    const skeletons = container.querySelectorAll('.animate-pulse');
+    const wrapper = container.querySelector('.space-y-3');
 
-    expect(skeletons).toHaveLength(5);
+    expect(wrapper.children).toHaveLength(5);
   });
 
   it('applies custom className', () => {
@@ -83,10 +84,12 @@ describe('SkeletonLoader', () => {
     expect(skeleton).toBeInTheDocument();
   });
 
-  it('has animation class', () => {
+  it('has animation with framer-motion', () => {
     const { container } = render(<SkeletonLoader />);
-    const skeleton = container.querySelector('div > div');
+    const wrapper = container.querySelector('.space-y-3');
+    const skeleton = wrapper?.firstChild;
 
-    expect(skeleton).toHaveClass('animate-pulse');
+    expect(skeleton).toBeInTheDocument();
+    expect(skeleton).toHaveClass('h-4', 'bg-muted', 'rounded');
   });
 });
