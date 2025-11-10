@@ -233,8 +233,10 @@ def extract_customs_smart(
                 value = float(groups[3])
 
             matched = True
+            desc_short = description[:30]
             logger.info(
-                f"Pattern {pattern_idx + 1} ({format_type}) matched: qty={quantity}, desc={description[:30]}, hs={hs_code}, value=${value}"
+                f"Pattern {pattern_idx + 1} ({format_type}) matched: "
+                f"qty={quantity}, desc={desc_short}, hs={hs_code}, value=${value}"
             )
             break
 
