@@ -41,10 +41,10 @@ help:
 # Start both servers in parallel
 dev:
 	@echo "🚀 Starting development servers..."
-	@echo "📦 Backend: http://localhost:8001"
+	@echo "📦 Backend: http://localhost:8000"
 	@echo "⚡ Frontend: http://localhost:5173"
 	@trap 'kill 0' EXIT; \
-	(cd backend && ./.venv/bin/uvicorn src.server:app --host 0.0.0.0 --port 8001 --reload) & \
+	(cd backend && ./.venv/bin/uvicorn src.server:app --host 0.0.0.0 --port 8000 --reload) & \
 	(cd frontend && npm run dev) & \
 	wait
 

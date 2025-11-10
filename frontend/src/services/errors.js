@@ -27,7 +27,7 @@ export function handleApiError(error) {
       });
       window.__apiOfflineToasted = true;
     }
-  } else if (error.code === 'ECONNABORTED') {
+  } else if (error.code === 'ECONNABORTED' || status === 408) {
     toast.error('Request Timeout', { description: 'The request took too long to complete' });
   } else if (status >= 500) {
     toast.error('Server Error', { description: message });
