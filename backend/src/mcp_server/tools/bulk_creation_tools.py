@@ -311,9 +311,7 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
 
                         if ctx:
                             name = to_address.get("name", "recipient")
-                            await ctx.info(
-                                f"🔍 Verifying FedEx-preprocessed address for {name}..."
-                            )
+                            await ctx.info(f"🔍 Verifying FedEx-preprocessed address for {name}...")
 
                         verify_result = await easypost_service.verify_address(
                             to_address, carrier="fedex"
@@ -529,10 +527,14 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                             ):
                                 return True
                             # USA Export/Asendia matching
-                            usa_match = ("USA" in preferred or "EXPORT" in preferred
-                                        or "ASENDIA" in preferred)
-                            easypost_match = ("USAEXPORT" in easypost_upper
-                                             or "ASENDIA" in easypost_upper)
+                            usa_match = (
+                                "USA" in preferred
+                                or "EXPORT" in preferred
+                                or "ASENDIA" in preferred
+                            )
+                            easypost_match = (
+                                "USAEXPORT" in easypost_upper or "ASENDIA" in easypost_upper
+                            )
                             return bool(usa_match and easypost_match)
 
                         # Mark preferred rates

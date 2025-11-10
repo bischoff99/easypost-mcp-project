@@ -1407,8 +1407,8 @@ def register_bulk_tools(mcp, easypost_service=None):
                                 service.client,
                                 None,  # Auto-detect value from description
                                 customs_signer,
-                            incoterm,
-                        )
+                                incoterm,
+                            )
 
                         if ctx and customs_info:
                             country = to_address["country"]
