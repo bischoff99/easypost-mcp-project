@@ -65,27 +65,27 @@ frontend:
 # Run all tests
 test:
 	@echo "🧪 Running all tests..."
-	@cd backend && ./venv/bin/pytest tests/ -v
+	@cd backend && ./.venv/bin/pytest tests/ -v
 	@cd frontend && npm test -- --run
 
 # Fast tests (changed files only, parallel execution)
 test-fast:
 	@echo "⚡ Running fast tests..."
-	@cd backend && ./venv/bin/pytest tests/ -v --lf --ff -n auto
+	@cd backend && ./.venv/bin/pytest tests/ -v --lf --ff -n auto
 	@cd frontend && npm test -- --run --changed
 
 # Watch mode for tests
 test-watch:
 	@echo "👀 Starting test watch mode..."
 	@trap 'kill 0' EXIT; \
-	(cd backend && ./venv/bin/pytest-watch tests/ --clear) & \
+	(cd backend && ./.venv/bin/pytest-watch tests/ --clear) & \
 	(cd frontend && npm test) & \
 	wait
 
 # Coverage report
 test-cov:
 	@echo "📊 Running tests with coverage..."
-	@cd backend && ./venv/bin/pytest tests/ -v --cov=src --cov-report=term-missing --cov-report=html
+	@cd backend && ./.venv/bin/pytest tests/ -v --cov=src --cov-report=term-missing --cov-report=html
 	@cd frontend && npm run test:coverage
 	@echo "✅ Coverage reports generated:"
 	@echo "   Backend:  backend/htmlcov/index.html"
@@ -93,7 +93,7 @@ test-cov:
 
 # Production build
 build:
-	@echo "📦 Building production bundles..."
+	@echo "���� Building production bundles..."
 	@cd frontend && npm run build
 	@cd backend && ./.venv/bin/python -m compileall src/
 	@echo "✅ Build complete!"
@@ -127,13 +127,13 @@ prod-docker:
 # Linting
 lint:
 	@echo "🔍 Running linters..."
-	@cd backend && ./venv/bin/ruff check src/ tests/
+	@cd backend && ./.venv/bin/ruff check src/ tests/
 	@cd frontend && npm run lint
 
 # Auto-format
 format:
 	@echo "✨ Formatting code..."
-	@cd backend && ./venv/bin/black src/ tests/ && ./venv/bin/ruff check src/ tests/ --fix
+	@cd backend && ./.venv/bin/black src/ tests/ && ./.venv/bin/ruff check src/ tests/ --fix
 	@cd frontend && npx prettier --write src/
 
 # Full quality check
@@ -166,15 +166,15 @@ health:
 # Database operations
 db-reset:
 	@echo "🔄 Resetting database..."
-	@cd backend && ./venv/bin/alembic downgrade base && ./venv/bin/alembic upgrade head
+	@cd backend && ./.venv/bin/alembic downgrade base && ./.venv/bin/alembic upgrade head
 	@echo "✅ Database reset complete!"
 
 db-migrate:
 	@echo "📝 Creating migration..."
-	@cd backend && ./venv/bin/alembic revision --autogenerate -m "$(m)"
+	@cd backend && ./.venv/bin/alembic revision --autogenerate -m "$(m)"
 
 db-upgrade:
-	@cd backend && ./venv/bin/alembic upgrade head
+	@cd backend && ./.venv/bin/alembic upgrade head
 
 # Performance benchmark
 benchmark:
