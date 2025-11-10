@@ -344,7 +344,7 @@ npm run dev
 
 ```bash
 # .env.production
-EASYPOST_API_KEY=EZAK_your_production_key_here
+EASYPOST_API_KEY=your_production_api_key_here_your_production_key_here
 DATABASE_URL=postgresql+asyncpg://user:password@host:5432/easypost_mcp
 ENVIRONMENT=production
 DEBUG=false

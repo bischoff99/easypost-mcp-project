@@ -137,7 +137,12 @@ def detect_hs_code_from_description(description: str) -> tuple[str, str, float]:
 
 
 def extract_customs_smart(
-    contents: str, weight_oz: float, easypost_client, default_value: float | None = None
+    contents: str,
+    weight_oz: float,
+    easypost_client,
+    default_value: float | None = None,
+    customs_signer: str = "Sender",
+    incoterm: str = "DDP",
 ) -> Any | None:
     """
     Smart customs extraction with auto-fill for missing data.
@@ -160,16 +165,80 @@ def extract_customs_smart(
     Returns:
         CustomsInfo object or None
     """
-    # Pattern 1: Full format with HTS code
-    full_pattern = r"\((\d+)\)\s*([^H]+?)\s*HTS Code:\s*([\d.]+)\s*\(\$(\d+(?:\.\d+)?)"
-    match = re.search(full_pattern, contents)
+    # Try multiple patterns in order of specificity
+    quantity = 1
+    description = ""
+    hs_code = ""
+    value = 0.0
+    matched = False
 
-    if match:
-        # Full format found - use exact values from structured input
-        quantity = int(match.group(1))
-        description = match.group(2).strip()
-        hs_code = match.group(3)
-        value = float(match.group(4))
+    # COMPREHENSIVE PATTERN MATCHING - handles all common formats
+    # Each pattern: (regex, format_type, group_order)
+    patterns = [
+        # Format 1: "(5) Desc HTS: 1234.56.7890 ($22 each)" or "($22)"
+        (
+            r"\((\d+)\)\s*(.+?)\s+HTS[:\s]*(?:Code[:\s]*)?([\d.]{10,})\s*\(\$(\d+(?:\.\d+)?)",
+            "standard",
+        ),
+        # Format 2: "(5) Desc HTS: 1234.56.7890 $22 each" (no parens)
+        (
+            r"\((\d+)\)\s*(.+?)\s+HTS[:\s]*(?:Code[:\s]*)?([\d.]{10,})\s*\$(\d+(?:\.\d+)?)",
+            "standard",
+        ),
+        # Format 3: "(5) Desc $22 each HTS Code: 1234.56.7890" (VALUE BEFORE HTS)
+        (
+            r"\((\d+)\)\s*(.+?)\s*\$(\d+(?:\.\d+)?)\s+(?:each|per)?\s*HTS[:\s]*(?:Code[:\s]*)?([\d.]{10,})",
+            "value_first",
+        ),
+        # Format 4: "(5) Desc @ $22 HTS: 1234.56.7890" or "– $22 HTS:"
+        (
+            r"\((\d+)\)\s*(.+?)\s*[@–-]?\s*\$(\d+(?:\.\d+)?)\s+.*?HTS[:\s]*(?:Code[:\s]*)?([\d.]{10,})",
+            "value_first",
+        ),
+        # Format 5: "Desc x5 HTS: 1234.56.7890 ($22)" (quantity at end)
+        (
+            r"(.+?)\s+x(\d+)\s+HTS[:\s]*(?:Code[:\s]*)?([\d.]{10,})\s*\(?\$(\d+(?:\.\d+)?)",
+            "qty_end",
+        ),
+        # Format 6: "(qty) Description HTS/HS code ($value)" - flexible catch-all
+        (
+            r"\((\d+)\)\s*([^$]+?)\s+(?:HTS|HS)[:\s]*(?:Code[:\s]*)?([\d.]{8,})\s*\(?\$(\d+(?:\.\d+)?)",
+            "standard",
+        ),
+    ]
+
+    for pattern_idx, (pattern, format_type) in enumerate(patterns):
+        match = re.search(pattern, contents, re.IGNORECASE)
+        if match:
+            groups = match.groups()
+
+            # Handle different group orders based on format type
+            if format_type == "value_first" or format_type == "value_first_minimal":
+                # (qty) Description $value HTS: code
+                quantity = int(groups[0])
+                description = groups[1].strip()
+                value = float(groups[2])
+                hs_code = groups[3]
+            elif format_type == "qty_end":
+                # Description x5 HTS: code ($value)
+                description = groups[0].strip()
+                quantity = int(groups[1])
+                hs_code = groups[2]
+                value = float(groups[3])
+            else:  # "standard" format
+                # (qty) Description HTS: code ($value)
+                quantity = int(groups[0])
+                description = groups[1].strip()
+                hs_code = groups[2]
+                value = float(groups[3])
+
+            matched = True
+            logger.info(
+                f"Pattern {pattern_idx + 1} ({format_type}) matched: qty={quantity}, desc={description[:30]}, hs={hs_code}, value=${value}"
+            )
+            break
+
+    if matched:
         # Use calculated item weight (leaves room for packaging)
         item_weight = calculate_item_weight(weight_oz)
     else:
@@ -214,7 +283,22 @@ def extract_customs_smart(
             value=value,
             weight=item_weight,  # Item weight (not parcel weight)
         )
-        return easypost_client.customs_info.create(customs_items=[customs_item])
+
+        # Create customs_info with proper fields (no incoterm - not supported by EasyPost API)
+        customs_params = {
+            "customs_items": [customs_item],
+            "customs_certify": True,
+            "customs_signer": customs_signer,
+            "contents_type": "merchandise",
+            "restriction_type": "none",
+            "eel_pfc": "NOEEI 30.37(a)",
+            "non_delivery_option": "return",
+        }
+
+        # Note: DDP/DDU is handled at shipment options level, not customs_info
+        # incoterm field doesn't exist in EasyPost customs_info API
+
+        return easypost_client.customs_info.create(**customs_params)
 
     except Exception as e:
         logger.error(f"Failed to create customs: {str(e)}")
@@ -226,20 +310,35 @@ _smart_customs_cache: dict[str, Any] = {}
 
 
 def get_or_create_customs(
-    contents: str, weight_oz: float, easypost_client, value: float | None = None
+    contents: str,
+    weight_oz: float,
+    easypost_client,
+    value: float | None = None,
+    customs_signer: str = "Sender",
+    incoterm: str = "DDP",
 ) -> Any | None:
     """
     Get cached customs or create new with smart defaults.
 
     M3 MAX OPTIMIZATION: 95% cache hit rate for bulk orders.
+
+    Args:
+        contents: Product description with HTS code
+        weight_oz: Parcel weight in ounces
+        easypost_client: EasyPost client instance
+        value: Optional declared value (auto-detected if None)
+        customs_signer: Name of person signing customs (required for all international)
+        incoterm: Trade terms - "DDP" (seller pays duties) or "DDU" (buyer pays)
     """
-    cache_key = f"{contents}:{weight_oz}:{value}"
+    cache_key = f"{contents}:{weight_oz}:{value}:{incoterm}"
 
     if cache_key in _smart_customs_cache:
         logger.debug(f"Customs cache hit: {contents[:30]}...")
         return _smart_customs_cache[cache_key]
 
-    customs = extract_customs_smart(contents, weight_oz, easypost_client, value)
+    customs = extract_customs_smart(
+        contents, weight_oz, easypost_client, value, customs_signer, incoterm
+    )
 
     if customs:
         _smart_customs_cache[cache_key] = customs

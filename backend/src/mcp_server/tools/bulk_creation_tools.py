@@ -133,27 +133,34 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
 
             total_lines = len(lines)
 
-            # Auto-detect origin
+            # Auto-detect origin from spreadsheet column 1
             if from_city is None:
                 first_line_data = parse_spreadsheet_line(lines[0])
                 origin_state = first_line_data["origin_state"]
+                # Map state names to default warehouse cities
+                # Must match keys in STORE_ADDRESSES structure
                 state_defaults = {
                     "California": "Los Angeles",
                     "Nevada": "Las Vegas",
+                    "New York": "New York",
                 }
                 from_city = state_defaults.get(origin_state, "Los Angeles")
 
                 if ctx:
                     await ctx.info(f"📍 Auto-detected origin: {from_city}")
 
-            # Get origin address
+            # Get origin address from warehouse lookup
             from_address = None
             for state_stores in STORE_ADDRESSES.values():
                 if from_city in state_stores:
                     from_address = state_stores[from_city]
                     break
 
+            # Fallback to Los Angeles if city not found
             if from_address is None:
+                logger.warning(
+                    f"City '{from_city}' not found in warehouses, using Los Angeles default"
+                )
                 from_address = STORE_ADDRESSES["California"]["Los Angeles"]
 
             if ctx:
@@ -286,17 +293,132 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                         "weight": validation_result["weight_oz"],
                     }
 
-                    # Check if international and create customs_info
-                    is_international = to_address["country"] != shipment_from_address.get(
-                        "country", "US"
-                    )
+                    # Check if international - store country before verification may convert to_address to ID
+                    to_country = to_address["country"]
+                    is_international = to_country != shipment_from_address.get("country", "US")
                     customs_info = None
+
+                    # Preprocess address for international FedEx/UPS shipments
+                    preferred_carrier = data.get("carrier_preference", "").upper()
+                    if is_international and (
+                        "FEDEX" in preferred_carrier or "UPS" in preferred_carrier
+                    ):
+                        # Preprocess address for FedEx/UPS before verification
+                        from src.services.easypost_service import preprocess_address_for_fedex
+
+                        to_address = preprocess_address_for_fedex(to_address)
+
+                        if ctx:
+                            await ctx.info(
+                                f"🔍 Verifying FedEx-preprocessed address for {to_address.get('name', 'recipient')}..."
+                            )
+
+                        verify_result = await easypost_service.verify_address(
+                            to_address, carrier="fedex"
+                        )
+
+                        # Check if verification was actually successful
+                        verification_success = verify_result.get("data", {}).get(
+                            "verification_success", False
+                        )
+                        verified_addr = verify_result.get("data", {}).get("address", {})
+
+                        if (
+                            verify_result.get("status") == "success"
+                            and verified_addr
+                            and verification_success
+                        ):
+                            # Use verified address fields - EasyPost SDK may not accept address IDs directly
+                            # The verification status should still be preserved when using verified fields
+                            verified_street1 = verified_addr.get("street1") or to_address.get(
+                                "street1"
+                            )
+
+                            if not verified_street1 or not verified_street1.strip():
+                                logger.error(
+                                    f"FedEx verification returned empty street1! Original: '{to_address.get('street1')}', Verified: '{verified_addr.get('street1')}'"
+                                )
+                                if ctx:
+                                    await ctx.info(
+                                        "❌ FedEx verification returned empty street1 - using original address"
+                                    )
+                            else:
+                                # Use verified address fields (FedEx has validated and corrected them)
+                                to_address = {
+                                    "name": verified_addr.get("name") or to_address.get("name"),
+                                    "street1": verified_street1,
+                                    "street2": verified_addr.get("street2")
+                                    or to_address.get("street2"),
+                                    "city": verified_addr.get("city") or to_address.get("city"),
+                                    "state": verified_addr.get("state") or to_address.get("state"),
+                                    "zip": verified_addr.get("zip") or to_address.get("zip"),
+                                    "country": verified_addr.get("country")
+                                    or to_address.get("country"),
+                                    "phone": verified_addr.get("phone") or to_address.get("phone"),
+                                    "email": verified_addr.get("email") or to_address.get("email"),
+                                    "company": verified_addr.get("company")
+                                    or to_address.get("company"),
+                                }
+                                logger.info(
+                                    f"Using FedEx verified address: street1='{to_address.get('street1')}', city='{to_address.get('city')}', country='{to_address.get('country')}'"
+                                )
+                                if ctx:
+                                    await ctx.info("✅ Address verified and corrected by FedEx")
+                        elif verify_result.get("status") == "warning" or (
+                            verified_addr and not verification_success
+                        ):
+                            # Address has warnings or verification didn't fully succeed
+                            errors = verify_result.get("data", {}).get("errors", [])
+                            logger.warning(
+                                f"FedEx address verification warnings for {to_address.get('name')}: {errors}"
+                            )
+                            if verified_addr:
+                                # Still try to use verified address fields if available
+                                to_address = {
+                                    "name": verified_addr.get("name") or to_address.get("name"),
+                                    "street1": verified_addr.get("street1")
+                                    or to_address.get("street1"),
+                                    "street2": verified_addr.get("street2")
+                                    or to_address.get("street2"),
+                                    "city": verified_addr.get("city") or to_address.get("city"),
+                                    "state": verified_addr.get("state") or to_address.get("state"),
+                                    "zip": verified_addr.get("zip") or to_address.get("zip"),
+                                    "country": verified_addr.get("country")
+                                    or to_address.get("country"),
+                                    "phone": verified_addr.get("phone") or to_address.get("phone"),
+                                    "email": verified_addr.get("email") or to_address.get("email"),
+                                    "company": verified_addr.get("company")
+                                    or to_address.get("company"),
+                                }
+                            if ctx:
+                                await ctx.info(f"⚠️  Address verification warnings: {errors}")
+                        else:
+                            # Verification failed - this is a problem for FedEx
+                            error_msg = verify_result.get("message", "Unknown verification error")
+                            errors = verify_result.get("data", {}).get("errors", [])
+                            logger.error(
+                                f"FedEx address verification FAILED for {to_address.get('name')}: {error_msg}, Errors: {errors}"
+                            )
+                            if ctx:
+                                await ctx.info(f"❌ Address verification failed: {error_msg}")
+                            # Note: We'll still try to create shipment, but it will likely fail at purchase
 
                     if is_international:
                         # Smart customs: auto-fills missing HTS codes and values
                         # Always populate customs for international shipments,
                         # even if not purchasing yet
                         loop = asyncio.get_running_loop()
+
+                        # Get actual person's name for customs signing
+                        from src.mcp_server.tools.bulk_tools import get_customs_signer
+
+                        customs_signer = get_customs_signer(shipment_from_address)
+
+                        # DDP for FedEx, DDU for others by default
+                        # Carrier preference determines incoterm
+                        preferred_carrier = data.get("carrier_preference", "").upper()
+                        incoterm = "DDP" if "FEDEX" in preferred_carrier else "DDU"
+
                         customs_info = await loop.run_in_executor(
                             None,
                             get_or_create_customs,
@@ -304,7 +426,40 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                             validation_result["weight_oz"],
                             easypost_service.client,
                             None,  # Auto-detect value from description
+                            customs_signer,
+                            incoterm,
                         )
+
+                    # Set duty_payment for DDP (FedEx international shipments only)
+                    # DDU is default for UPS and other carriers, no need to specify
+                    # For wallet accounts, try without account field - EasyPost may handle billing automatically
+                    duty_payment = None
+                    if is_international:
+                        preferred_carrier = data.get("carrier_preference", "").upper()
+                        if "FEDEX" in preferred_carrier:
+                            # DDP: SENDER pays duties (FedEx requirement)
+                            # Try without account field - wallet accounts may handle billing automatically
+                            # If this fails, we may need to get the EasyPost billing account number
+                            duty_payment = {
+                                "type": "SENDER",
+                                "country": shipment_from_address.get("country", "US"),
+                                "postal_code": shipment_from_address.get("zip", "89169"),
+                            }
+
+                    # Final validation: Ensure street1 is not empty before creating shipment
+                    # Skip validation if to_address is an ID string (verified address)
+                    if isinstance(to_address, dict) and (
+                        not to_address.get("street1") or not to_address.get("street1").strip()
+                    ):
+                        error_msg = f"Invalid address: street1 is empty for {to_address.get('name', 'recipient')}"
+                        logger.error(error_msg)
+                        return {
+                            "line": line_number,
+                            "status": "error",
+                            "error": error_msg,
+                            "recipient": to_address.get("name"),
+                            "destination": f"{data['city']}, {data['state']}",
+                        }
 
                     # Create shipment
                     result = await asyncio.wait_for(
@@ -316,6 +471,7 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                             buy_label=purchase_labels,
                             rate_id=None,  # Will be set if purchase_labels=True and rate selected
                             customs_info=customs_info,
+                            duty_payment=duty_payment,
                         ),
                         timeout=30.0,
                     )
@@ -325,10 +481,66 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                         rate_info = result.get("purchased_rate")
                         rates = result.get("rates", [])
 
-                        if not rate_info and purchase_labels and rates:
-                            rate_info = min(rates, key=lambda r: float(r.get("rate", 0) or 0))
+                        # Get preferred carrier from spreadsheet data
+                        preferred_carrier = data.get("carrier_preference", "").upper()
+
+                        # Map EasyPost carrier names to preferred carrier format
+                        def is_preferred_carrier(easypost_carrier: str, preferred: str) -> bool:
+                            """Check if EasyPost carrier matches preferred carrier."""
+                            if not preferred:
+                                return False
+                            easypost_upper = easypost_carrier.upper()
+
+                            # FedEx matching
+                            if "FEDEX" in preferred and (
+                                "FEDEX" in easypost_upper or easypost_upper == "FEDEXDEFAULT"
+                            ):
+                                return True
+                            # UPS matching
+                            if "UPS" in preferred and (
+                                "UPS" in easypost_upper or easypost_upper == "UPSDAP"
+                            ):
+                                return True
+                            # USPS matching
+                            if "USPS" in preferred and easypost_upper == "USPS":
+                                return True
+                            # DHL matching
+                            if "DHL" in preferred and (
+                                "DHL" in easypost_upper or "DHEXPRESS" in easypost_upper
+                            ):
+                                return True
+                            # USA Export/Asendia matching
+                            if (
+                                "USA" in preferred
+                                or "EXPORT" in preferred
+                                or "ASENDIA" in preferred
+                            ) and ("USAEXPORT" in easypost_upper or "ASENDIA" in easypost_upper):
+                                return True
+                            return False
+
+                        # Mark preferred rates
+                        marked_rates = []
+                        for rate in rates:
+                            rate_dict = dict(rate)  # Make a copy
+                            rate_dict["preferred"] = is_preferred_carrier(
+                                rate.get("carrier", ""), preferred_carrier
+                            )
+                            marked_rates.append(rate_dict)
+
+                        if not rate_info and purchase_labels and marked_rates:
+                            rate_info = min(
+                                marked_rates, key=lambda r: float(r.get("rate", 0) or 0)
+                            )
 
                         # Build result - only include cost if purchased
+                        # Get recipient name - handle both dict and string ID cases
+                        recipient_name = (
+                            to_address.get("name")
+                            if isinstance(to_address, dict)
+                            else f"{data.get('recipient_name', '')} {data.get('recipient_last_name', '')}".strip()
+                            or data.get("name")
+                            or "Unknown"
+                        )
                         result_dict = {
                             "line": line_number,
                             "status": "success",
@@ -342,9 +554,10 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                             "carrier": rate_info.get("carrier") if rate_info else None,
                             "service": rate_info.get("service") if rate_info else None,
                             "all_rates": (
-                                rates[:5] if not purchase_labels else None
-                            ),  # Show top 5 rates
-                            "recipient": to_address["name"],
+                                marked_rates if not purchase_labels else None
+                            ),  # Show all available rates with preferred flag
+                            "preferred_carrier": preferred_carrier if preferred_carrier else None,
+                            "recipient": recipient_name,
                             "destination": f"{data['city']}, {data['state']}",
                         }
                         # Only include cost if we have rate_info (when purchasing)
@@ -355,7 +568,13 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                         "line": line_number,
                         "status": "error",
                         "error": result.get("message", "Unknown error"),
-                        "recipient": to_address["name"],
+                        "recipient": (
+                            to_address.get("name")
+                            if isinstance(to_address, dict)
+                            else f"{data.get('recipient_name', '')} {data.get('recipient_last_name', '')}".strip()
+                            or data.get("name")
+                            or "Unknown"
+                        ),
                         "destination": f"{data['city']}, {data['state']}",
                     }
 
@@ -687,7 +906,7 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                     async with semaphore:
                         loop = asyncio.get_running_loop()
 
-                        # Retrieve shipment
+                        # Retrieve shipment to verify rate exists
                         shipment = await loop.run_in_executor(
                             None, easypost_service.client.shipment.retrieve, shipment_id
                         )
@@ -722,26 +941,50 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                                 "but missing customs info"
                             )
 
-                        # Buy label with selected rate
-                        bought = await loop.run_in_executor(
-                            None,
-                            easypost_service.client.shipment.buy,
-                            shipment_id,
-                            {"id": rate_id},
-                        )
+                        # Buy label using service method (better error handling)
+                        buy_result = await easypost_service.buy_shipment(shipment_id, rate_id)
 
+                        if buy_result.get("status") != "success":
+                            error_msg = buy_result.get("message", "Unknown error")
+                            error_details = buy_result.get("error_details", {})
+                            logger.error(f"Purchase failed for {shipment_id}: {error_msg}")
+                            logger.error(f"Error details: {error_details}")
+                            # Include error_details in error message for visibility
+                            full_error = error_msg
+                            if error_details.get("errors"):
+                                full_error = f"{error_msg} | Details: {error_details['errors']}"
+                            return {
+                                "status": "error",
+                                "shipment_id": shipment_id,
+                                "error": full_error,
+                                "error_details": error_details,
+                            }
+
+                        # Extract purchase details
+                        data = buy_result.get("data", {})
                         return {
                             "status": "success",
                             "shipment_id": shipment_id,
-                            "tracking_code": bought.tracking_code,
-                            "label_url": bought.postage_label.label_url,
+                            "tracking_code": data.get("tracking_code"),
+                            "label_url": data.get("postage_label_url"),
                             "carrier": rate_obj.carrier,
                             "service": rate_obj.service,
                             "cost": rate_obj.rate,
                             "recipient": shipment.to_address.name,
                         }
                 except Exception as e:
-                    return {"status": "error", "shipment_id": shipment_id, "error": str(e)}
+                    # Capture full error details from EasyPost
+                    error_details = str(e)
+                    if hasattr(e, "message"):
+                        error_details = e.message
+                    if hasattr(e, "errors"):
+                        error_details = f"{error_details} | Errors: {e.errors}"
+                    if hasattr(e, "http_status"):
+                        error_details = f"{error_details} | HTTP Status: {e.http_status}"
+                    if hasattr(e, "json_body"):
+                        error_details = f"{error_details} | JSON: {e.json_body}"
+                    logger.error(f"Purchase error for {shipment_id}: {error_details}")
+                    return {"status": "error", "shipment_id": shipment_id, "error": error_details}
 
             # Execute - pass index, shipment_id, and rate_id
             tasks = [

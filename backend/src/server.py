@@ -59,8 +59,15 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Note: uvloop.install() is deprecated in Python 3.12+
+# For production, use: uvicorn main:app --loop uvloop
+# For now, we use install() for compatibility with FastAPI/uvicorn startup
 if _uvloop_available and uvloop is not None:
-    uvloop.install()
+    import warnings
+
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=DeprecationWarning, module="uvloop")
+        uvloop.install()
     logger.info("uvloop installed successfully")
 else:
     logger.info("uvloop not available for this platform; falling back to default event loop")

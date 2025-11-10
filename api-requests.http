@@ -1,0 +1,257 @@
+### EasyPost MCP API Requests
+### Switch environments using: Ctrl+Shift+P > "Rest Client: Switch Environment"
+
+### Variables
+@baseUrl = {{baseUrl}}
+@apiUrl = {{apiUrl}}
+@easypostApiKey = {{easypostApiKey}}
+
+###############################################
+# HEALTH & METRICS
+###############################################
+
+### Health Check
+GET {{baseUrl}}/health
+Accept: application/json
+
+### Metrics
+GET {{baseUrl}}/metrics
+Accept: application/json
+
+### Root
+GET {{baseUrl}}/
+Accept: application/json
+
+###############################################
+# SHIPMENTS
+###############################################
+
+### List Shipments
+GET {{apiUrl}}/shipments?page_size=10
+Accept: application/json
+
+### Get Shipment by ID
+GET {{apiUrl}}/shipments/shp_9d7c329bac4547cc9af94eba3bf88cd4
+Accept: application/json
+
+### Create Shipment
+POST {{apiUrl}}/shipments
+Content-Type: application/json
+
+{
+  "from_address": {
+    "name": "Test User",
+    "street1": "123 Test St",
+    "city": "San Francisco",
+    "state": "CA",
+    "zip": "94105",
+    "country": "US"
+  },
+  "to_address": {
+    "name": "Test Recipient",
+    "street1": "456 Test Ave",
+    "city": "New York",
+    "state": "NY",
+    "zip": "10001",
+    "country": "US"
+  },
+  "parcel": {
+    "length": 10,
+    "width": 8,
+    "height": 5,
+    "weight": 16
+  }
+}
+
+### Buy Shipment
+POST {{apiUrl}}/shipments/buy
+Content-Type: application/json
+
+{
+  "shipment_id": "shp_xxx",
+  "rate_id": "rate_xxx"
+}
+
+###############################################
+# RATES
+###############################################
+
+### Get Rates
+POST {{apiUrl}}/rates
+Content-Type: application/json
+
+{
+  "from_address": {
+    "name": "Test User",
+    "street1": "123 Test St",
+    "city": "San Francisco",
+    "state": "CA",
+    "zip": "94105",
+    "country": "US"
+  },
+  "to_address": {
+    "name": "Test Recipient",
+    "street1": "456 Test Ave",
+    "city": "New York",
+    "state": "NY",
+    "zip": "10001",
+    "country": "US"
+  },
+  "parcel": {
+    "length": 10,
+    "width": 8,
+    "height": 5,
+    "weight": 16
+  }
+}
+
+###############################################
+# TRACKING
+###############################################
+
+### Track Shipment
+GET {{apiUrl}}/tracking/9434600208303110744580
+Accept: application/json
+
+###############################################
+# ANALYTICS
+###############################################
+
+### Get Analytics
+GET {{apiUrl}}/analytics
+Accept: application/json
+
+### Get Stats
+GET {{apiUrl}}/stats
+Accept: application/json
+
+### Get Carrier Performance
+GET {{apiUrl}}/carrier-performance
+Accept: application/json
+
+###############################################
+# DATABASE ENDPOINTS
+###############################################
+
+### Get DB Shipments
+GET {{apiUrl}}/db/shipments?page_size=10
+Accept: application/json
+
+### Get DB Shipment by ID
+GET {{apiUrl}}/db/shipments/1
+Accept: application/json
+
+### Get Addresses
+GET {{apiUrl}}/db/addresses?limit=10
+Accept: application/json
+
+### Create Address
+POST {{apiUrl}}/db/addresses
+Content-Type: application/json
+
+{
+  "name": "Test Address",
+  "street1": "123 Test St",
+  "city": "San Francisco",
+  "state": "CA",
+  "zip": "94105",
+  "country": "US"
+}
+
+### Update Address
+PUT {{apiUrl}}/db/addresses/00000000-0000-0000-0000-000000000000
+Content-Type: application/json
+
+{
+  "name": "Updated Address",
+  "city": "Los Angeles"
+}
+
+### Delete Address
+DELETE {{apiUrl}}/db/addresses/00000000-0000-0000-0000-000000000000
+Accept: application/json
+
+### Get Analytics Dashboard
+GET {{apiUrl}}/db/analytics/dashboard?days=30
+Accept: application/json
+
+###############################################
+# SETTINGS
+###############################################
+
+### Get Settings
+GET {{apiUrl}}/settings
+Accept: application/json
+
+### Save Settings
+POST {{apiUrl}}/settings
+Content-Type: application/json
+
+{
+  "companyName": "Test Company",
+  "email": "test@example.com",
+  "phone": "415-555-0123",
+  "notifyOnShipment": true,
+  "notifyOnDelivery": true,
+  "notifyOnException": true,
+  "theme": "light",
+  "language": "en",
+  "timezone": "America/Los_Angeles"
+}
+
+###############################################
+# BULK OPERATIONS
+###############################################
+
+### Create Bulk Shipments
+POST {{apiUrl}}/bulk-shipments
+Content-Type: application/json
+
+{
+  "shipments": [
+    {
+      "from_address": {
+        "name": "Test User",
+        "street1": "123 Test St",
+        "city": "San Francisco",
+        "state": "CA",
+        "zip": "94105",
+        "country": "US"
+      },
+      "to_address": {
+        "name": "Test Recipient",
+        "street1": "456 Test Ave",
+        "city": "New York",
+        "state": "NY",
+        "zip": "10001",
+        "country": "US"
+      },
+      "parcel": {
+        "length": 10,
+        "width": 8,
+        "height": 5,
+        "weight": 16
+      }
+    }
+  ]
+}
+
+###############################################
+# WEBHOOKS
+###############################################
+
+### Process EasyPost Webhook
+POST {{apiUrl}}/webhooks/easypost
+Content-Type: application/json
+X-Easypost-Hmac-Signature: test-signature
+
+{
+  "description": "tracker.updated",
+  "mode": "test",
+  "created_at": "2025-11-08T20:00:00Z",
+  "result": {
+    "id": "trk_xxx",
+    "tracking_code": "9434600208303110744580",
+    "status": "in_transit"
+  }
+}

@@ -8,7 +8,7 @@ Complete guide for deploying EasyPost MCP to production with Docker.
 - Docker Compose v2.0+
 - 16+ GB RAM (96+ GB recommended for M3 Max optimizations)
 - Domain name (optional, for SSL)
-- EasyPost Production API key (EZAK*)
+- EasyPost Production API key (your_production_api_key_here*)
 
 ## Quick Start
 
@@ -22,7 +22,7 @@ Edit `.env.production` with your values:
 
 ```env
 # EasyPost API Keys (REQUIRED)
-EASYPOST_API_KEY=EZAK_your_production_key_here
+EASYPOST_API_KEY=your_production_api_key_here_your_production_key_here
 EASYPOST_TEST_KEY=EZTK_your_test_key_here
 
 # Database Password (REQUIRED)
@@ -118,7 +118,7 @@ docker-compose -f docker-compose.prod.yml exec backend alembic upgrade head
 ### Environment Variables
 
 **Backend:**
-- `EASYPOST_API_KEY` - Production API key (EZAK*)
+- `EASYPOST_API_KEY` - Production API key (your_production_api_key_here*)
 - `DATABASE_URL` - Auto-configured PostgreSQL connection
 - `WORKERS` - Uvicorn worker count (33 for M3 Max)
 - `PYTHONOPTIMIZE=2` - Enable Python optimizations
@@ -397,7 +397,7 @@ environment:
 
 ## Security Checklist
 
-- [ ] Production EasyPost API key configured (EZAK*)
+- [ ] Production EasyPost API key configured (your_production_api_key_here*)
 - [ ] Strong PostgreSQL password set
 - [ ] SSL/HTTPS enabled
 - [ ] Firewall configured (only 80/443 open)

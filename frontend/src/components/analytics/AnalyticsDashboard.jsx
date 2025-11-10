@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import {
   BarChart,
@@ -40,7 +40,7 @@ export default function AnalyticsDashboard({ days = 30 }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const fetchAnalytics = React.useCallback(async () => {
+  const fetchAnalytics = useCallback(async () => {
     setLoading(true);
     setError('');
 
@@ -61,7 +61,7 @@ export default function AnalyticsDashboard({ days = 30 }) {
     }
   }, [days]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     fetchAnalytics();
   }, [fetchAnalytics]);
 

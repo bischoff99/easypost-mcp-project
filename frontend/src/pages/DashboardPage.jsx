@@ -4,11 +4,12 @@ import { Badge } from '@/components/ui/Badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Skeleton, SkeletonCard, SkeletonStats, SkeletonText } from '@/components/ui/Skeleton';
 import { formatRelativeTime } from '@/lib/utils';
+import { logger } from '@/lib/logger';
 import { shipmentAPI } from '@/services/api';
 import { BarChart, CheckCircle, DollarSign, Package, Plus, Search, TruckIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
+import { useTransition, useMemo } from 'react';
 
 // Static data for quick action cards
 const quickActions = [
@@ -47,134 +48,128 @@ const statusColors = {
  *
  * This component serves as the main dashboard for the application.
  * It displays key statistics, quick actions, recent activity, and carrier performance.
- * The data is fetched from the API when the component mounts.
+ * Uses React Query for efficient data fetching, caching, and automatic refetching.
  */
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(true);
-  const [stats, setStats] = useState([]);
-  const [recentActivity, setRecentActivity] = useState([]);
-  const [carrierPerformance, setCarrierPerformance] = useState([]);
+  const [isPending, startTransition] = useTransition();
 
-  // Fetch dashboard data from the API on component mount
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        setIsLoading(true);
-        console.log('🔄 Dashboard: Fetching data from API...');
-
-        // Fetch all data in parallel for faster loading
-        const [statsResponse, recentResponse, carrierResponse] = await Promise.all([
-          shipmentAPI.getStats(),
-          shipmentAPI.getRecentShipments(5),
-          shipmentAPI.getCarrierPerformance(),
-        ]);
-
-        console.log('📊 Dashboard: API Response received', {
-          statsResponse,
-          recentResponse,
-          carrierResponse,
-        });
-
-        // Transform and set stats data
-        if (statsResponse.status === 'success' && statsResponse.data) {
-          const statsData = statsResponse.data;
-          setStats([
-            {
-              name: statsData.total_shipments?.label || 'Total Shipments',
-              value: statsData.total_shipments?.value?.toLocaleString() || '0',
-              note: statsData.total_shipments?.note || 'Last 100 from API',
-              icon: Package,
-            },
-            {
-              name: statsData.in_transit?.label || 'In Transit',
-              value: statsData.in_transit?.value?.toLocaleString() || '0',
-              note: statsData.in_transit?.note || 'Currently shipping',
-              icon: TruckIcon,
-            },
-            {
-              name: statsData.total_cost?.label || 'Total Spent',
-              value: `$${statsData.total_cost?.value?.toFixed(2) || '0.00'}`,
-              note: statsData.total_cost?.note || 'From shipment rates',
-              icon: DollarSign,
-            },
-            {
-              name: statsData.delivery_rate?.label || 'Delivery Rate',
-              value: `${(statsData.delivery_rate?.value * 100)?.toFixed(1) || '0'}%`,
-              note: statsData.delivery_rate?.note || 'Delivered / Total',
-              icon: CheckCircle,
-            },
-          ]);
-        }
-
-        // Set carrier performance data
-        if (carrierResponse.status === 'success' && carrierResponse.data) {
-          setCarrierPerformance(carrierResponse.data);
-        }
-
-        // Transform and set recent shipments data
-        if (recentResponse.status === 'success' && recentResponse.data) {
-          const transformedActivity = recentResponse.data.map((shipment, index) => {
-            let destination = 'Unknown';
-            if (shipment.to_address?.city) {
-              destination = shipment.to_address.state
-                ? `${shipment.to_address.city}, ${shipment.to_address.state}`
-                : shipment.to_address.city;
-            } else if (shipment.to) {
-              destination = shipment.to;
-            }
-
-            return {
-              id: shipment.id || index + 1,
-              type: 'shipment_created',
-              tracking: shipment.tracking_number || 'N/A',
-              message: `Shipment created to ${destination}`,
-              timestamp: shipment.created_at || new Date().toISOString(),
-              status: shipment.status || 'pending',
-            };
-          });
-          setRecentActivity(transformedActivity);
-        }
-      } catch (error) {
-        console.error('❌ Dashboard: Failed to load data', error);
-        toast.error('Failed to Load Dashboard', { description: error.message });
-        // Set empty state with error messages
-        setStats([
-          {
-            name: 'Total Shipments',
-            value: '0',
-            note: 'API connection failed',
-            icon: Package,
-          },
-          {
-            name: 'In Transit',
-            value: '0',
-            note: 'API connection failed',
-            icon: TruckIcon,
-          },
-          {
-            name: 'Total Spent',
-            value: '$0.00',
-            note: 'API connection failed',
-            icon: DollarSign,
-          },
-          {
-            name: 'Delivery Rate',
-            value: '0%',
-            note: 'API connection failed',
-            icon: CheckCircle,
-          },
-        ]);
-
-        setRecentActivity([]);
-        setCarrierPerformance([]);
-      } finally {
-        setIsLoading(false);
+  // Fetch dashboard data using React Query for automatic caching and refetching
+  const {
+    data: statsData,
+    isLoading: statsLoading,
+    error: statsError,
+  } = useQuery({
+    queryKey: ['dashboard', 'stats'],
+    queryFn: async () => {
+      logger.debug('Dashboard: Fetching stats from API...');
+      const response = await shipmentAPI.getStats();
+      if (response.status === 'success' && response.data) {
+        return response.data;
       }
-    };
+      throw new Error(response.message || 'Failed to fetch stats');
+    },
+  });
 
-    fetchDashboardData();
-  }, []);
+  const {
+    data: recentShipments,
+    isLoading: recentLoading,
+    error: recentError,
+  } = useQuery({
+    queryKey: ['dashboard', 'recent'],
+    queryFn: async () => {
+      logger.debug('Dashboard: Fetching recent shipments from API...');
+      const response = await shipmentAPI.getRecentShipments(5);
+      if (response.status === 'success' && response.data) {
+        return response.data;
+      }
+      throw new Error(response.message || 'Failed to fetch recent shipments');
+    },
+  });
+
+  const {
+    data: carrierData,
+    isLoading: carrierLoading,
+    error: carrierError,
+  } = useQuery({
+    queryKey: ['dashboard', 'carriers'],
+    queryFn: async () => {
+      logger.debug('Dashboard: Fetching carrier performance from API...');
+      const response = await shipmentAPI.getCarrierPerformance();
+      if (response.status === 'success' && response.data) {
+        return response.data;
+      }
+      throw new Error(response.message || 'Failed to fetch carrier performance');
+    },
+  });
+
+  // Transform stats data
+  const stats = useMemo(() => {
+    if (!statsData) return [];
+    return [
+      {
+        name: statsData.total_shipments?.label || 'Total Shipments',
+        value: statsData.total_shipments?.value?.toLocaleString() || '0',
+        note: statsData.total_shipments?.note || 'Last 100 from API',
+        icon: Package,
+      },
+      {
+        name: statsData.in_transit?.label || 'In Transit',
+        value: statsData.in_transit?.value?.toLocaleString() || '0',
+        note: statsData.in_transit?.note || 'Currently shipping',
+        icon: TruckIcon,
+      },
+      {
+        name: statsData.total_cost?.label || 'Total Spent',
+        value: `$${statsData.total_cost?.value?.toFixed(2) || '0.00'}`,
+        note: statsData.total_cost?.note || 'From shipment rates',
+        icon: DollarSign,
+      },
+      {
+        name: statsData.delivery_rate?.label || 'Delivery Rate',
+        value: `${(statsData.delivery_rate?.value * 100)?.toFixed(1) || '0'}%`,
+        note: statsData.delivery_rate?.note || 'Delivered / Total',
+        icon: CheckCircle,
+      },
+    ];
+  }, [statsData]);
+
+  // Transform recent activity data
+  const recentActivity = useMemo(() => {
+    if (!recentShipments) return [];
+    return recentShipments.map((shipment, index) => {
+      let destination = 'Unknown';
+      if (shipment.to_address?.city) {
+        destination = shipment.to_address.state
+          ? `${shipment.to_address.city}, ${shipment.to_address.state}`
+          : shipment.to_address.city;
+      } else if (shipment.to) {
+        destination = shipment.to;
+      }
+
+      return {
+        id: shipment.id || index + 1,
+        type: 'shipment_created',
+        tracking: shipment.tracking_number || 'N/A',
+        message: `Shipment created to ${destination}`,
+        timestamp: shipment.created_at || new Date().toISOString(),
+        status: shipment.status || 'pending',
+      };
+    });
+  }, [recentShipments]);
+
+  // Handle errors
+  const isLoading = statsLoading || recentLoading || carrierLoading;
+  const hasError = statsError || recentError || carrierError;
+
+  if (hasError) {
+    logger.error('Dashboard: Failed to load data', { statsError, recentError, carrierError });
+    if (!statsData) {
+      toast.error('Failed to Load Dashboard', {
+        description: statsError?.message || 'Unable to fetch dashboard data',
+      });
+    }
+  }
 
   // Render loading skeletons while data is being fetched
   if (isLoading) {
@@ -237,7 +232,11 @@ export default function DashboardPage() {
               key={action.title}
               {...action}
               delay={0.4 + index * 0.1}
-              onClick={() => navigate(action.path)}
+              onClick={() => {
+                startTransition(() => {
+                  navigate(action.path);
+                });
+              }}
             />
           ))}
         </div>
@@ -279,7 +278,15 @@ export default function DashboardPage() {
               ) : (
                 <div className="text-center py-8">
                   <p className="text-muted-foreground mb-4">No recent activity to display.</p>
-                  <Button onClick={() => navigate('/shipments')}>Create a Shipment</Button>
+                  <Button
+                    onClick={() => {
+                      startTransition(() => {
+                        navigate('/shipments');
+                      });
+                    }}
+                  >
+                    Create a Shipment
+                  </Button>
                 </div>
               )}
             </div>
@@ -294,8 +301,8 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {carrierPerformance.length > 0 ? (
-                carrierPerformance.map((item) => (
+              {carrierData && carrierData.length > 0 ? (
+                carrierData.map((item) => (
                   <div key={item.carrier} className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
                       <span className="font-medium">{item.carrier}</span>
@@ -317,7 +324,15 @@ export default function DashboardPage() {
               ) : (
                 <div className="text-center py-8">
                   <p className="text-muted-foreground mb-4">No carrier data available.</p>
-                  <Button onClick={() => navigate('/analytics')}>View Analytics</Button>
+                  <Button
+                    onClick={() => {
+                      startTransition(() => {
+                        navigate('/analytics');
+                      });
+                    }}
+                  >
+                    View Analytics
+                  </Button>
                 </div>
               )}
             </div>

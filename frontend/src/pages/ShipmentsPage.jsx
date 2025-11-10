@@ -1,18 +1,20 @@
 import { useState, useEffect } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Package, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import ShipmentTable from '@/components/shipments/ShipmentTable';
+import { Badge } from '@/components/ui/Badge';
+import DataTable from '@/components/ui/DataTable';
+import EmptyState from '@/components/ui/EmptyState';
 import ShipmentFilters from '@/components/shipments/ShipmentFilters';
-import ShipmentForm from '@/components/shipments/ShipmentForm';
 import { shipmentAPI } from '@/services/api';
+import { useNavigate } from 'react-router-dom';
 
 export default function ShipmentsPage() {
+  const navigate = useNavigate();
   const [filters, setFilters] = useState({});
   const [shipments, setShipments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isShipmentFormOpen, setIsShipmentFormOpen] = useState(false);
 
   // Fetch real shipments data
   useEffect(() => {
@@ -141,7 +143,7 @@ export default function ShipmentsPage() {
           <h2 className="text-3xl font-bold tracking-tight">Shipments</h2>
           <p className="text-muted-foreground">View and manage all your shipments</p>
         </div>
-        <Button className="gap-2" onClick={() => setIsShipmentFormOpen(true)}>
+        <Button className="gap-2" onClick={() => navigate('/shipments/new')}>
           <Plus className="h-4 w-4" />
           New Shipment
         </Button>
@@ -163,27 +165,112 @@ export default function ShipmentsPage() {
       </Card>
 
       {/* Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>All Shipments</CardTitle>
-          <CardDescription>Complete history of your shipments</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ShipmentTable shipments={shipments} isLoading={isLoading} />
-        </CardContent>
-      </Card>
-
-      {/* Shipment Form Modal */}
-      <ShipmentForm
-        isOpen={isShipmentFormOpen}
-        onClose={() => setIsShipmentFormOpen(false)}
-        onSuccess={(_shipment) => {
-          toast.success('Shipment created!');
-          setIsShipmentFormOpen(false);
-          // Refresh shipments list
-          window.location.reload();
-        }}
-      />
+      {shipments.length === 0 && !isLoading ? (
+        <Card>
+          <CardContent className="pt-6">
+            <EmptyState
+              icon={Package}
+              title="No shipments yet"
+              description="Get started by creating your first shipment. Track packages, manage deliveries, and streamline your shipping process."
+              action={() => navigate('/shipments/new')}
+              actionLabel="Create Shipment"
+              secondaryAction={() => navigate('/tracking')}
+              secondaryActionLabel="Track Existing"
+            />
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>All Shipments</CardTitle>
+                <CardDescription>Complete history of your shipments</CardDescription>
+              </div>
+              <Badge variant="secondary">{shipments.length} total</Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <DataTable
+              columns={[
+                {
+                  key: 'tracking_number',
+                  header: 'Tracking Number',
+                  render: (row) => (
+                    <span className="font-mono text-sm">{row.tracking_number}</span>
+                  ),
+                },
+                {
+                  key: 'status',
+                  header: 'Status',
+                  render: (row) => {
+                    const statusColors = {
+                      pending: 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-400',
+                      in_transit: 'bg-blue-500/10 text-blue-700 dark:text-blue-400',
+                      delivered: 'bg-green-500/10 text-green-700 dark:text-green-400',
+                      cancelled: 'bg-red-500/10 text-red-700 dark:text-red-400',
+                    };
+                    return (
+                      <Badge className={statusColors[row.status] || statusColors.pending}>
+                        {row.status.replace('_', ' ')}
+                      </Badge>
+                    );
+                  },
+                },
+                {
+                  key: 'carrier',
+                  header: 'Carrier',
+                },
+                {
+                  key: 'service',
+                  header: 'Service',
+                },
+                {
+                  key: 'from',
+                  header: 'Origin',
+                },
+                {
+                  key: 'to',
+                  header: 'Destination',
+                },
+                {
+                  key: 'cost',
+                  header: 'Cost',
+                  render: (row) => `$${row.cost.toFixed(2)}`,
+                },
+                {
+                  key: 'created_at',
+                  header: 'Created',
+                  render: (row) => new Date(row.created_at).toLocaleDateString(),
+                },
+                {
+                  key: 'actions',
+                  header: '',
+                  sortable: false,
+                  render: (row) => (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/tracking?number=${row.tracking_number}`);
+                      }}
+                    >
+                      Track <ArrowRight className="ml-1 h-3 w-3" />
+                    </Button>
+                  ),
+                },
+              ]}
+              data={shipments}
+              onRowClick={(row) => navigate(`/tracking?number=${row.tracking_number}`)}
+              isLoading={isLoading}
+              emptyMessage="No shipments match your filters"
+              searchPlaceholder="Search by tracking number, carrier, origin..."
+              pageSize={10}
+            />
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/Button';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 import SearchModal from '@/components/ui/SearchModal';
 import NotificationsDropdown from '@/components/ui/NotificationsDropdown';
+import LanguageSelector from '@/components/international/LanguageSelector';
 import useUIStore from '@/stores/useUIStore';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
@@ -70,6 +71,8 @@ export default function Header() {
             </Button>
 
             <NotificationsDropdown />
+
+            <LanguageSelector />
 
             <ThemeToggle />
 

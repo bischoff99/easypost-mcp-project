@@ -38,7 +38,7 @@ frontend/
 
 ### **Production (Live Mode)**
 - **File:** `backend/.env.production`
-- **Key:** `EZAK...` (EasyPost Production Key)
+- **Key:** `your_production_api_key_here...` (EasyPost Production Key)
 - **Safe to commit:** ❌ NO - Gitignored
 - **Use for:** Production deployments only
 
@@ -143,7 +143,7 @@ docker compose up --build
 
 ### ✅ DO:
 - Use test keys (EZTK) for development
-- Keep production keys (EZAK) in `.env.production`
+- Keep production keys (your_production_api_key_here) in `.env.production`
 - Commit `.env.development` (test keys are safe)
 - Use platform secrets for cloud deployment
 
@@ -159,7 +159,7 @@ docker compose up --build
 
 | Aspect | Development | Production |
 |--------|------------|------------|
-| **API Key** | EZTK (test) | EZAK (live) |
+| **API Key** | EZTK (test) | your_production_api_key_here (live) |
 | **File** | `.env.development` | `.env.production` |
 | **Committed** | ✅ Yes | ❌ No |
 | **Backend URL** | localhost:8000 | Your domain |
@@ -181,7 +181,7 @@ python -c "from src.utils.config import settings; print(f'Key: {settings.EASYPOS
 ### **Verify Production Setup**
 ```bash
 cd backend && ENVIRONMENT=production python -c "from src.utils.config import settings; print(f'Key: {settings.EASYPOST_API_KEY[:10]}...')"
-# Should show: EZAK151720...
+# Should show: your_production_api_key_here...
 ```
 
 ---

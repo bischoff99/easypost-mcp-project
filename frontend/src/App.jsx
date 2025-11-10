@@ -5,6 +5,7 @@ import { initializeTheme } from './stores/useThemeStore';
 import AppShell from './components/layout/AppShell';
 import DashboardPage from './pages/DashboardPage';
 import ErrorBoundary from './components/ui/ErrorBoundary';
+import NavigationLoader from './components/ui/SuspenseBoundary';
 
 // Lazy load pages for better performance
 const ShipmentsPage = lazy(() => import('./pages/ShipmentsPage'));
@@ -12,6 +13,8 @@ const TrackingPage = lazy(() => import('./pages/TrackingPage'));
 const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'));
 const AddressBookPage = lazy(() => import('./pages/AddressBookPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const CreateShipmentPage = lazy(() => import('./pages/CreateShipmentPage'));
+const InternationalShippingPage = lazy(() => import('./pages/InternationalShippingPage'));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -34,12 +37,15 @@ function App() {
           v7_relativeSplatPath: true,
         }}
       >
+        <NavigationLoader />
         <Toaster position="top-right" richColors closeButton />
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<AppShell />}>
               <Route index element={<DashboardPage />} />
               <Route path="shipments" element={<ShipmentsPage />} />
+              <Route path="shipments/new" element={<CreateShipmentPage />} />
+              <Route path="shipments/international" element={<InternationalShippingPage />} />
               <Route path="tracking" element={<TrackingPage />} />
               <Route path="analytics" element={<AnalyticsPage />} />
               <Route path="addresses" element={<AddressBookPage />} />

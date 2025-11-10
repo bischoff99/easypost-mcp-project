@@ -1,4 +1,5 @@
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 
 export class ApiError extends Error {
   constructor(message, status, data) {
@@ -13,7 +14,7 @@ export function handleApiError(error) {
   const message = error.response?.data?.message || error.message || 'An error occurred';
   const status = error.response?.status;
 
-  console.error(`✗ API Error:`, error.config?.url, status, message);
+  logger.error('API Error:', error.config?.url, status, message);
 
   if (status >= 500) {
     toast.error('Server Error', { description: message });
@@ -26,7 +27,7 @@ export function handleApiError(error) {
   }
 
   if (import.meta.env.DEV) {
-    console.warn('API Error:', error.response?.data || error.message);
+    logger.warn('API Error details:', error.response?.data || error.message);
   }
 
   return new ApiError(message, status, error.response?.data);

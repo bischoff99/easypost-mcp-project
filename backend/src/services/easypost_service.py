@@ -11,6 +11,176 @@ from pydantic import BaseModel, Field
 logger = logging.getLogger(__name__)
 
 
+# Country name to ISO 2-letter code mapping for EasyPost API
+COUNTRY_CODE_MAP = {
+    "UNITED KINGDOM": "GB",
+    "NORTHERN IRELAND": "GB",
+    "ENGLAND": "GB",
+    "SCOTLAND": "GB",
+    "WALES": "GB",
+    "GERMANY": "DE",
+    "SPAIN": "ES",
+    "FRANCE": "FR",
+    "ITALY": "IT",
+    "NETHERLANDS": "NL",
+    "BELGIUM": "BE",
+    "AUSTRIA": "AT",
+    "SWITZERLAND": "CH",
+    "POLAND": "PL",
+    "SWEDEN": "SE",
+    "DENMARK": "DK",
+    "NORWAY": "NO",
+    "FINLAND": "FI",
+    "IRELAND": "IE",
+    "PORTUGAL": "PT",
+    "GREECE": "GR",
+    "CZECH REPUBLIC": "CZ",
+    "HUNGARY": "HU",
+    "ROMANIA": "RO",
+    "BULGARIA": "BG",
+    "CROATIA": "HR",
+    "SLOVAKIA": "SK",
+    "SLOVENIA": "SI",
+    "LUXEMBOURG": "LU",
+    "ESTONIA": "EE",
+    "LATVIA": "LV",
+    "LITHUANIA": "LT",
+    "MALTA": "MT",
+    "CYPRUS": "CY",
+    "CANADA": "CA",
+    "MEXICO": "MX",
+    "AUSTRALIA": "AU",
+    "NEW ZEALAND": "NZ",
+    "JAPAN": "JP",
+    "SOUTH KOREA": "KR",
+    "KOREA": "KR",
+    "CHINA": "CN",
+    "INDIA": "IN",
+    "SINGAPORE": "SG",
+    "HONG KONG": "HK",
+    "TAIWAN": "TW",
+    "THAILAND": "TH",
+    "MALAYSIA": "MY",
+    "INDONESIA": "ID",
+    "PHILIPPINES": "PH",
+    "VIETNAM": "VN",
+    "BRAZIL": "BR",
+    "ARGENTINA": "AR",
+    "CHILE": "CL",
+    "COLOMBIA": "CO",
+    "PERU": "PE",
+    "SOUTH AFRICA": "ZA",
+    "ISRAEL": "IL",
+    "TURKEY": "TR",
+    "SAUDI ARABIA": "SA",
+    "UAE": "AE",
+    "UNITED ARAB EMIRATES": "AE",
+    "USA": "US",
+    "UNITED STATES": "US",
+    "US": "US",
+}
+
+
+def normalize_country_code(country: str) -> str:
+    """
+    Convert country name to ISO 2-letter code for EasyPost API.
+
+    Args:
+        country: Country name or code
+
+    Returns:
+        ISO 2-letter country code (uppercase)
+    """
+    if not country:
+        return "US"  # Default to US
+
+    country_upper = country.strip().upper()
+
+    # If already a 2-letter code, return as-is
+    if len(country_upper) == 2:
+        return country_upper
+
+    # Look up in mapping
+    return COUNTRY_CODE_MAP.get(country_upper, country_upper)
+
+
+def normalize_address(address: dict[str, Any]) -> dict[str, Any]:
+    """
+    Normalize address data for EasyPost API.
+
+    Ensures country codes are ISO 2-letter format and trims whitespace.
+
+    Args:
+        address: Address dictionary
+
+    Returns:
+        Normalized address dictionary
+    """
+    if not address:
+        return address
+
+    normalized = address.copy()
+
+    # Normalize country code
+    if "country" in normalized:
+        normalized["country"] = normalize_country_code(normalized["country"])
+
+    # Trim whitespace from all string fields (preserve None values)
+    for key, value in normalized.items():
+        if isinstance(value, str):
+            normalized[key] = value.strip()
+        elif value is None:
+            # Keep None values (don't convert to empty string)
+            pass
+
+    return normalized
+
+
+def preprocess_address_for_fedex(address: dict[str, Any]) -> dict[str, Any]:
+    """
+    Reformat address to meet FedEx/UPS international API requirements.
+
+    Both FedEx and UPS have strict validation for international addresses:
+    - State field must be removed for non-US addresses (max 5 chars, rejects long values)
+    - FedEx doesn't accept descriptive text in street2 (building names like "FOUR WINDS")
+    - street1 max 35 characters for FedEx
+    - UPS Worldwide Economy has 36" girth limit (length + width + height)
+
+    Args:
+        address: Address dict to preprocess
+
+    Returns:
+        Preprocessed address dict with state removed for international addresses
+    """
+    result = address.copy()
+    street1 = result.get("street1", "").strip()
+    street2 = result.get("street2", "").strip()
+    country = result.get("country", "").upper()
+
+    # For non-US addresses, remove state field entirely (UPS/FedEx requirements)
+    if country and country != "US" and "state" in result:
+        del result["state"]  # Remove entirely, not just set to empty/None
+
+    # Handle descriptive street2 (building names, etc.)
+    # FedEx often rejects these, so combine with street1 or drop
+    if street2:
+        # If street2 is short (likely a building name), try combining
+        if len(street2.split()) <= 3 and len(street1) + len(street2) + 2 <= 35:
+            # Combine into street1 if it fits
+            result["street1"] = f"{street1}, {street2}"
+            result["street2"] = ""
+        elif len(street2.split()) <= 3:
+            # Too long to combine - drop street2
+            result["street1"] = street1
+            result["street2"] = ""
+        else:
+            # Keep longer street2 (likely apartment/suite number)
+            result["street1"] = street1[:35]
+            result["street2"] = street2[:35]
+
+    return result
+
+
 class AddressModel(BaseModel):
     """Address model with input validation and length limits."""
 
@@ -120,8 +290,17 @@ class EasyPostService:
 
     def __init__(self, api_key: str):
         self.api_key = api_key
-        self.client = easypost.EasyPostClient(api_key)
         self.logger = logging.getLogger(__name__)
+
+        # Validate API key format before initialization
+        if not api_key:
+            raise ValueError("EasyPost API key is required")
+
+        if not (api_key.startswith("EZAK") or api_key.startswith("EZTK")):
+            self.logger.warning(f"API key format unexpected: {api_key[:10]}...")
+
+        self.logger.info(f"Initializing EasyPost client with key: {api_key[:10]}...")
+        self.client = easypost.EasyPostClient(api_key)
 
         # Scale ThreadPoolExecutor with CPU cores (M3 Max: 16 cores, 128GB RAM)
         cpu_count = multiprocessing.cpu_count()  # 16 cores
@@ -133,7 +312,7 @@ class EasyPostService:
 
     async def create_shipment(
         self,
-        to_address: dict[str, Any],
+        to_address: dict[str, Any] | str,
         from_address: dict[str, Any],
         parcel: dict[str, Any],
         carrier: str = "USPS",
@@ -141,12 +320,13 @@ class EasyPostService:
         buy_label: bool = True,
         rate_id: str | None = None,
         customs_info: dict[str, Any] | None = None,
+        duty_payment: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """
         Create a shipment and optionally purchase label.
 
         Args:
-            to_address: Destination address dict with name, street1, city, state, zip
+            to_address: Destination address dict with name, street1, city, state, zip, OR address ID string
             from_address: Origin address dict with same structure
             parcel: Package dimensions dict with length, width, height, weight
             carrier: Shipping carrier preference (default: "USPS")
@@ -154,6 +334,7 @@ class EasyPostService:
             buy_label: Whether to purchase label immediately (default: True)
             rate_id: Required if buy_label=True - the rate ID to use for purchase
             customs_info: Optional customs info for international shipments
+            duty_payment: Optional duty payment info for DDP/DDU
 
         Returns:
             Dict with status, shipment data (id, tracking_code, rates, etc.)
@@ -171,6 +352,7 @@ class EasyPostService:
                 buy_label,
                 rate_id,
                 customs_info,
+                duty_payment,
             )
         except Exception as e:
             self.logger.error(f"Error creating shipment: {self._sanitize_error(e)}")
@@ -178,7 +360,7 @@ class EasyPostService:
 
     def _create_shipment_sync(
         self,
-        to_address: dict[str, Any],
+        to_address: dict[str, Any] | str,
         from_address: dict[str, Any],
         parcel: dict[str, Any],
         carrier: str,
@@ -186,17 +368,39 @@ class EasyPostService:
         buy_label: bool,
         rate_id: str | None = None,
         customs_info: dict[str, Any] | None = None,
+        duty_payment: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Synchronous shipment creation with optional label purchase."""
         try:
             service_info = f" / {service}" if service else ""
             self.logger.info(f"Creating shipment with {carrier}{service_info}")
 
+            # Normalize addresses before API call - don't normalize if already preprocessed
+            # EasyPost SDK accepts address dicts
+            # Note: to_address may already be preprocessed (state removed for international)
+            if isinstance(to_address, dict):
+                # Only normalize country code, don't re-add state field
+                to_address_param = normalize_address(to_address)
+            else:
+                to_address_param = to_address
+
+            # Normalize from_address (always a dict)
+            from_address_param = normalize_address(from_address)
+
             # For international shipments, create customs_info if not provided
             shipment_params = {
-                "to_address": to_address,
-                "from_address": from_address,
+                "to_address": to_address_param,
+                "from_address": from_address_param,
                 "parcel": parcel,
+                # Use configured wallet carrier accounts for full rate access
+                "carrier_accounts": [
+                    "ca_39ef64ac3d674f2b9e332efe5bec379e",  # UPS Wallet Account
+                    "ca_4dd19ccfd9cf425bbe90fb6e13ebbf6c",  # FedEx Wallet Account
+                    "ca_d5671c42018c4754b8e9eb06e47d6e66",  # DHL eCommerce Account
+                    "ca_4a4c551b17824ee694a210823f477349",  # DHL Express Account
+                    "ca_5e187e0f2e2f419fb347822000e141b8",  # USA Export/Asendia Account
+                    "ca_66de37160a9b4377b37a75c513ab8ba0",  # USPS Account
+                ],
             }
 
             if customs_info:
@@ -234,7 +438,14 @@ class EasyPostService:
                 )
                 shipment_params["customs_info"] = customs_info_obj
 
+            # Add duty_payment for DDP/DDU (FedEx/UPS international shipments)
+            if duty_payment:
+                shipment_params["duty_payment"] = duty_payment
+
             shipment = self.client.shipment.create(**shipment_params)
+
+            # Retrieve shipment fresh to ensure all rates are populated from carrier_accounts
+            shipment = self.client.shipment.retrieve(shipment.id)
 
             # Get all rates
             rates = [
@@ -373,6 +584,138 @@ class EasyPostService:
                 "timestamp": datetime.now(UTC).isoformat(),
             }
 
+    async def verify_address(
+        self, address: dict[str, Any], carrier: str | None = None
+    ) -> dict[str, Any]:
+        """
+        Verify address with optional carrier-specific verification.
+
+        Args:
+            address: Address dictionary to verify
+            carrier: Optional carrier name for carrier-grade verification ("fedex", "ups")
+
+        Returns:
+            Dict with verification status and verified address
+        """
+        try:
+            loop = asyncio.get_running_loop()
+            result = await loop.run_in_executor(
+                self.executor,
+                self._verify_address_sync,
+                address,
+                carrier,
+            )
+            return result
+        except Exception as e:
+            error_msg = self._sanitize_error(e)
+            self.logger.error(f"Error verifying address: {error_msg}")
+            return {
+                "status": "error",
+                "message": f"Failed to verify address: {error_msg}",
+                "timestamp": datetime.now(UTC).isoformat(),
+            }
+
+    def _verify_address_sync(
+        self, address: dict[str, Any], carrier: str | None = None
+    ) -> dict[str, Any]:
+        """Synchronous address verification."""
+        try:
+            # Normalize address first
+            normalized = normalize_address(address)
+
+            # Prepare verification params
+            verify_params = {"verify": True}  # Always enable standard verification
+            if carrier and carrier.lower() in ["fedex", "ups"]:
+                # Carrier verification requires verify=True to be set first
+                verify_params["verify_carrier"] = carrier.lower()
+
+            # Create and verify address - EasyPost SDK accepts kwargs directly
+            verified_address = self.client.address.create(
+                street1=normalized.get("street1"),
+                street2=normalized.get("street2"),
+                city=normalized.get("city"),
+                state=normalized.get("state"),
+                zip=normalized.get("zip"),
+                country=normalized.get("country"),
+                name=normalized.get("name"),
+                company=normalized.get("company"),
+                phone=normalized.get("phone"),
+                email=normalized.get("email"),
+                **verify_params,
+            )
+
+            # Check verification results
+            verifications = (
+                verified_address.verifications if hasattr(verified_address, "verifications") else {}
+            )
+            delivery_verification = verifications.get("delivery", {}) if verifications else {}
+            carrier_verification = verifications.get("carrier", {}) if carrier else {}
+
+            # Log detailed verification results for debugging
+            delivery_success = delivery_verification.get("success", "N/A")
+            carrier_success = carrier_verification.get("success", "N/A") if carrier else "N/A"
+            self.logger.info("Address verification results:")
+            self.logger.info(f"  - Delivery success: {delivery_success}")
+            self.logger.info(f"  - Delivery errors: {delivery_verification.get('errors', [])}")
+            if carrier:
+                self.logger.info(f"  - Carrier ({carrier}) success: {carrier_success}")
+                self.logger.info(
+                    f"  - Carrier ({carrier}) errors: {carrier_verification.get('errors', [])}"
+                )
+            self.logger.info(f"  - Original street1: '{normalized.get('street1')}'")
+            self.logger.info(f"  - Verified street1: '{verified_address.street1}'")
+            self.logger.info(f"  - Original street2: '{normalized.get('street2')}'")
+            self.logger.info(f"  - Verified street2: '{verified_address.street2}'")
+
+            success = True
+            errors = []
+
+            if delivery_verification and not delivery_verification.get("success", True):
+                success = False
+                errors.extend(delivery_verification.get("errors", []))
+
+            if carrier_verification and not carrier_verification.get("success", True):
+                success = False
+                errors.extend(carrier_verification.get("errors", []))
+
+            # Log the verified address street1 for debugging FedEx issues
+            self.logger.info(f"Verified address street1: '{verified_address.street1}'")
+
+            status_value = "success" if success else "warning"
+            message = (
+                "Address verified successfully" if success else "Address verification had warnings"
+            )
+
+            return {
+                "status": status_value,
+                "data": {
+                    "address": {
+                        "id": verified_address.id,
+                        "street1": verified_address.street1,
+                        "street2": verified_address.street2,
+                        "city": verified_address.city,
+                        "state": verified_address.state,
+                        "zip": verified_address.zip,
+                        "country": verified_address.country,
+                        "name": verified_address.name,
+                        "company": verified_address.company,
+                        "phone": verified_address.phone,
+                        "email": verified_address.email,
+                    },
+                    "verification_success": success,
+                    "errors": errors,
+                },
+                "message": message,
+                "timestamp": datetime.now(UTC).isoformat(),
+            }
+        except Exception as e:
+            self.logger.error(f"Address verification failed: {self._sanitize_error(e)}")
+            return {
+                "status": "error",
+                "message": str(e),
+                "timestamp": datetime.now(UTC).isoformat(),
+            }
+
     def _buy_shipment_sync(self, shipment_id: str, rate_id: str) -> dict[str, Any]:
         """Synchronous label purchase."""
         try:
@@ -389,6 +732,27 @@ class EasyPostService:
             if not rate_obj:
                 raise ValueError(f"Rate {rate_id} not found in shipment rates")
 
+            # Log shipment details for debugging - especially address for FedEx
+            to_addr = shipment.to_address if hasattr(shipment, "to_address") else None
+            street1 = to_addr.street1 if to_addr and hasattr(to_addr, "street1") else None
+            has_duty = hasattr(shipment, "duty_payment") and shipment.duty_payment is not None
+            self.logger.info(
+                f"Shipment details: id={shipment.id}, status={shipment.status}, "
+                f"carrier={rate_obj.carrier}, service={rate_obj.service}, "
+                f"has_customs={shipment.customs_info is not None}, "
+                f"has_duty_payment={has_duty}, "
+                f"to_address_street1='{street1}', "
+                f"to_address_city='{to_addr.city if to_addr else None}', "
+                f"to_address_country='{to_addr.country if to_addr else None}'"
+            )
+
+            # Validate address before purchase (especially for FedEx)
+            if to_addr and (not street1 or not street1.strip()):
+                addr_dict = to_addr.__dict__ if hasattr(to_addr, "__dict__") else "N/A"
+                error_msg = f"Invalid address: street1 is empty or None. Address: {addr_dict}"
+                self.logger.error(error_msg)
+                raise ValueError(error_msg)
+
             # Buy the shipment with the rate ID
             # EasyPost API expects: { "rate": { "id": "rate_..." } }
             # Python SDK accepts rate object or rate dict
@@ -400,29 +764,59 @@ class EasyPostService:
                 "data": {
                     "shipment_id": bought_shipment.id,
                     "tracking_code": bought_shipment.tracking_code,
-                    "postage_label_url": bought_shipment.postage_label.label_url
-                    if bought_shipment.postage_label
-                    else None,
+                    "postage_label_url": (
+                        bought_shipment.postage_label.label_url
+                        if bought_shipment.postage_label
+                        else None
+                    ),
                     "purchased_rate": {
-                        "rate": bought_shipment.selected_rate.rate
-                        if bought_shipment.selected_rate
-                        else None,
-                        "carrier": bought_shipment.selected_rate.carrier
-                        if bought_shipment.selected_rate
-                        else None,
-                        "service": bought_shipment.selected_rate.service
-                        if bought_shipment.selected_rate
-                        else None,
+                        "rate": (
+                            bought_shipment.selected_rate.rate
+                            if bought_shipment.selected_rate
+                            else None
+                        ),
+                        "carrier": (
+                            bought_shipment.selected_rate.carrier
+                            if bought_shipment.selected_rate
+                            else None
+                        ),
+                        "service": (
+                            bought_shipment.selected_rate.service
+                            if bought_shipment.selected_rate
+                            else None
+                        ),
                     },
                 },
                 "message": "Label purchased successfully",
                 "timestamp": datetime.now(UTC).isoformat(),
             }
         except Exception as e:
+            # Capture detailed error information
+            error_msg = str(e)
+            error_details = {"message": error_msg}
+
+            # Try to extract more details from EasyPost error object
+            if hasattr(e, "message"):
+                error_details["message"] = e.message
+            if hasattr(e, "errors"):
+                error_details["errors"] = e.errors
+            if hasattr(e, "http_status"):
+                error_details["http_status"] = e.http_status
+            if hasattr(e, "json_body"):
+                error_details["json_body"] = e.json_body
+
+            self.logger.error(f"Buy error details: {error_details}")
             self.logger.error(f"Failed to buy shipment: {self._sanitize_error(e)}")
+
+            # Return detailed error message
+            detailed_error = error_msg
+            if error_details.get("errors"):
+                detailed_error = f"{error_msg} | Details: {error_details['errors']}"
+
             return {
                 "status": "error",
-                "message": str(e),
+                "message": detailed_error,
+                "error_details": error_details,
                 "timestamp": datetime.now(UTC).isoformat(),
             }
 
@@ -528,11 +922,12 @@ class EasyPostService:
                 "timestamp": datetime.now(UTC).isoformat(),
             }
         except Exception as e:
-            self.logger.error(f"Error getting rates: {self._sanitize_error(e)}")
+            error_msg = self._sanitize_error(e)
+            self.logger.error(f"Error getting rates: {error_msg}")
             return {
                 "status": "error",
                 "data": None,
-                "message": "Failed to retrieve rates",
+                "message": f"Failed to retrieve rates: {error_msg}",
                 "timestamp": datetime.now(UTC).isoformat(),
             }
 
@@ -545,11 +940,35 @@ class EasyPostService:
     ) -> list[dict[str, Any]]:
         """Synchronous rates retrieval."""
         try:
-            self.logger.info("Calculating rates...")
+            self.logger.info(f"Calculating rates... (API key: {self.api_key[:10]}...)")
+
+            # Normalize addresses before API call
+            to_address = normalize_address(to_address)
+            from_address = normalize_address(from_address)
+
+            self.logger.info(
+                f"From: {from_address.get('city')}, {from_address.get('state')}, {from_address.get('country')}"
+            )
+            self.logger.info(
+                f"To: {to_address.get('city')}, {to_address.get('state')}, {to_address.get('country')}"
+            )
+            self.logger.info(
+                f"Parcel: {parcel.get('length')}x{parcel.get('width')}x{parcel.get('height')}, {parcel.get('weight')}oz"
+            )
+
             shipment_params = {
                 "to_address": to_address,
                 "from_address": from_address,
                 "parcel": parcel,
+                # Use configured wallet carrier accounts for full rate access
+                "carrier_accounts": [
+                    "ca_39ef64ac3d674f2b9e332efe5bec379e",  # UPS Wallet Account
+                    "ca_4dd19ccfd9cf425bbe90fb6e13ebbf6c",  # FedEx Wallet Account
+                    "ca_d5671c42018c4754b8e9eb06e47d6e66",  # DHL eCommerce Account
+                    "ca_4a4c551b17824ee694a210823f477349",  # DHL Express Account
+                    "ca_5e187e0f2e2f419fb347822000e141b8",  # USA Export/Asendia Account
+                    "ca_66de37160a9b4377b37a75c513ab8ba0",  # USPS Account
+                ],
             }
 
             # Add customs_info if provided (for international shipments)
@@ -600,7 +1019,7 @@ class EasyPostService:
             ]
         except Exception as e:
             self.logger.error(f"Failed to get rates: {self._sanitize_error(e)}")
-            return []
+            raise
 
     async def list_shipments(
         self,

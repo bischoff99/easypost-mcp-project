@@ -45,7 +45,13 @@ class Settings:
     MCP_LOG_LEVEL: str = os.getenv("MCP_LOG_LEVEL", "INFO")
 
     # CORS
-    CORS_ORIGINS: list = os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",")
+    CORS_ORIGINS: list = [
+        origin.strip()
+        for origin in os.getenv(
+            "CORS_ORIGINS", "http://localhost:5173,http://localhost:4173"
+        ).split(",")
+        if origin.strip()
+    ]
     CORS_ALLOW_CREDENTIALS: bool = os.getenv("CORS_ALLOW_CREDENTIALS", "true").lower() == "true"
     CORS_ALLOW_METHODS: list = os.getenv("CORS_ALLOW_METHODS", "GET,POST,OPTIONS").split(",")
     CORS_ALLOW_HEADERS: list = [
@@ -66,10 +72,9 @@ class Settings:
         if not self.EASYPOST_API_KEY:
             errors.append("EASYPOST_API_KEY is required")
 
+        # DATABASE_URL is optional for development/testing - database features will be disabled
         if not self.DATABASE_URL:
-            errors.append(
-                "DATABASE_URL is required (format: postgresql+asyncpg://user:pass@host/db)"
-            )
+            logger.warning("DATABASE_URL not configured. Database features disabled.")
 
         if errors:
             raise ValueError(f"Configuration errors: {'; '.join(errors)}")

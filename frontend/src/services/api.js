@@ -1,6 +1,7 @@
 import axios from 'axios';
 import axiosRetry from 'axios-retry';
 import { handleApiError, ApiError } from './errors';
+import { logger } from '@/lib/logger';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -26,7 +27,7 @@ axiosRetry(api, {
 // Error interceptor with toast notifications
 api.interceptors.response.use(
   (response) => {
-    console.log(`✓ API ${response.config.method.toUpperCase()} ${response.config.url}: ${response.status}`);
+    logger.api(response.config.method, response.config.url, response.status);
     return response;
   },
   (error) => {

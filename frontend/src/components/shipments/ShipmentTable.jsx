@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import {
   Package,
   TruckIcon,
@@ -87,7 +87,7 @@ const mockShipments = [
   },
 ];
 
-export default function ShipmentTable({ shipments: propShipments, isLoading = false }) {
+export default memo(function ShipmentTable({ shipments: propShipments, isLoading = false }) {
   // Use prop shipments if provided, otherwise fallback to mock data
   const shipments = propShipments || mockShipments;
   const [selectedRows, setSelectedRows] = useState(new Set());
@@ -270,4 +270,4 @@ export default function ShipmentTable({ shipments: propShipments, isLoading = fa
       </div>
     </div>
   );
-}
+});

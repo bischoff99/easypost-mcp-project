@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { formatDate } from '@/lib/utils';
+import { logger } from '@/lib/logger';
 import { shipmentAPI } from '@/services/api';
 
 const mockTrackingData = {
@@ -77,9 +78,7 @@ export default function TrackingPage() {
       }
     } catch (error) {
       // Log error in development only
-      if (import.meta.env.DEV) {
-        console.error('Tracking error:', error);
-      }
+      logger.error('Tracking error:', error);
       toast.info('Using Demo Data', { description: 'Showing sample tracking for demonstration' });
       setTrackingData(mockTrackingData);
     } finally {

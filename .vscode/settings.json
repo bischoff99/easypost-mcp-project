@@ -9,9 +9,7 @@
     "reportMissingTypeStubs": "none",
     "reportGeneralTypeIssues": "information"
   },
-  "python.analysis.extraPaths": [
-    "${workspaceFolder}/backend/src"
-  ],
+  "python.analysis.extraPaths": ["${workspaceFolder}/backend/src"],
   "python.analysis.indexing": true,
   "[python]": {
     "editor.defaultFormatter": "charliermarsh.ruff",
@@ -23,11 +21,7 @@
   },
   "python.testing.pytestEnabled": true,
   "python.testing.unittestEnabled": false,
-  "python.testing.pytestArgs": [
-    "backend/tests",
-    "-v",
-    "--no-cov"
-  ],
+  "python.testing.pytestArgs": ["backend/tests", "-v", "--no-cov"],
   "files.exclude": {
     "**/__pycache__": true,
     "**/*.pyc": true,
@@ -86,5 +80,14 @@
   "editor.rulers": [100],
   "editor.bracketPairColorization.enabled": true,
   "editor.guides.bracketPairs": "active",
-  "editor.inlineSuggest.enabled": true
+  "editor.inlineSuggest.enabled": true,
+  "cursorpyright.analysis.autoImportCompletions": true,
+  "cursorpyright.analysis.diagnosticSeverityOverrides": {
+    "reportUnusedImport": "information",
+    "reportUnusedVariable": "information",
+    "reportMissingTypeStubs": "none",
+    "reportGeneralTypeIssues": "information"
+  },
+  "cursorpyright.analysis.extraPaths": ["${workspaceFolder}/backend/src"],
+  "cursorpyright.analysis.typeCheckingMode": "basic"
 }

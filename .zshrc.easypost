@@ -1,0 +1,12 @@
+# EasyPost MCP Project - Zsh Configuration
+# Source this file from your ~/.zshrc to suppress warnings
+
+# Suppress Powerlevel10k instant prompt warning for direnv
+typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
+
+# Optional: Suppress direnv log output
+export DIRENV_LOG_FORMAT=""
+
+# Instructions:
+# Add this to your ~/.zshrc:
+#   source ~/Developer/github/andrejs/easypost-mcp-project/.zshrc.easypost
