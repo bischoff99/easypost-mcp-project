@@ -293,7 +293,8 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                         "weight": validation_result["weight_oz"],
                     }
 
-                    # Check if international - store country before verification may convert to_address to ID
+                    # Check if international - store country before verification
+                    # may convert to_address to ID
                     to_country = to_address["country"]
                     is_international = to_country != shipment_from_address.get("country", "US")
                     customs_info = None
@@ -309,8 +310,9 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                         to_address = preprocess_address_for_fedex(to_address)
 
                         if ctx:
+                            name = to_address.get("name", "recipient")
                             await ctx.info(
-                                f"🔍 Verifying FedEx-preprocessed address for {to_address.get('name', 'recipient')}..."
+                                f"🔍 Verifying FedEx-preprocessed address for {name}..."
                             )
 
                         verify_result = await easypost_service.verify_address(
@@ -328,22 +330,28 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                             and verified_addr
                             and verification_success
                         ):
-                            # Use verified address fields - EasyPost SDK may not accept address IDs directly
-                            # The verification status should still be preserved when using verified fields
+                            # Use verified address fields - EasyPost SDK may not
+                            # accept address IDs directly. The verification status
+                            # should still be preserved when using verified fields
                             verified_street1 = verified_addr.get("street1") or to_address.get(
                                 "street1"
                             )
 
                             if not verified_street1 or not verified_street1.strip():
+                                orig = to_address.get("street1")
+                                ver = verified_addr.get("street1")
                                 logger.error(
-                                    f"FedEx verification returned empty street1! Original: '{to_address.get('street1')}', Verified: '{verified_addr.get('street1')}'"
+                                    f"FedEx verification returned empty street1! "
+                                    f"Original: '{orig}', Verified: '{ver}'"
                                 )
                                 if ctx:
                                     await ctx.info(
-                                        "❌ FedEx verification returned empty street1 - using original address"
+                                        "❌ FedEx verification returned empty "
+                                        "street1 - using original address"
                                     )
                             else:
-                                # Use verified address fields (FedEx has validated and corrected them)
+                                # Use verified address fields
+                                # (FedEx has validated and corrected them)
                                 to_address = {
                                     "name": verified_addr.get("name") or to_address.get("name"),
                                     "street1": verified_street1,
@@ -359,8 +367,12 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                                     "company": verified_addr.get("company")
                                     or to_address.get("company"),
                                 }
+                                st = to_address.get("street1")
+                                city = to_address.get("city")
+                                country = to_address.get("country")
                                 logger.info(
-                                    f"Using FedEx verified address: street1='{to_address.get('street1')}', city='{to_address.get('city')}', country='{to_address.get('country')}'"
+                                    f"Using FedEx verified address: "
+                                    f"street1='{st}', city='{city}', country='{country}'"
                                 )
                                 if ctx:
                                     await ctx.info("✅ Address verified and corrected by FedEx")
@@ -369,8 +381,9 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                         ):
                             # Address has warnings or verification didn't fully succeed
                             errors = verify_result.get("data", {}).get("errors", [])
+                            name = to_address.get("name")
                             logger.warning(
-                                f"FedEx address verification warnings for {to_address.get('name')}: {errors}"
+                                f"FedEx address verification warnings for {name}: {errors}"
                             )
                             if verified_addr:
                                 # Still try to use verified address fields if available
@@ -396,12 +409,15 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                             # Verification failed - this is a problem for FedEx
                             error_msg = verify_result.get("message", "Unknown verification error")
                             errors = verify_result.get("data", {}).get("errors", [])
+                            name = to_address.get("name")
                             logger.error(
-                                f"FedEx address verification FAILED for {to_address.get('name')}: {error_msg}, Errors: {errors}"
+                                f"FedEx address verification FAILED for {name}: "
+                                f"{error_msg}, Errors: {errors}"
                             )
                             if ctx:
                                 await ctx.info(f"❌ Address verification failed: {error_msg}")
-                            # Note: We'll still try to create shipment, but it will likely fail at purchase
+                            # Note: We'll still try to create shipment, but it will
+                            # likely fail at purchase
 
                     if is_international:
                         # Smart customs: auto-fills missing HTS codes and values
@@ -432,14 +448,16 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
 
                     # Set duty_payment for DDP (FedEx international shipments only)
                     # DDU is default for UPS and other carriers, no need to specify
-                    # For wallet accounts, try without account field - EasyPost may handle billing automatically
+                    # For wallet accounts, try without account field -
+                    # EasyPost may handle billing automatically
                     duty_payment = None
                     if is_international:
                         preferred_carrier = data.get("carrier_preference", "").upper()
                         if "FEDEX" in preferred_carrier:
                             # DDP: SENDER pays duties (FedEx requirement)
-                            # Try without account field - wallet accounts may handle billing automatically
-                            # If this fails, we may need to get the EasyPost billing account number
+                            # Try without account field - wallet accounts may
+                            # handle billing automatically. If this fails, we may
+                            # need to get the EasyPost billing account number
                             duty_payment = {
                                 "type": "SENDER",
                                 "country": shipment_from_address.get("country", "US"),
@@ -451,7 +469,8 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                     if isinstance(to_address, dict) and (
                         not to_address.get("street1") or not to_address.get("street1").strip()
                     ):
-                        error_msg = f"Invalid address: street1 is empty for {to_address.get('name', 'recipient')}"
+                        name = to_address.get("name", "recipient")
+                        error_msg = f"Invalid address: street1 is empty for {name}"
                         logger.error(error_msg)
                         return {
                             "line": line_number,
@@ -510,13 +529,11 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                             ):
                                 return True
                             # USA Export/Asendia matching
-                            if (
-                                "USA" in preferred
-                                or "EXPORT" in preferred
-                                or "ASENDIA" in preferred
-                            ) and ("USAEXPORT" in easypost_upper or "ASENDIA" in easypost_upper):
-                                return True
-                            return False
+                            usa_match = ("USA" in preferred or "EXPORT" in preferred
+                                        or "ASENDIA" in preferred)
+                            easypost_match = ("USAEXPORT" in easypost_upper
+                                             or "ASENDIA" in easypost_upper)
+                            return bool(usa_match and easypost_match)
 
                         # Mark preferred rates
                         marked_rates = []
@@ -534,13 +551,13 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
 
                         # Build result - only include cost if purchased
                         # Get recipient name - handle both dict and string ID cases
-                        recipient_name = (
-                            to_address.get("name")
-                            if isinstance(to_address, dict)
-                            else f"{data.get('recipient_name', '')} {data.get('recipient_last_name', '')}".strip()
-                            or data.get("name")
-                            or "Unknown"
-                        )
+                        if isinstance(to_address, dict):
+                            recipient_name = to_address.get("name")
+                        else:
+                            fname = data.get("recipient_name", "")
+                            lname = data.get("recipient_last_name", "")
+                            recipient_name = f"{fname} {lname}".strip()
+                        recipient_name = recipient_name or data.get("name") or "Unknown"
                         result_dict = {
                             "line": line_number,
                             "status": "success",
@@ -568,13 +585,7 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                         "line": line_number,
                         "status": "error",
                         "error": result.get("message", "Unknown error"),
-                        "recipient": (
-                            to_address.get("name")
-                            if isinstance(to_address, dict)
-                            else f"{data.get('recipient_name', '')} {data.get('recipient_last_name', '')}".strip()
-                            or data.get("name")
-                            or "Unknown"
-                        ),
+                        "recipient": recipient_name,
                         "destination": f"{data['city']}, {data['state']}",
                     }
 
