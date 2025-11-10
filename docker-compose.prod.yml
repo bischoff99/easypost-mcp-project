@@ -61,7 +61,7 @@ services:
       - MCP_HOST=0.0.0.0
       - MCP_PORT=8000
       - CORS_ORIGINS=http://localhost,http://localhost:80,https://${DOMAIN:-localhost}
-      - WORKERS=33
+      - WORKERS=16
       - PYTHONOPTIMIZE=2
       - PYTHONUNBUFFERED=1
     depends_on:
