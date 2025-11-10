@@ -13,17 +13,26 @@ export class ApiError extends Error {
 export function handleApiError(error) {
   const message = error.response?.data?.message || error.message || 'An error occurred';
   const status = error.response?.status;
+  const url = error.config?.url || 'unknown endpoint';
 
-  logger.error('API Error:', error.config?.url, status, message);
+  logger.error(`API Error: ${url}`, { status, message, code: error.code });
 
-  if (status >= 500) {
+  // Handle connection errors (backend not running)
+  if (error.code === 'ERR_NETWORK' || error.code === 'ECONNREFUSED') {
+    logger.warn('Backend server is unreachable. Make sure it is running on http://localhost:8000');
+    // Only toast once per session to avoid spam
+    if (!window.__apiOfflineToasted) {
+      toast.error('Backend Offline', {
+        description: 'Unable to connect to the API server. Please ensure the backend is running.',
+      });
+      window.__apiOfflineToasted = true;
+    }
+  } else if (error.code === 'ECONNABORTED') {
+    toast.error('Request Timeout', { description: 'The request took too long to complete' });
+  } else if (status >= 500) {
     toast.error('Server Error', { description: message });
   } else if (status >= 400) {
     toast.error('Request Failed', { description: message });
-  } else if (error.code === 'ECONNABORTED') {
-    toast.error('Request Timeout', { description: 'The request took too long to complete' });
-  } else if (error.code === 'ERR_NETWORK') {
-    toast.error('Network Error', { description: 'Unable to connect to server' });
   }
 
   if (import.meta.env.DEV) {
