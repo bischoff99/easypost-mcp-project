@@ -1,4 +1,4 @@
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { getInternationalRates } from '@/services/internationalShippingService';
 import { logger } from '@/lib/logger';
 

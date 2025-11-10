@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { shipmentAPI } from '@/services/api';
-import { DollarSign, MapPin, Package, Ruler, X, ArrowLeft } from 'lucide-react';
+import { DollarSign, MapPin, Package, Ruler, ArrowLeft } from 'lucide-react';
 import { useState, useOptimistic, useActionState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -23,7 +23,7 @@ export default function CreateShipmentPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [rates, setRates] = useState([]);
   const [selectedRate, setSelectedRate] = useState(null);
-  const [isPending, startTransition] = useTransition();
+  const [_isPending, startTransition] = useTransition();
 
   // Optimistic UI for rates - show rates immediately while fetching
   const [optimisticRates, addOptimisticRates] = useOptimistic(
@@ -35,7 +35,7 @@ export default function CreateShipmentPage() {
   );
 
   // React 19 action for buying shipment
-  const [purchaseState, purchaseAction, isPurchasePending] = useActionState(
+  const [_purchaseState, purchaseAction, isPurchasePending] = useActionState(
     async (previousState, formDataOrPayload) => {
       if (!selectedRate) {
         toast.error('No rate selected');

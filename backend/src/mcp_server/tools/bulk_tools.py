@@ -1114,9 +1114,10 @@ def _generate_rate_table(shipments: list[dict]) -> str:
         lines.append(f"**Address:** {sender.get('street1', '')}")
         if sender.get("street2"):
             lines.append(f"**Address 2:** {sender.get('street2')}")
-        lines.append(
-            f"**City, State ZIP:** {sender.get('city', '')}, {sender.get('state', '')} {sender.get('zip', '')}"
-        )
+        city = sender.get("city", "")
+        state = sender.get("state", "")
+        zip_code = sender.get("zip", "")
+        lines.append(f"**City, State ZIP:** {city}, {state} {zip_code}")
         lines.append(f"**Country:** {sender.get('country', '')}")
         lines.append(f"**Phone:** {sender.get('phone', 'N/A')}")
         lines.append(f"**Email:** {sender.get('email', 'N/A')}")
@@ -1126,9 +1127,10 @@ def _generate_rate_table(shipments: list[dict]) -> str:
         lines.append(f"**Address:** {recipient.get('street1', '')}")
         if recipient.get("street2"):
             lines.append(f"**Address 2:** {recipient.get('street2')}")
-        lines.append(
-            f"**City, State ZIP:** {recipient.get('city', '')}, {recipient.get('state', '')} {recipient.get('zip', '')}"
-        )
+        city = recipient.get("city", "")
+        state = recipient.get("state", "")
+        zip_code = recipient.get("zip", "")
+        lines.append(f"**City, State ZIP:** {city}, {state} {zip_code}")
         lines.append(f"**Country:** {recipient.get('country', '')}")
         lines.append(f"**Phone:** {recipient.get('phone', 'N/A')}")
         lines.append(f"**Email:** {recipient.get('email', 'N/A')}")
@@ -1136,12 +1138,13 @@ def _generate_rate_table(shipments: list[dict]) -> str:
         lines.append("\n### 📋 SHIPMENT DETAILS")
         lines.append(f"**Product:** {product.get('description', shipment.get('contents', 'N/A'))}")
         lines.append(f"**Category:** {product.get('category', 'N/A')}")
-        lines.append(
-            f"**Weight:** {parcel.get('weight_oz', 0)} oz ({parcel.get('weight_lbs', 0):.2f} lbs)"
-        )
-        lines.append(
-            f"**Dimensions:** {parcel.get('length', 0)} x {parcel.get('width', 0)} x {parcel.get('height', 0)} in"
-        )
+        weight_oz = parcel.get("weight_oz", 0)
+        weight_lbs = parcel.get("weight_lbs", 0)
+        lines.append(f"**Weight:** {weight_oz} oz ({weight_lbs:.2f} lbs)")
+        length = parcel.get("length", 0)
+        width = parcel.get("width", 0)
+        height = parcel.get("height", 0)
+        lines.append(f"**Dimensions:** {length} x {width} x {height} in")
 
         # Show customs info if international
         if customs and customs.get("required"):
@@ -1217,9 +1220,9 @@ def _generate_rate_table(shipments: list[dict]) -> str:
 
         # Show summary
         lines.append(f"\n**Total Rates Available:** {len(rates)}")
-        lines.append(
-            f"**Price Range:** ${min(float(r['rate']) for r in rates):.2f} - ${max(float(r['rate']) for r in rates):.2f}"
-        )
+        min_rate = min(float(r["rate"]) for r in rates)
+        max_rate = max(float(r["rate"]) for r in rates)
+        lines.append(f"**Price Range:** ${min_rate:.2f} - ${max_rate:.2f}")
 
     return "\n".join(lines)
 
@@ -1404,14 +1407,15 @@ def register_bulk_tools(mcp, easypost_service=None):
                                 service.client,
                                 None,  # Auto-detect value from description
                                 customs_signer,
-                                incoterm,
-                            )
+                            incoterm,
+                        )
 
-                            if ctx and customs_info:
-                                await ctx.info(
-                                    f"✅ Auto-generated customs ({incoterm}) for international shipment "
-                                    f"({to_address['country']})"
-                                )
+                        if ctx and customs_info:
+                            country = to_address["country"]
+                            await ctx.info(
+                                f"✅ Auto-generated customs ({incoterm}) "
+                                f"for international shipment ({country})"
+                            )
 
                         # Get rates with timeout (customs included for international)
                         rates_result = await asyncio.wait_for(

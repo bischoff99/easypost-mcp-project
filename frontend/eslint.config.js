@@ -5,7 +5,7 @@ import globals from 'globals'
 
 export default [
   {
-    ignores: ['dist', 'node_modules', '*.config.js'],
+    ignores: ['dist', 'node_modules', '*.config.js', '**/e2e-tests/**', '**/src/tests/e2e/**'],
   },
   js.configs.recommended,
   {
@@ -31,7 +31,7 @@ export default [
       ...reactHooks.configs.recommended.rules,
       'react/jsx-no-target-blank': 'off',
       'react/prop-types': 'off',
-      'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', destructuredArrayIgnorePattern: '^_' }],
       'no-console': ['warn', { allow: ['warn', 'error'] }],
     },
     settings: {
@@ -41,4 +41,3 @@ export default [
     },
   },
 ]
-

@@ -38,84 +38,48 @@ api.interceptors.response.use(
 
 export const shipmentAPI = {
   createShipment: async (data) => {
-    try {
-      const response = await api.post('/shipments', data);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await api.post('/shipments', data);
+    return response.data;
   },
 
   getTracking: async (trackingNumber) => {
-    try {
-      const response = await api.get(`/tracking/${trackingNumber}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await api.get(`/tracking/${trackingNumber}`);
+    return response.data;
   },
 
   getRates: async (data) => {
-    try {
-      const response = await api.post('/rates', data);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await api.post('/rates', data);
+    return response.data;
   },
 
   getRecentShipments: async (limit = 10) => {
-    try {
-      const response = await api.get(`/shipments?page_size=${limit}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await api.get(`/shipments?page_size=${limit}`);
+    return response.data;
   },
 
   getAnalytics: async () => {
-    try {
-      const response = await api.get('/analytics');
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await api.get('/analytics');
+    return response.data;
   },
 
   getStats: async () => {
-    try {
-      const response = await api.get('/stats');
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await api.get('/stats');
+    return response.data;
   },
 
   getCarrierPerformance: async () => {
-    try {
-      const response = await api.get('/carrier-performance');
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await api.get('/carrier-performance');
+    return response.data;
   },
 
   getShipment: async (shipmentId) => {
-    try {
-      const response = await api.get(`/shipments/${shipmentId}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await api.get(`/shipments/${shipmentId}`);
+    return response.data;
   },
 
   buyShipment: async (data) => {
-    try {
-      const response = await api.post('/shipments/buy', data);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await api.post('/shipments/buy', data);
+    return response.data;
   },
 
   healthCheck: async () => {
@@ -123,33 +87,29 @@ export const shipmentAPI = {
       const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
       const response = await axios.get(`${baseURL}/health`, { timeout: 5000 });
       return response.data;
-    } catch (error) {
+    } catch {
       throw new ApiError('Backend server is not running', 503, null);
     }
   },
 
   // Bulk Operations
   createBulkShipments: async (shipments, onProgress) => {
-    try {
-      const response = await api.post('/bulk-shipments', { shipments });
+    const response = await api.post('/bulk-shipments', { shipments });
 
-      // Simulate progress updates (in production, use WebSocket or SSE)
-      if (onProgress) {
-        const total = shipments.length;
-        let current = 0;
-        const interval = setInterval(() => {
-          current += Math.min(10, total - current);
-          onProgress(Math.round((current / total) * 100));
-          if (current >= total) {
-            clearInterval(interval);
-          }
-        }, 500);
-      }
-
-      return response.data;
-    } catch (error) {
-      throw error;
+    // Simulate progress updates (in production, use WebSocket or SSE)
+    if (onProgress) {
+      const total = shipments.length;
+      let current = 0;
+      const interval = setInterval(() => {
+        current += Math.min(10, total - current);
+        onProgress(Math.round((current / total) * 100));
+        if (current >= total) {
+          clearInterval(interval);
+        }
+      }, 500);
     }
+
+    return response.data;
   },
 };
 

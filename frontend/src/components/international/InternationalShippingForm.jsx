@@ -22,7 +22,7 @@ import { Loader2 } from 'lucide-react';
  */
 export default function InternationalShippingForm() {
   const { t } = useTranslation();
-  const { getRates, rates, isLoading, error } = useShippingRates();
+  const { getRates, rates, isLoading, error: _error } = useShippingRates();
 
   const [selectedCountry, setSelectedCountry] = useState('GB');
   const [selectedRate, setSelectedRate] = useState(null);

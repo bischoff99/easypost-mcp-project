@@ -33,7 +33,7 @@ export default function AddressForm({ isOpen, onClose, onSuccess, address = null
   const isEditMode = !!address;
 
   // Form action using React 19's useActionState
-  const [formState, formAction, isPending] = useActionState(
+  const [_formState, formAction, isPending] = useActionState(
     async (previousState, formData) => {
       try {
         // Extract form data

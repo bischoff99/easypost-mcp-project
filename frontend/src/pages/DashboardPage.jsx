@@ -54,7 +54,7 @@ const statusColors = {
  */
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const [isPending, startTransition] = useTransition();
+  const [_isPending, startTransition] = useTransition();
 
   // Fetch dashboard data using React Query for automatic caching and refetching
   const {
