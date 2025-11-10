@@ -114,12 +114,14 @@ networks:
 
 # Production Deployment Instructions:
 #
-# 1. Create .env.production file:
-#    cp .env.example .env.production
-#    # Edit with production values
+# 1. Ensure backend/.env is configured with production values:
+#    ENVIRONMENT=production
+#    EASYPOST_API_KEY=EZAK... (production key)
+#    DEBUG=false
+#    LOG_LEVEL=INFO
 #
 # 2. Build and start:
-#    docker-compose -f docker-compose.prod.yml --env-file .env.production up -d
+#    docker-compose -f docker-compose.prod.yml --env-file backend/.env up -d
 #
 # 3. Run database migrations:
 #    docker-compose -f docker-compose.prod.yml exec backend alembic upgrade head

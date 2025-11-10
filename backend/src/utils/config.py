@@ -7,17 +7,10 @@ from dotenv import load_dotenv
 # Configure logger
 logger = logging.getLogger(__name__)
 
-# Determine which .env file to load based on ENVIRONMENT variable
-env = os.getenv("ENVIRONMENT", "development")
-env_file = Path(__file__).parent.parent.parent / f".env.{env}"
-
-# Load environment-specific file if it exists, otherwise use .env
-if env_file.exists():
-    load_dotenv(env_file)
-    logger.info(f"Loaded environment from: {env_file}")
-else:
-    load_dotenv()
-    logger.info("Loaded environment from: .env")
+# Load .env file from project root (single source of truth)
+env_file = Path(__file__).parent.parent.parent.parent / ".env"
+load_dotenv(env_file)
+logger.info(f"Loaded environment from: {env_file}")
 
 
 class Settings:
@@ -31,7 +24,7 @@ class Settings:
     # Formula: (workers × pool_size) + max_overflow <= PostgreSQL max_connections
     # Default: 20 base + 30 overflow = 50 total per worker
     # With 33 workers: 33 × 20 + 30 = 690 connections (requires PG max_connections ≥ 700)
-    # For production: Set DATABASE_POOL_SIZE=20, DATABASE_MAX_OVERFLOW=30 in .env.production
+    # Configure in .env: DATABASE_POOL_SIZE=20, DATABASE_MAX_OVERFLOW=30
     DATABASE_POOL_SIZE: int = int(os.getenv("DATABASE_POOL_SIZE", "20"))
     DATABASE_MAX_OVERFLOW: int = int(os.getenv("DATABASE_MAX_OVERFLOW", "30"))
     DATABASE_POOL_RECYCLE: int = int(os.getenv("DATABASE_POOL_RECYCLE", "3600"))

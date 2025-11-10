@@ -25,14 +25,14 @@ source venv/bin/activate
 pip install -r requirements.txt
 
 # Configure environment
-cp .env.example .env.development
-# Edit .env.development with your EasyPost test API key
+cp ../.env.example ../.env
+# Edit ../.env with your EasyPost test API key
 ```
 
 ### Running
 
 ```bash
-# Development (uses .env.development)
+# Development (uses root .env)
 uvicorn src.server:app --reload
 
 # Production
@@ -190,7 +190,7 @@ CORS_ORIGINS=http://localhost:5173
 ENVIRONMENT=development  # or production
 ```
 
-See `.env.example` for full list.
+See `../.env.example` for full list.
 
 ### Hardware Optimization
 
@@ -310,7 +310,7 @@ pip install -r requirements.txt
 
 ```bash
 # Verify API key
-python -c "import os; from dotenv import load_dotenv; load_dotenv('.env.development'); print(os.getenv('EASYPOST_API_KEY'))"
+python -c "import os; from dotenv import load_dotenv; load_dotenv('../.env'); print(os.getenv('EASYPOST_API_KEY'))"
 # Should print your API key starting with EZTK (test) or EZAK (production)
 ```
 

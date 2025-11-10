@@ -90,17 +90,12 @@ build/
 .env
 .env.local
 .env.*.local
-.env.production
-backend/.env
-backend/.env.production
-backend/.env.local
 frontend/.env
 frontend/.env.production
 frontend/.env.local
 
 # Keep these (safe to commit)
 !.env.example
-!backend/.env.development
 !frontend/.env.development
 
 # Pre-commit
