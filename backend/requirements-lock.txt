@@ -100,4 +100,4 @@ uvloop==0.22.1
 watchdog==6.0.0
 websockets==15.0.1
 wheel==0.45.1
-wrapt==2.0.0
+wrapt==2.0.1
