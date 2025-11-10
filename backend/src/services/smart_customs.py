@@ -142,7 +142,7 @@ def extract_customs_smart(
     easypost_client,
     default_value: float | None = None,
     customs_signer: str = "Sender",
-    incoterm: str = "DDP",
+    _incoterm: str = "DDP",
 ) -> Any | None:
     """
     Smart customs extraction with auto-fill for missing data.
