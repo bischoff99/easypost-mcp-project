@@ -12,9 +12,16 @@ export default function NavigationLoader() {
   const [isNavigating, setIsNavigating] = useState(false);
 
   useEffect(() => {
-    setIsNavigating(true);
-    const timer = setTimeout(() => setIsNavigating(false), 300);
-    return () => clearTimeout(timer);
+    // Use requestAnimationFrame to avoid synchronous setState warning
+    let timer;
+    const frame = requestAnimationFrame(() => {
+      setIsNavigating(true);
+      timer = setTimeout(() => setIsNavigating(false), 300);
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+      if (timer) clearTimeout(timer);
+    };
   }, [location.pathname]);
 
   if (isNavigating) {

@@ -95,7 +95,7 @@ test-cov:
 
 # Production build
 build:
-	@echo "���� Building production bundles..."
+	@echo "📦 Building production bundles..."
 	@cd frontend && npm run build
 	@cd backend && ./.venv/bin/python -m compileall src/
 	@echo "✅ Build complete!"

@@ -23,11 +23,16 @@ fi
 echo "📦 Starting backend server..."
 (
   cd backend
+  # Check for .venv (uv convention) or venv (traditional)
   if [ -f ./.venv/bin/uvicorn ]; then
     echo "   Backend: http://localhost:8000"
     ./.venv/bin/uvicorn src.server:app --host 0.0.0.0 --port 8000 --reload --log-level warning 2>&1 | sed 's/^/   [Backend] /'
+  elif [ -f ./venv/bin/uvicorn ]; then
+    echo "   Backend: http://localhost:8000"
+    ./venv/bin/uvicorn src.server:app --host 0.0.0.0 --port 8000 --reload --log-level warning 2>&1 | sed 's/^/   [Backend] /'
   else
-    echo "❌ Backend venv not set up. Run: cd backend && uv venv .venv && uv pip install -r requirements.txt"
+    echo "❌ Backend venv not set up. Run: cd backend && python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt"
+    echo "   Or with uv: cd backend && uv venv .venv && uv pip install -r requirements.txt"
     sleep 1000000
   fi
 ) &

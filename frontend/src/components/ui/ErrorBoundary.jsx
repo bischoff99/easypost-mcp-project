@@ -20,7 +20,7 @@ class ErrorBoundary extends React.Component {
       return (
         <div className="flex flex-col items-center justify-center h-screen bg-background text-foreground">
           <h1 className="text-4xl font-bold mb-4">Oops! Something went wrong.</h1>
-          <p className="text-lg mb-8">We're sorry for the inconvenience. Please try again later.</p>
+          <p className="text-lg mb-8">We&apos;re sorry for the inconvenience. Please try again later.</p>
           {import.meta.env.DEV && (
             <details className="w-full max-w-2xl p-4 bg-muted rounded-lg">
               <summary>Error Details</summary>

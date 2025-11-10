@@ -84,10 +84,9 @@ export default function SearchModal() {
     }, 300);
 
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
 
-  const handleResultClick = (shipment) => {
+  const handleResultClick = (_shipment) => {
     navigate(`/shipments`);
     setOpen(false);
     setQuery('');

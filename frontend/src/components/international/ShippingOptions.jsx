@@ -1,6 +1,6 @@
 import { Check, Package, Truck, Plane } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { formatCurrency, getCurrencySymbol } from '@/services/currencyService';
+import { formatCurrency } from '@/services/currencyService';
 import { getEstimatedDeliveryDate, parseDeliveryDays } from '@/services/internationalShippingService';
 
 /**
