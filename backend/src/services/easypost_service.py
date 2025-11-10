@@ -326,7 +326,8 @@ class EasyPostService:
         Create a shipment and optionally purchase label.
 
         Args:
-            to_address: Destination address dict with name, street1, city, state, zip, OR address ID string
+            to_address: Destination address dict with name, street1, city,
+                state, zip, OR address ID string
             from_address: Origin address dict with same structure
             parcel: Package dimensions dict with length, width, height, weight
             carrier: Shipping carrier preference (default: "USPS")
@@ -599,13 +600,12 @@ class EasyPostService:
         """
         try:
             loop = asyncio.get_running_loop()
-            result = await loop.run_in_executor(
+            return await loop.run_in_executor(
                 self.executor,
                 self._verify_address_sync,
                 address,
                 carrier,
             )
-            return result
         except Exception as e:
             error_msg = self._sanitize_error(e)
             self.logger.error(f"Error verifying address: {error_msg}")
@@ -946,15 +946,19 @@ class EasyPostService:
             to_address = normalize_address(to_address)
             from_address = normalize_address(from_address)
 
-            self.logger.info(
-                f"From: {from_address.get('city')}, {from_address.get('state')}, {from_address.get('country')}"
-            )
-            self.logger.info(
-                f"To: {to_address.get('city')}, {to_address.get('state')}, {to_address.get('country')}"
-            )
-            self.logger.info(
-                f"Parcel: {parcel.get('length')}x{parcel.get('width')}x{parcel.get('height')}, {parcel.get('weight')}oz"
-            )
+            from_city = from_address.get("city")
+            from_state = from_address.get("state")
+            from_country = from_address.get("country")
+            self.logger.info(f"From: {from_city}, {from_state}, {from_country}")
+            to_city = to_address.get("city")
+            to_state = to_address.get("state")
+            to_country = to_address.get("country")
+            self.logger.info(f"To: {to_city}, {to_state}, {to_country}")
+            length = parcel.get("length")
+            width = parcel.get("width")
+            height = parcel.get("height")
+            weight = parcel.get("weight")
+            self.logger.info(f"Parcel: {length}x{width}x{height}, {weight}oz")
 
             shipment_params = {
                 "to_address": to_address,
