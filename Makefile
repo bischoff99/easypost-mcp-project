@@ -42,7 +42,7 @@ help:
 dev:
 	@echo "🚀 Starting development servers..."
 	@trap 'kill 0' EXIT; \
-	(cd backend && ./venv/bin/uvicorn src.server:app --reload --log-level warning) & \
+	(cd backend && ./.venv/bin/uvicorn src.server:app --reload --log-level warning) & \
 	(cd frontend && npm run dev) & \
 	wait
 
@@ -50,13 +50,13 @@ dev:
 dev-mock:
 	@echo "🎭 Starting with mock EasyPost API..."
 	@trap 'kill 0' EXIT; \
-	(cd backend && MOCK_MODE=true ./venv/bin/uvicorn src.server:app --reload) & \
+	(cd backend && MOCK_MODE=true ./.venv/bin/uvicorn src.server:app --reload) & \
 	(cd frontend && npm run dev) & \
 	wait
 
 # Backend only
 backend:
-	@cd backend && ./venv/bin/uvicorn src.server:app --reload
+	@cd backend && ./.venv/bin/uvicorn src.server:app --reload
 
 # Frontend only
 frontend:
