@@ -42,7 +42,7 @@ help:
 dev:
 	@echo "🚀 Starting development servers..."
 	@trap 'kill 0' EXIT; \
-	(cd backend && ./.venv/bin/uvicorn src.server:app --reload --log-level warning 2>/dev/null || echo "⚠️  Backend could not start (port may be in use)") & \
+	(cd backend && ./.venv/bin/uvicorn src.server:app --host 0.0.0.0 --port 8001 --reload --log-level warning) & \
 	(cd frontend && npm run dev) & \
 	wait
 
@@ -96,7 +96,7 @@ build:
 	@echo "���� Building production bundles..."
 	@cd frontend && npm run build
 	@cd backend && ./.venv/bin/python -m compileall src/
-	@echo "✅ Build complete!"
+	@echo "�� Build complete!"
 	@du -sh frontend/dist
 
 # Docker build
