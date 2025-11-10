@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 echo "🚀 Starting EasyPost development servers..."
 
@@ -7,9 +6,18 @@ echo "🚀 Starting EasyPost development servers..."
 cleanup() {
   echo ""
   echo "🛑 Shutting down servers..."
-  kill 0
+  kill 0 2>/dev/null || true
 }
 trap cleanup EXIT
+
+# Kill any existing process on port 8000
+echo "🔍 Checking for processes on port 8000..."
+if lsof -Pi :8000 -sTCP:LISTEN -t >/dev/null 2>&1 ; then
+  PID=$(lsof -Pi :8000 -sTCP:LISTEN -t)
+  echo "⚠️  Found existing process on port 8000 (PID: $PID), killing it..."
+  kill -9 $PID 2>/dev/null || true
+  sleep 1
+fi
 
 # Start backend in background
 echo "📦 Starting backend server..."
@@ -26,7 +34,7 @@ echo "📦 Starting backend server..."
 BACKEND_PID=$!
 
 # Wait a moment for backend to start
-sleep 2
+sleep 3
 
 # Start frontend
 echo "⚡ Starting frontend server..."
