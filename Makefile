@@ -41,6 +41,9 @@ help:
 # Start both servers in parallel
 dev:
 	@echo "🚀 Starting development servers..."
+	@echo "🔍 Cleaning up port 8000..."
+	@pkill -f "uvicorn.*8000" || true
+	@sleep 1
 	@trap 'kill 0' EXIT; \
 	(cd backend && ./.venv/bin/uvicorn src.server:app --reload --log-level warning) & \
 	(cd frontend && npm run dev) & \
