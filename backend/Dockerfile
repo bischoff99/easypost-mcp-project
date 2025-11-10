@@ -1,5 +1,5 @@
 # Build stage - install dependencies
-FROM python:3.13-slim AS builder
+FROM python:3.14-slim AS builder
 
 WORKDIR /build
 
@@ -14,7 +14,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --no-warn-script-location -r requirements.txt
 
 # Production stage - minimal runtime
-FROM python:3.13-slim
+FROM python:3.14-slim
 
 WORKDIR /app
 
