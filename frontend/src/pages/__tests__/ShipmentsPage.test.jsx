@@ -120,3 +120,24 @@ describe('ShipmentsPage', () => {
     expect(screen.getByText('Search & Filter')).toBeInTheDocument();
   });
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

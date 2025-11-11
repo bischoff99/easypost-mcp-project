@@ -1,66 +1,42 @@
 {
   "recommendations": [
     // ===================================
-    // PYTHON/BACKEND - CORE (Required)
+    // PYTHON/BACKEND - CORE (Essential Only)
     // ===================================
     "ms-python.python",
+    "ms-python.vscode-pylance",
     "ms-python.debugpy",
-    "ms-python.black-formatter",
-    "ms-python.isort",
     "charliermarsh.ruff",
+    "ms-python.mypy-type-checker",
 
     // ===================================
-    // PYTHON/BACKEND - PRODUCTIVITY
+    // REACT/FRONTEND - CORE (Essential Only)
     // ===================================
-    "njpwerner.autodocstring",
-    "usernamehw.errorlens",
-
-    // ===================================
-    // REACT/FRONTEND - CORE (Required)
-    // ===================================
-    "dsznajder.es7-react-js-snippets",
     "dbaeumer.vscode-eslint",
     "esbenp.prettier-vscode",
     "bradlc.vscode-tailwindcss",
+    "vitest.vitest",
 
     // ===================================
-    // REACT/FRONTEND - PRODUCTIVITY
-    // ===================================
-    "formulahendry.auto-rename-tag",
-    "formulahendry.auto-close-tag",
-    "wallabyjs.console-ninja",
-
-    // ===================================
-    // FULL-STACK PRODUCTIVITY
+    // PRODUCTIVITY - ESSENTIAL ONLY
     // ===================================
     "eamodio.gitlens",
     "christian-kohler.path-intellisense",
-    "christian-kohler.npm-intellisense",
-    "aaron-bond.better-comments",
-    "gruntfuggly.todo-tree",
-    "streetsidesoftware.code-spell-checker",
 
     // ===================================
-    // DOCKER & DEVOPS
+    // DEVOPS - ESSENTIAL
     // ===================================
     "ms-azuretools.vscode-docker",
 
     // ===================================
-    // MARKDOWN & DOCUMENTATION
+    // DOCUMENTATION - ESSENTIAL
     // ===================================
-    "yzhang.markdown-all-in-one",
-    "davidanson.vscode-markdownlint",
-
-    // ===================================
-    // DEVELOPMENT TOOLS
-    // ===================================
-    "tamasfe.even-better-toml",
-    "ms-vscode.makefile-tools",
-    "donjayamanne.githistory"
+    "yzhang.markdown-all-in-one"
   ],
   "unwantedRecommendations": [
-    // Cursor has built-in Pyright (anysphere.cursorpyright)
-    "ms-python.vscode-pylance",
+    // Deprecated formatters (Ruff replaces both)
+    "ms-python.black-formatter",
+    "ms-python.isort",
 
     // Deprecated test extensions (use native VSCode Testing API)
     "hbenl.vscode-test-explorer",
@@ -70,12 +46,31 @@
     // Performance issues / unmaintained
     "wix.vscode-import-cost",
 
-    // Redundant AI assistants (Cursor has native AI + Claude Code)
+    // Redundant AI assistants (Cursor has native AI)
     "github.copilot",
     "github.copilot-chat",
     "google.gemini-cli-vscode-ide-companion",
-    "google.geminicodeassist",
+    "google.gemini-codeassist",
     "openai.chatgpt",
-    "rooveterinaryinc.roo-cline"
+    "rooveterinaryinc.roo-cline",
+
+    // Removed - Nice-to-have productivity (not essential)
+    "dsznajder.es7-react-js-snippets",
+    "formulahendry.auto-rename-tag",
+    "formulahendry.auto-close-tag",
+    "wallabyjs.console-ninja",
+    "njpwerner.autodocstring",
+    "usernamehw.errorlens",
+    "aaron-bond.better-comments",
+    "gruntfuggly.todo-tree",
+    "streetsidesoftware.code-spell-checker",
+    "christian-kohler.npm-intellisense",
+    "davidanson.vscode-markdownlint",
+    "ms-vscode.makefile-tools",
+    "donjayamanne.githistory",
+    "tamasfe.even-better-toml",
+    "bierner.markdown-mermaid",
+    "ms-vscode.vscode-json",
+    "redhat.vscode-yaml"
   ]
 }

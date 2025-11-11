@@ -85,9 +85,9 @@ echo ""
 
 # Docker Performance
 echo -e "${YELLOW}=== Docker Performance ===${NC}"
-if command -v docker &> /dev/null && [ -f "docker-compose.yml" ]; then
+if command -v docker &> /dev/null && [ -f "docker/docker-compose.yml" ]; then
     echo -e "${BLUE}Docker Build Speed:${NC}"
-    time docker-compose build --parallel 2>/dev/null || echo "Build completed"
+    time docker compose -f docker/docker-compose.yml build --parallel 2>/dev/null || echo "Build completed"
 else
     echo "Docker or docker-compose not available"
 fi

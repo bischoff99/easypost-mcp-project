@@ -1,75 +1,45 @@
 # Python
 __pycache__/
 *.py[cod]
-*$py.class
 *.so
 .Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# Virtual environments
 venv/
-ENV/
 env/
 .venv
-
-# Testing
+*.egg-info/
 .pytest_cache/
-.coverage
 htmlcov/
-.tox/
-.hypothesis/
-coverage.json
-tests/
+.coverage
 
-# Linting/Formatting caches
-.ruff_cache/
-.mypy_cache/
-
-# IDEs
+# IDE
+.vscode/
 .idea/
 *.swp
-*.swo
-*~
-.vscode/
 
-# OS
-.DS_Store
-Thumbs.db
+# Logs
+logs/
+*.log
 
-# Git
-.git/
-.gitignore
-.gitattributes
+# Tests
+tests/
+test_*.py
 
-# Docs
+# Development
+.env
+.env.local
 *.md
-README.md
-docs/
-demos/
+!README.md
 
-# CI/CD
-.github/
+# Build artifacts
+dist/
+build/
+*.egg
 
-# Alembic (keep alembic/ but exclude versions during dev)
-alembic/versions/*.pyc
+# Database
+*.db
+*.sqlite
 
-# Development files
-scripts/
-notebooks/
-.env*
-!.env.production.example
+# Temporary files
+*.tmp
+*.bak
+.cache/

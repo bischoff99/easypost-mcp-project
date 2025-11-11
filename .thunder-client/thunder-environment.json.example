@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "description": "Thunder Client environment template. Copy to thunder-environment.json and use environment variables from .env file.",
+  "clientName": "Thunder Client",
+  "collectionName": "EasyPost MCP API",
+  "collectionId": "easypost-mcp-api",
+  "environments": [
+    {
+      "id": "development",
+      "name": "Development",
+      "data": [
+        {
+          "name": "baseUrl",
+          "value": "http://localhost:8000"
+        },
+        {
+          "name": "apiUrl",
+          "value": "http://localhost:8000"
+        },
+        {
+          "name": "frontendUrl",
+          "value": "http://localhost:5173"
+        },
+        {
+          "name": "easypostApiKey",
+          "value": "${EASYPOST_API_KEY}"
+        },
+        {
+          "name": "databaseUrl",
+          "value": "${DATABASE_URL}"
+        },
+        {
+          "name": "environment",
+          "value": "development"
+        }
+      ],
+      "created": "2025-11-11T00:00:00.000Z"
+    },
+    {
+      "id": "production",
+      "name": "Production",
+      "data": [
+        {
+          "name": "baseUrl",
+          "value": "http://localhost:80"
+        },
+        {
+          "name": "apiUrl",
+          "value": "http://localhost:80/api"
+        },
+        {
+          "name": "frontendUrl",
+          "value": "http://localhost:80"
+        },
+        {
+          "name": "easypostApiKey",
+          "value": "${EASYPOST_API_KEY}"
+        },
+        {
+          "name": "databaseUrl",
+          "value": "${DATABASE_URL}"
+        },
+        {
+          "name": "environment",
+          "value": "production"
+        }
+      ],
+      "created": "2025-11-11T00:00:00.000Z"
+    },
+    {
+      "id": "staging",
+      "name": "Staging",
+      "data": [
+        {
+          "name": "baseUrl",
+          "value": "https://staging.example.com"
+        },
+        {
+          "name": "apiUrl",
+          "value": "https://staging.example.com/api"
+        },
+        {
+          "name": "frontendUrl",
+          "value": "https://staging.example.com"
+        },
+        {
+          "name": "easypostApiKey",
+          "value": "${EASYPOST_API_KEY}"
+        },
+        {
+          "name": "databaseUrl",
+          "value": "${DATABASE_URL}"
+        },
+        {
+          "name": "environment",
+          "value": "staging"
+        }
+      ],
+      "created": "2025-11-11T00:00:00.000Z"
+    }
+  ],
+  "folders": [],
+  "requests": []
+}

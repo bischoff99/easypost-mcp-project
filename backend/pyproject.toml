@@ -37,10 +37,12 @@ warn_unused_ignores = true
 strict_optional = true
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = ["E501", "E741", "E402", "C401", "S101", "ARG", "PTH"]  # Relaxed rules for tests
+"tests/**/*.py" = ["E501", "E741", "E402", "C401", "S101", "ARG", "PTH", "UP038"]  # Relaxed rules for tests
 ".ai-templates/**/*.py" = ["F821", "E501"]  # Ignore undefined names in templates
 "src/server.py" = ["E402"]  # Allow uvloop.install() before imports
-"**/migrations/**/*.py" = ["E501"]  # Alembic migrations can be long
+"**/migrations/**/*.py" = ["E501", "UP007"]  # Alembic migrations can be long
+"alembic/versions/*.py" = ["E501", "UP007"]  # Alembic auto-generated files
+"run_mcp.py" = ["PTH120", "PTH100"]  # Allow os.path for MCP compatibility
 
 [tool.ruff.lint.isort]
 known-first-party = ["src"]

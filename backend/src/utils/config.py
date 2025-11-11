@@ -1,5 +1,6 @@
 import logging
 import os
+from functools import lru_cache
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -75,4 +76,19 @@ class Settings:
         return True
 
 
-settings = Settings()
+@lru_cache()
+def get_settings() -> Settings:
+    """
+    Get cached settings instance.
+
+    FastAPI best practice: Use @lru_cache to ensure Settings is instantiated
+    only once and reused across the application lifecycle.
+
+    Returns:
+        Settings: Cached application settings
+    """
+    return Settings()
+
+
+# Backwards compatibility: Module-level instance for non-dependency use
+settings = get_settings()

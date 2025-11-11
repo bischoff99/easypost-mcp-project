@@ -311,3 +311,24 @@ DataTable.propTypes = {
   pageSize: PropTypes.number,
   className: PropTypes.string,
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
