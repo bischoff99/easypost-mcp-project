@@ -37,29 +37,35 @@
 
 ## Environment Variables
 
-### Development
+🚨 **SECURITY**: See [REST_CLIENT_SECURITY_SETUP.md](./REST_CLIENT_SECURITY_SETUP.md) for secure configuration
+
+### Development (Secure Pattern)
 ```json
 {
   "baseUrl": "http://localhost:8000",
   "apiUrl": "http://localhost:8000",
   "frontendUrl": "http://localhost:5173",
-  "easypostApiKey": "EZTK151720b5bbc44c08bd3c3f7a055b69acOSQagEFWUPCil26sR0flew",
-  "databaseUrl": "postgresql://postgres:postgres@localhost:5432/easypost_mcp",
+  "easypostApiKey": "${EASYPOST_API_KEY}",
+  "databaseUrl": "${DATABASE_URL}",
   "environment": "development"
 }
 ```
 
-### Production
+### Production (Secure Pattern)
 ```json
 {
   "baseUrl": "http://localhost:80",
   "apiUrl": "http://localhost:80/api",
   "frontendUrl": "http://localhost:80",
-  "easypostApiKey": "your_production_api_key_here",
-  "databaseUrl": "postgresql://easypost:@postgres:5432/easypost_mcp",
+  "easypostApiKey": "${EASYPOST_API_KEY}",
+  "databaseUrl": "${DATABASE_URL}",
   "environment": "production"
 }
 ```
+
+**Important**: Values are read from `.env` file (gitignored). See templates:
+- `.cursor/rest-client-environments.json.example`
+- `.thunder-client/thunder-environment.json.example`
 
 ## Quick Reference
 

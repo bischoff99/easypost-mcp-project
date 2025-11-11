@@ -1,6 +1,6 @@
 {
   "python.defaultInterpreterPath": "${workspaceFolder}/backend/venv/bin/python",
-  "python.languageServer": "Default",
+  "python.languageServer": "Pylance",
   "python.analysis.typeCheckingMode": "basic",
   "python.analysis.autoImportCompletions": true,
   "python.analysis.diagnosticSeverityOverrides": {

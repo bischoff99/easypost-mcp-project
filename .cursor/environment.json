@@ -1,4 +1,7 @@
 {
+  "version": "2.1.0",
+  "lastModified": "2025-11-11",
+  "description": "Cursor devcontainer build configuration",
   "build": {
     "context": ".",
     "dockerfile": "Dockerfile"

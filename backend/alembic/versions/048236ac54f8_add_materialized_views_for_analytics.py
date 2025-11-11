@@ -5,11 +5,10 @@ Revises: 73e8f9a2b1c4
 Create Date: 2025-11-04 10:07:41.753296+00:00
 
 """
-from typing import Sequence, Union
+from collections.abc import Sequence
+from typing import Union
 
 from alembic import op
-import sqlalchemy as sa
-
 
 # revision identifiers, used by Alembic.
 revision: str = '048236ac54f8'
@@ -20,7 +19,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Create materialized views for fast analytics queries."""
-    
+
     # =========================================================================
     # MATERIALIZED VIEW 1: Daily Shipment Analytics
     # =========================================================================
@@ -44,18 +43,18 @@ def upgrade() -> None:
         GROUP BY DATE(created_at), carrier, service
         ORDER BY date DESC, shipment_count DESC;
     """)
-    
+
     # Create indexes on materialized view
     op.execute("""
         CREATE UNIQUE INDEX IF NOT EXISTS ix_mv_daily_analytics_date_carrier_service
         ON mv_daily_shipment_analytics (date, carrier, service);
     """)
-    
+
     op.execute("""
         CREATE INDEX IF NOT EXISTS ix_mv_daily_analytics_date
         ON mv_daily_shipment_analytics (date DESC);
     """)
-    
+
     # =========================================================================
     # MATERIALIZED VIEW 2: Carrier Performance Summary
     # =========================================================================
@@ -69,9 +68,9 @@ def upgrade() -> None:
             AVG(total_cost) as avg_cost,
             COUNT(CASE WHEN status = 'delivered' THEN 1 END) as delivered_count,
             COUNT(CASE WHEN status IN ('delivered', 'returned', 'cancelled') THEN 1 END) as completed_count,
-            CASE 
+            CASE
                 WHEN COUNT(CASE WHEN status IN ('delivered', 'returned', 'cancelled') THEN 1 END) > 0
-                THEN (COUNT(CASE WHEN status = 'delivered' THEN 1 END)::float / 
+                THEN (COUNT(CASE WHEN status = 'delivered' THEN 1 END)::float /
                       COUNT(CASE WHEN status IN ('delivered', 'returned', 'cancelled') THEN 1 END) * 100)
                 ELSE 95.0
             END as on_time_rate,
@@ -84,13 +83,13 @@ def upgrade() -> None:
         GROUP BY carrier, service
         ORDER BY total_shipments DESC;
     """)
-    
+
     # Create indexes on carrier performance view
     op.execute("""
         CREATE UNIQUE INDEX IF NOT EXISTS ix_mv_carrier_performance_carrier_service
         ON mv_carrier_performance (carrier, service);
     """)
-    
+
     # =========================================================================
     # MATERIALIZED VIEW 3: Top Routes
     # =========================================================================
@@ -117,13 +116,13 @@ def upgrade() -> None:
         ORDER BY shipment_count DESC
         LIMIT 100;
     """)
-    
+
     # Create index on top routes
     op.execute("""
         CREATE INDEX IF NOT EXISTS ix_mv_top_routes_count
         ON mv_top_routes (shipment_count DESC);
     """)
-    
+
     # =========================================================================
     # REFRESH FUNCTION: Auto-refresh materialized views
     # =========================================================================
@@ -137,7 +136,7 @@ def upgrade() -> None:
         END;
         $$ LANGUAGE plpgsql;
     """)
-    
+
     # Add comment
     op.execute("""
         COMMENT ON FUNCTION refresh_analytics_views() IS
@@ -147,10 +146,10 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Drop materialized views and refresh function."""
-    
+
     # Drop refresh function
     op.execute("DROP FUNCTION IF EXISTS refresh_analytics_views()")
-    
+
     # Drop materialized views
     op.execute("DROP MATERIALIZED VIEW IF EXISTS mv_top_routes")
     op.execute("DROP MATERIALIZED VIEW IF EXISTS mv_carrier_performance")

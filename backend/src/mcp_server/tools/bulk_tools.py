@@ -1107,7 +1107,15 @@ def _generate_rate_table(shipments: list[dict]) -> str:
         product = detailed.get("product", {})
         customs = detailed.get("customs", {})
 
+        # Get carrier preference early for use throughout
+        carrier_pref = detailed.get("carrier_preference", "").upper()
+
         lines.append(f"\n## Shipment #{shipment['shipment_number']}: {shipment['recipient']}")
+
+        # Add carrier preference indicator at the top
+        if carrier_pref:
+            lines.append(f"**🎯 Preferred Carrier:** {carrier_pref}")
+
         lines.append("\n### 📦 SENDER INFORMATION")
         lines.append(f"**Company:** {sender.get('company', 'N/A')}")
         lines.append(f"**Name:** {sender.get('name', 'N/A')}")
@@ -1161,9 +1169,7 @@ def _generate_rate_table(shipments: list[dict]) -> str:
                     lines.append(f"  - HS Code: {item.get('hs_tariff_number', 'N/A')}")
                     lines.append(f"  - Origin: {item.get('origin_country', 'US')}")
 
-        # Get carrier preference
-        carrier_pref = detailed.get("carrier_preference", "").upper()
-
+        # Get rates
         rates = shipment.get("rates", [])
         if not rates:
             lines.append("\n❌ No rates available")
@@ -1192,17 +1198,36 @@ def _generate_rate_table(shipments: list[dict]) -> str:
         else:
             other_rates = rates
 
-        # Display requested carrier rates (if specified)
+        # Display requested carrier rates (if specified) - PROMINENTLY AT TOP
         if carrier_pref and requested_rates:
-            lines.append(f"\n### ⭐ REQUESTED CARRIER: {carrier_pref}")
+            lines.append(f"\n### ⭐ PREFERRED CARRIER: {carrier_pref}")
+
+            # Calculate cost comparison
+            cheapest_requested = min(float(r["rate"]) for r in requested_rates)
+            cheapest_overall = min(float(r["rate"]) for r in rates)
+
+            if cheapest_requested > cheapest_overall:
+                savings = cheapest_requested - cheapest_overall
+                lines.append(
+                    f"💡 **Note:** Cheapest {carrier_pref} option is ${cheapest_requested:.2f}. "
+                    f"You could save ${savings:.2f} with alternative carriers "
+                    f"(cheapest: ${cheapest_overall:.2f})\n"
+                )
+            else:
+                lines.append(f"✅ **{carrier_pref} offers the best rates for this shipment!**\n")
+
             lines.append("| Service | Rate | Delivery Days |")
             lines.append("|---------|------|---------------|")
 
-            # Sort by price
-            for rate in sorted(requested_rates, key=lambda r: float(r["rate"])):
+            # Sort by price (cheapest first)
+            sorted_requested = sorted(requested_rates, key=lambda r: float(r["rate"]))
+            for idx, rate in enumerate(sorted_requested):
                 days = rate.get("delivery_days") or "N/A"
+                # Mark cheapest with special indicator
+                marker = "✓ CHEAPEST" if idx == 0 else ""
+                service_name = f"{rate['carrier']} {rate['service']}"
                 lines.append(
-                    f"| {rate['carrier']} {rate['service']} | **${rate['rate']}** | {days} |"
+                    f"| {service_name} {marker} | **${rate['rate']}** | {days} |"
                 )
 
         # Display all other rates

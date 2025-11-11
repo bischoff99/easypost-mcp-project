@@ -7,6 +7,7 @@ from fastapi import Depends
 from fastmcp.server.dependencies import get_context
 
 from src.services.easypost_service import EasyPostService
+from src.utils.config import Settings, get_settings
 
 
 def get_easypost_service() -> EasyPostService:
@@ -68,3 +69,4 @@ def get_rate_limiter():
 # Type aliases for clean endpoint annotations
 EasyPostDep = Annotated[EasyPostService, Depends(get_easypost_service)]
 DBPoolDep = Annotated[asyncpg.Pool | None, Depends(get_db_pool)]
+SettingsDep = Annotated[Settings, Depends(get_settings)]
