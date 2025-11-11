@@ -14,9 +14,10 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       matrix:
-        python-version: ['3.13']
+        python-version: ['3.12']
 
     steps:
     - uses: actions/checkout@v5
