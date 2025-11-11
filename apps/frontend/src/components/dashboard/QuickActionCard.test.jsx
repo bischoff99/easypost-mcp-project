@@ -1,11 +1,11 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
-import { Plus } from 'lucide-react';
-import QuickActionCard from './QuickActionCard';
+import { render, screen, fireEvent } from '@testing-library/react'
+import { describe, it, expect, vi } from 'vitest'
+import { Plus } from 'lucide-react'
+import QuickActionCard from './QuickActionCard'
 
 describe('QuickActionCard', () => {
   it('renders with all props', () => {
-    const handleClick = vi.fn();
+    const handleClick = vi.fn()
 
     render(
       <QuickActionCard
@@ -16,14 +16,14 @@ describe('QuickActionCard', () => {
         delay={0}
         color="primary"
       />
-    );
+    )
 
-    expect(screen.getByText('Create Shipment')).toBeInTheDocument();
-    expect(screen.getByText('Create a new shipping label')).toBeInTheDocument();
-  });
+    expect(screen.getByText('Create Shipment')).toBeInTheDocument()
+    expect(screen.getByText('Create a new shipping label')).toBeInTheDocument()
+  })
 
   it('calls onClick when clicked', () => {
-    const handleClick = vi.fn();
+    const handleClick = vi.fn()
 
     render(
       <QuickActionCard
@@ -32,16 +32,16 @@ describe('QuickActionCard', () => {
         icon={Plus}
         onClick={handleClick}
       />
-    );
+    )
 
-    const card = screen.getByText('Create Shipment').closest('.cursor-pointer');
-    fireEvent.click(card);
+    const card = screen.getByText('Create Shipment').closest('.cursor-pointer')
+    fireEvent.click(card)
 
-    expect(handleClick).toHaveBeenCalledOnce();
-  });
+    expect(handleClick).toHaveBeenCalledOnce()
+  })
 
   it('renders different color variants', () => {
-    const handleClick = vi.fn();
+    const handleClick = vi.fn()
 
     const { rerender } = render(
       <QuickActionCard
@@ -51,7 +51,7 @@ describe('QuickActionCard', () => {
         onClick={handleClick}
         color="primary"
       />
-    );
+    )
 
     // Test that it renders without error for each color
     rerender(
@@ -62,7 +62,7 @@ describe('QuickActionCard', () => {
         onClick={handleClick}
         color="secondary"
       />
-    );
+    )
 
     rerender(
       <QuickActionCard
@@ -72,8 +72,8 @@ describe('QuickActionCard', () => {
         onClick={handleClick}
         color="accent"
       />
-    );
+    )
 
-    expect(screen.getByText('Test')).toBeInTheDocument();
-  });
-});
+    expect(screen.getByText('Test')).toBeInTheDocument()
+  })
+})
