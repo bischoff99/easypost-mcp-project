@@ -11,6 +11,7 @@ For detailed rules, see:
 - `.cursor/rules/03-testing-best-practices.mdc` - Testing strategy
 - `.cursor/rules/04-mcp-development.mdc` - MCP tool development
 - `.cursor/rules/05-m3-max-optimizations.mdc` - Performance optimization
+- `.cursor/rules/06-quick-reference.mdc` - Quick reference for naming conventions and patterns
 
 ## Project Structure
 
