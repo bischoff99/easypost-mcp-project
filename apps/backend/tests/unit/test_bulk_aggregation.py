@@ -5,9 +5,10 @@ These tests mock database calls to verify aggregation
 functions work correctly.
 """
 
-import pytest
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock
+
+import pytest
 
 from src.mcp_server.tools.bulk_aggregation import aggregate_results, setup_database_tracking
 
@@ -112,9 +113,7 @@ class TestSetupDatabaseTracking:
 
         start_time = datetime.now(UTC)
 
-        batch_op, batch_id = await setup_database_tracking(
-            mock_db_service, start_time, mock_ctx
-        )
+        batch_op, batch_id = await setup_database_tracking(mock_db_service, start_time, mock_ctx)
 
         assert batch_op == mock_batch
         assert batch_id == "bulk_123"
@@ -134,18 +133,14 @@ class TestSetupDatabaseTracking:
     async def test_handles_db_error_gracefully(self):
         """Test handles database errors gracefully."""
         mock_db_service = MagicMock()
-        mock_db_service.create_batch_operation = AsyncMock(
-            side_effect=Exception("DB Error")
-        )
+        mock_db_service.create_batch_operation = AsyncMock(side_effect=Exception("DB Error"))
 
         mock_ctx = AsyncMock()
         mock_ctx.info = AsyncMock()
 
         start_time = datetime.now(UTC)
 
-        batch_op, batch_id = await setup_database_tracking(
-            mock_db_service, start_time, mock_ctx
-        )
+        batch_op, batch_id = await setup_database_tracking(mock_db_service, start_time, mock_ctx)
 
         assert batch_op is None
         assert batch_id is None

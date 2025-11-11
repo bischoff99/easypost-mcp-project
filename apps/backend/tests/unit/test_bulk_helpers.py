@@ -7,12 +7,6 @@ without any I/O operations or external dependencies.
 
 import pytest
 
-from src.models.bulk_dto import (
-    AddressDTO,
-    ParcelDTO,
-    ShipmentDataDTO,
-    ValidationResultDTO,
-)
 from src.mcp_server.tools.bulk_helpers import (
     build_parcel,
     build_shipment_request,
@@ -23,6 +17,11 @@ from src.mcp_server.tools.bulk_helpers import (
     select_best_rate,
     select_warehouse_address,
     validate_shipment_data,
+)
+from src.models.bulk_dto import (
+    AddressDTO,
+    ShipmentDataDTO,
+    ValidationResultDTO,
 )
 
 

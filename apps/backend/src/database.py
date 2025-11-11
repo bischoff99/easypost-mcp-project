@@ -48,7 +48,7 @@ def create_engine() -> AsyncEngine | None:
             max_overflow=settings.DATABASE_MAX_OVERFLOW,  # Burst capacity (default: 5)
             pool_recycle=settings.DATABASE_POOL_RECYCLE,  # Recycle connections (default: 1800s)
             pool_pre_ping=True,  # Verify connections before use
-            pool_timeout=settings.DATABASE_POOL_TIMEOUT,  # Wait for connection from pool (default: 10s)
+            pool_timeout=settings.DATABASE_POOL_TIMEOUT,  # Wait for connection (default: 10s)
             # asyncpg-specific optimizations
             connect_args={
                 "server_settings": {
@@ -59,7 +59,7 @@ def create_engine() -> AsyncEngine | None:
                     "statement_timeout": str(settings.DATABASE_STATEMENT_TIMEOUT_MS),
                 },
                 "timeout": settings.DATABASE_CONNECT_TIMEOUT,  # Connection timeout (default: 10s)
-                "command_timeout": settings.DATABASE_COMMAND_TIMEOUT,  # Query timeout (default: 60s)
+                "command_timeout": settings.DATABASE_COMMAND_TIMEOUT,  # Query timeout (60s)
                 "statement_cache_size": 500,  # Prepared statement cache
             },
             # Execution options

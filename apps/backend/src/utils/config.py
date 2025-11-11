@@ -29,9 +29,15 @@ class Settings:
     DATABASE_MAX_OVERFLOW: int = int(os.getenv("DATABASE_MAX_OVERFLOW", "5"))
     DATABASE_POOL_RECYCLE: int = int(os.getenv("DATABASE_POOL_RECYCLE", "1800"))  # 30 min
     DATABASE_POOL_TIMEOUT: int = int(os.getenv("DATABASE_POOL_TIMEOUT", "10"))  # 10s wait
-    DATABASE_COMMAND_TIMEOUT: int = int(os.getenv("DATABASE_COMMAND_TIMEOUT", "60"))  # 60s query timeout
-    DATABASE_CONNECT_TIMEOUT: int = int(os.getenv("DATABASE_CONNECT_TIMEOUT", "10"))  # 10s connection timeout
-    DATABASE_STATEMENT_TIMEOUT_MS: int = int(os.getenv("DATABASE_STATEMENT_TIMEOUT_MS", "15000"))  # 15s statement timeout
+    DATABASE_COMMAND_TIMEOUT: int = int(
+        os.getenv("DATABASE_COMMAND_TIMEOUT", "60")
+    )  # 60s query timeout
+    DATABASE_CONNECT_TIMEOUT: int = int(
+        os.getenv("DATABASE_CONNECT_TIMEOUT", "10")
+    )  # 10s connection timeout
+    DATABASE_STATEMENT_TIMEOUT_MS: int = int(
+        os.getenv("DATABASE_STATEMENT_TIMEOUT_MS", "15000")
+    )  # 15s statement timeout
 
     # Server
     MCP_HOST: str = os.getenv("MCP_HOST", "0.0.0.0")  # noqa: S104 - Required for Docker
@@ -76,7 +82,7 @@ class Settings:
         return True
 
 
-@lru_cache()
+@lru_cache
 def get_settings() -> Settings:
     """
     Get cached settings instance.

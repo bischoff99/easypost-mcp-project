@@ -5,15 +5,16 @@ These tests mock external API calls (EasyPost) to verify
 I/O functions work correctly.
 """
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from src.models.bulk_dto import AddressDTO, CustomsInfoDTO, ParcelDTO, ShipmentRequestDTO
+import pytest
+
 from src.mcp_server.tools.bulk_io import (
     create_shipment_with_rates,
     prepare_customs_if_international,
     verify_address_if_needed,
 )
+from src.models.bulk_dto import AddressDTO, CustomsInfoDTO, ParcelDTO, ShipmentRequestDTO
 
 
 @pytest.fixture
@@ -129,9 +130,7 @@ class TestVerifyAddressIfNeeded:
         mock_easypost_service.verify_address.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_handles_verification_failure(
-        self, sample_address, mock_easypost_service
-    ):
+    async def test_handles_verification_failure(self, sample_address, mock_easypost_service):
         """Test handles verification failure gracefully."""
         intl_address = AddressDTO(
             name="Recipient",
@@ -298,9 +297,7 @@ class TestCreateShipmentWithRates:
         assert result.label_url == "https://label.url"
 
     @pytest.mark.asyncio
-    async def test_handles_creation_error(
-        self, sample_shipment_request, mock_easypost_service
-    ):
+    async def test_handles_creation_error(self, sample_shipment_request, mock_easypost_service):
         """Test handles shipment creation errors."""
         mock_easypost_service.create_shipment = AsyncMock(
             return_value={
