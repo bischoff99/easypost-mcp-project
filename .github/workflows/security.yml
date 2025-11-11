@@ -2,12 +2,14 @@ name: Security Scan
 
 on:
   push:
-    branches: [main, develop]
+    branches: [master, main, develop]
   pull_request:
-    branches: [main, develop]
+    branches: [master, main, develop]
   schedule:
     # Run weekly on Monday at 00:00 UTC
     - cron: '0 0 * * 1'
+    # Also run weekly on Sunday at 00:00 UTC
+    - cron: '0 0 * * 0'
 
 jobs:
   dependency-audit:
