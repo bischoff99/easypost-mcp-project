@@ -36,6 +36,7 @@ htmlcov/
 .tox/
 .hypothesis/
 coverage.json
+frontend/coverage/
 
 # Linting/Formatting caches
 .ruff_cache/
@@ -68,6 +69,7 @@ coverage.json
 .cursor/PROJECT_PROGRESS.md
 .cursor/QUICK_*.md
 .cursor/commands/v2/
+.cursor/Dockerfile
 
 # Cursor research archive - track it
 !.cursor/research-archive/
@@ -82,6 +84,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+pnpm-lock.yaml
 
 # Build outputs
 dist/
@@ -106,8 +109,10 @@ frontend/.env.local
 # Generated files (shipping labels, downloads, etc.)
 labels/
 shipping-labels/
+data/
 downloads/
 backend/logs/
+frontend/logs/
 ssl/
 
 # Script backups
