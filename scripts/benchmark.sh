@@ -27,7 +27,7 @@ echo ""
 echo -e "${YELLOW}=== Backend Performance ===${NC}"
 
 if [ -d "backend" ]; then
-    cd backend
+    cd apps/backend
 
     echo -e "${BLUE}ThreadPoolExecutor Workers:${NC}"
     python -c "
@@ -60,7 +60,7 @@ echo ""
 echo -e "${YELLOW}=== Frontend Performance ===${NC}"
 
 if [ -d "frontend" ]; then
-    cd frontend
+    cd apps/frontend
 
     echo -e "${BLUE}Frontend Build Speed:${NC}"
     if command -v npm &> /dev/null; then
@@ -85,9 +85,9 @@ echo ""
 
 # Docker Performance
 echo -e "${YELLOW}=== Docker Performance ===${NC}"
-if command -v docker &> /dev/null && [ -f "docker/docker-compose.yml" ]; then
+if command -v docker &> /dev/null && [ -f "deploy/docker-compose.yml" ]; then
     echo -e "${BLUE}Docker Build Speed:${NC}"
-    time docker compose -f docker/docker-compose.yml build --parallel 2>/dev/null || echo "Build completed"
+    time docker compose -f deploy/docker-compose.yml build --parallel 2>/dev/null || echo "Build completed"
 else
     echo "Docker or docker-compose not available"
 fi

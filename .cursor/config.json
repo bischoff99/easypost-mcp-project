@@ -1,0 +1,7 @@
+{
+  "indexing": {
+    "ignore": ["deploy", "__pycache__", ".venv", "venv", "node_modules", ".git", ".direnv", "dist", "build", "coverage", "htmlcov"],
+    "include": ["apps/backend", "apps/frontend", "scripts", "docs"]
+  },
+  "contextWindow": 128000
+}

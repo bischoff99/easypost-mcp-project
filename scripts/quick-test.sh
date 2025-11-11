@@ -27,7 +27,7 @@ curl -s http://localhost:8080/api/stats | jq -r '.status' && echo -e "${GREEN}âœ
 
 # 5. Quick unit tests
 echo -e "${BLUE}5. Quick Tests...${NC}"
-cd backend && source venv/bin/activate && pytest tests/unit -q -x 2>&1 | tail -1
+cd apps/backend && source venv/bin/activate && pytest tests/unit -q -x 2>&1 | tail -1
 cd ..
 
 echo ""

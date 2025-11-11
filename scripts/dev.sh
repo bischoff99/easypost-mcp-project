@@ -1,62 +1,25 @@
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
 
-echo "🚀 Starting EasyPost development servers..."
+# DB
+docker ps --format '{{.Names}}' | rg -qx 'ep-pg' || docker run --name ep-pg -e POSTGRES_USER=dev -e POSTGRES_PASSWORD=devpass -e POSTGRES_DB=easypost -p 5432:5432 -d postgres:16
 
-# Function to cleanup on exit
-cleanup() {
-  echo ""
-  echo "🛑 Shutting down servers..."
-  kill 0 2>/dev/null || true
-}
-trap cleanup EXIT
+# Backend
+pushd apps/backend >/dev/null
+python -m venv .venv; . .venv/bin/activate
+pip install -U pip wheel; pip install -e .
+alembic upgrade head || true
+UVICORN_CMD="uvicorn src.server:app --host 0.0.0.0 --port 8000"
+($UVICORN_CMD) &
+BEPID=$!
+popd >/dev/null
 
-# Kill any existing process on port 8000
-echo "🔍 Checking for processes on port 8000..."
-if lsof -Pi :8000 -sTCP:LISTEN -t >/dev/null 2>&1 ; then
-  PID=$(lsof -Pi :8000 -sTCP:LISTEN -t)
-  echo "⚠️  Found existing process on port 8000 (PID: $PID), killing it..."
-  kill -9 $PID 2>/dev/null || true
-  sleep 1
-fi
+# Frontend
+pushd apps/frontend >/dev/null
+pnpm i || npm i
+(pnpm dev || npm run dev) &
+FEPID=$!
+popd >/dev/null
 
-# Start backend in background
-echo "📦 Starting backend server..."
-(
-  cd backend
-  # Check for .venv (uv convention) or venv (traditional)
-  if [ -f ./.venv/bin/uvicorn ]; then
-    echo "   Backend: http://localhost:8000"
-    ./.venv/bin/uvicorn src.server:app --host 0.0.0.0 --port 8000 --reload --log-level warning 2>&1 | sed 's/^/   [Backend] /'
-  elif [ -f ./venv/bin/uvicorn ]; then
-    echo "   Backend: http://localhost:8000"
-    ./venv/bin/uvicorn src.server:app --host 0.0.0.0 --port 8000 --reload --log-level warning 2>&1 | sed 's/^/   [Backend] /'
-  else
-    echo "❌ Backend venv not set up. Run: cd backend && python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt"
-    echo "   Or with uv: cd backend && uv venv .venv && uv pip install -r requirements.txt"
-    sleep 1000000
-  fi
-) &
-BACKEND_PID=$!
-
-# Wait a moment for backend to start
-sleep 3
-
-# Start frontend
-echo "⚡ Starting frontend server..."
-(
-  cd frontend
-  echo "   Frontend: http://localhost:5173"
-  npm run dev 2>&1 | sed 's/^/   [Frontend] /'
-) &
-FRONTEND_PID=$!
-
-echo ""
-echo "✅ Both servers running!"
-echo "   Backend:  http://localhost:8000"
-echo "   Frontend: http://localhost:5173"
-echo ""
-echo "Press Ctrl+C to stop all servers"
-echo ""
-
-# Wait for both processes
-wait $BACKEND_PID $FRONTEND_PID
+trap "kill $BEPID $FEPID 2>/dev/null || true" INT TERM
+wait

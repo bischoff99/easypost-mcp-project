@@ -1,0 +1,47 @@
+[
+  {
+    "key": "ctrl+shift+t",
+    "command": "workbench.action.tasks.runTask",
+    "args": "🧪 Test: Backend"
+  },
+  {
+    "key": "ctrl+shift+l",
+    "command": "workbench.action.tasks.runTask",
+    "args": "🎨 Lint: Backend"
+  },
+  {
+    "key": "ctrl+shift+f",
+    "command": "workbench.action.tasks.runTask",
+    "args": "✨ Format: Backend"
+  },
+  {
+    "key": "ctrl+shift+alt+t",
+    "command": "workbench.action.tasks.runTask",
+    "args": "🧪 Test: Frontend"
+  },
+  {
+    "key": "ctrl+shift+alt+l",
+    "command": "workbench.action.tasks.runTask",
+    "args": "🎨 Lint: Frontend"
+  },
+  {
+    "key": "ctrl+shift+alt+f",
+    "command": "workbench.action.tasks.runTask",
+    "args": "✨ Format: Frontend"
+  },
+  {
+    "key": "ctrl+shift+d",
+    "command": "workbench.action.debug.start",
+    "when": "!inDebugMode"
+  },
+  {
+    "key": "ctrl+shift+b",
+    "command": "workbench.action.tasks.build"
+  },
+  {
+    "key": "ctrl+shift+r",
+    "command": "workbench.action.reloadWindow"
+  }
+]
+
+

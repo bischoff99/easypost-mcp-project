@@ -9,4 +9,4 @@ export DIRENV_LOG_FORMAT=""
 
 # Instructions:
 # Add this to your ~/.zshrc:
-#   source ~/Developer/github/andrejs/easypost-mcp-project/.zshrc.easypost
+#   source /Users/andrejs/Projects/personal/easypost-mcp-project/.zshrc.easypost
