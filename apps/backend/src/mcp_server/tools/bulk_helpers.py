@@ -22,9 +22,7 @@ from src.models.bulk_dto import (
 )
 
 
-def validate_shipment_data(
-    data: ShipmentDataDTO, line_number: int
-) -> ValidationResultDTO:
+def validate_shipment_data(data: ShipmentDataDTO, line_number: int) -> ValidationResultDTO:
     """
     Validate shipment data and parse dimensions/weight.
 
@@ -149,9 +147,7 @@ def build_parcel(validation_result: ValidationResultDTO) -> ParcelDTO:
     )
 
 
-def is_international_shipment(
-    to_address: AddressDTO, from_address: AddressDTO
-) -> bool:
+def is_international_shipment(to_address: AddressDTO, from_address: AddressDTO) -> bool:
     """
     Check if shipment is international.
 
@@ -213,9 +209,7 @@ def is_preferred_carrier(easypost_carrier: str, preferred: str) -> bool:
         return True
     # USA Export/Asendia matching
     usa_match = (
-        "USA" in preferred_upper
-        or "EXPORT" in preferred_upper
-        or "ASENDIA" in preferred_upper
+        "USA" in preferred_upper or "EXPORT" in preferred_upper or "ASENDIA" in preferred_upper
     )
     easypost_match = "USAEXPORT" in easypost_upper or "ASENDIA" in easypost_upper
     return bool(usa_match and easypost_match)
@@ -265,4 +259,3 @@ def select_best_rate(
 
     # Not purchasing - return cheapest
     return min(marked_rates, key=lambda r: float(r.get("rate", 0) or 0))
-

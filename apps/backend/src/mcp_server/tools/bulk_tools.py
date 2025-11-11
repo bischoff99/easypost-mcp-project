@@ -1035,7 +1035,9 @@ def parse_human_readable_shipment(text: str) -> dict | None:
     for line in lines:
         if not any(
             kw in line.lower() for kw in ["email", "phone", "dimension", "weight", "@"]
-        ) and not re.search(r"\+?\d{10,}", line):  # Skip phone-only lines
+        ) and not re.search(
+            r"\+?\d{10,}", line
+        ):  # Skip phone-only lines
             address_lines.append(line)
 
     if len(address_lines) >= 4:
@@ -1059,9 +1061,7 @@ def parse_human_readable_shipment(text: str) -> dict | None:
         country_line = (
             address_lines[4]
             if has_company and len(address_lines) > 4
-            else address_lines[3]
-            if len(address_lines) > 3
-            else "US"
+            else address_lines[3] if len(address_lines) > 3 else "US"
         )
         if country_line.lower() in ["usa", "united states", "us"]:
             result["country"] = "US"
@@ -1226,9 +1226,7 @@ def _generate_rate_table(shipments: list[dict]) -> str:
                 # Mark cheapest with special indicator
                 marker = "✓ CHEAPEST" if idx == 0 else ""
                 service_name = f"{rate['carrier']} {rate['service']}"
-                lines.append(
-                    f"| {service_name} {marker} | **${rate['rate']}** | {days} |"
-                )
+                lines.append(f"| {service_name} {marker} | **${rate['rate']}** | {days} |")
 
         # Display all other rates
         if other_rates:
@@ -1500,45 +1498,57 @@ def register_bulk_tools(mcp, easypost_service=None):
                                     "is_international": is_international,
                                 },
                                 "carrier_preference": data.get("carrier_preference", ""),
-                                "customs": {
-                                    "required": is_international,
-                                    "auto_generated": bool(customs_info)
+                                "customs": (
+                                    {
+                                        "required": is_international,
+                                        "auto_generated": (
+                                            bool(customs_info) if is_international else False
+                                        ),
+                                        "items": (
+                                            [
+                                                {
+                                                    "description": (
+                                                        item.description
+                                                        if hasattr(item, "description")
+                                                        else ""
+                                                    ),
+                                                    "quantity": (
+                                                        item.quantity
+                                                        if hasattr(item, "quantity")
+                                                        else 1
+                                                    ),
+                                                    "value": (
+                                                        item.value if hasattr(item, "value") else 0
+                                                    ),
+                                                    "weight": (
+                                                        item.weight
+                                                        if hasattr(item, "weight")
+                                                        else 0
+                                                    ),
+                                                    "hs_tariff_number": (
+                                                        item.hs_tariff_number
+                                                        if hasattr(item, "hs_tariff_number")
+                                                        else ""
+                                                    ),
+                                                    "origin_country": (
+                                                        item.origin_country
+                                                        if hasattr(item, "origin_country")
+                                                        else "US"
+                                                    ),
+                                                }
+                                                for item in (
+                                                    customs_info.customs_items
+                                                    if hasattr(customs_info, "customs_items")
+                                                    else []
+                                                )
+                                            ]
+                                            if customs_info
+                                            else []
+                                        ),
+                                    }
                                     if is_international
-                                    else False,
-                                    "items": (
-                                        [
-                                            {
-                                                "description": item.description
-                                                if hasattr(item, "description")
-                                                else "",
-                                                "quantity": item.quantity
-                                                if hasattr(item, "quantity")
-                                                else 1,
-                                                "value": item.value
-                                                if hasattr(item, "value")
-                                                else 0,
-                                                "weight": item.weight
-                                                if hasattr(item, "weight")
-                                                else 0,
-                                                "hs_tariff_number": item.hs_tariff_number
-                                                if hasattr(item, "hs_tariff_number")
-                                                else "",
-                                                "origin_country": item.origin_country
-                                                if hasattr(item, "origin_country")
-                                                else "US",
-                                            }
-                                            for item in (
-                                                customs_info.customs_items
-                                                if hasattr(customs_info, "customs_items")
-                                                else []
-                                            )
-                                        ]
-                                        if customs_info
-                                        else []
-                                    ),
-                                }
-                                if is_international
-                                else None,
+                                    else None
+                                ),
                             },
                         }
 
