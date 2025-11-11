@@ -16,8 +16,8 @@ cp .env.example .env
 ```bash
 make install
 # Or manually:
-# cd backend && python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt
-# cd frontend && npm install
+# cd apps/backend && python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt
+# cd apps/frontend && pnpm install
 ```
 
 ### 3. Start Development Servers
@@ -37,14 +37,17 @@ make dev
 
 ```
 easypost-mcp-project/
-├── backend/          # FastAPI/Python backend service
-│   ├── src/         # Source code
-│   ├── tests/       # Test suite (unit + integration)
-│   └── alembic/     # Database migrations
-├── frontend/         # React/Vite frontend service
-│   ├── src/         # Source code
-│   └── e2e/         # End-to-end tests
-├── docker/           # Docker Compose configurations
+├── apps/
+│   ├── backend/      # FastAPI/Python backend service
+│   │   ├── src/      # Source code
+│   │   ├── tests/    # Test suite (unit + integration)
+│   │   └── alembic/  # Database migrations
+│   └── frontend/     # React/Vite frontend service
+│       ├── src/      # Source code
+│       └── e2e/      # End-to-end tests
+├── packages/
+│   └── core/         # Shared code (Python + TypeScript)
+├── deploy/           # Docker Compose configurations
 ├── docs/             # Project documentation
 ├── scripts/          # Utility scripts
 └── data/             # Generated data (gitignored)

@@ -50,7 +50,7 @@ ep-test-file() {
         echo "Usage: ep-test-file <path-to-test-file>"
         return 1
     fi
-    cd "$EASYPOST_PROJECT_ROOT/backend" && source venv/bin/activate && pytest "$1" -v
+    cd "$EASYPOST_PROJECT_ROOT/backend" &&source venv/bin/activate && pytest "$1" -v
 }
 
 # Backend shell with venv activated

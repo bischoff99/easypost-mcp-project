@@ -18,10 +18,10 @@ EasyPost MCP is a production-ready shipping integration with:
 make dev
 
 # Backend only
-cd backend && source venv/bin/activate && uvicorn src.server:app --reload
+cd apps/backend && source venv/bin/activate && uvicorn src.server:app --reload
 
 # Frontend only
-cd frontend && npm run dev
+cd apps/frontend && pnpm run dev
 ```
 
 ### Testing
@@ -36,10 +36,10 @@ make test-fast
 make test-cov
 
 # Run single backend test
-cd backend && pytest tests/path/to/test_file.py::test_function_name -v
+cd apps/backend && pytest tests/path/to/test_file.py::test_function_name -v
 
 # Run single frontend test
-cd frontend && npm test -- src/path/to/test.test.jsx
+cd apps/frontend && npm test -- src/path/to/test.test.jsx
 ```
 
 ### Code Quality
@@ -60,7 +60,7 @@ make check
 make db-reset
 
 # Create migration
-cd backend && alembic revision --autogenerate -m "description"
+cd apps/backend && alembic revision --autogenerate -m "description"
 
 # Apply migrations
 make db-upgrade
@@ -82,7 +82,7 @@ make prod-docker
 
 ### Backend Structure
 ```
-backend/src/
+apps/backend/src/
 ├── server.py           # FastAPI app with MCP integration
 ├── routers/            # API endpoints (shipments, tracking, analytics, webhooks)
 ├── services/           # Business logic (easypost_service, database_service)
@@ -98,7 +98,7 @@ backend/src/
 
 ### Frontend Structure
 ```
-frontend/src/
+apps/frontend/src/
 ├── App.jsx             # Main app with routing
 ├── pages/              # Page components (Dashboard, Shipments, Analytics, etc.)
 ├── components/         # Reusable UI components
@@ -162,7 +162,7 @@ MCP (Model Context Protocol) tools are designed for AI agents to interact with t
 **Database Patterns:**
 - SQLAlchemy 2.0 async style: `select(Model).where()`
 - Connection pooling: 50 (SQLAlchemy) + 32 (asyncpg) = 82 total
-- Alembic migrations in `backend/alembic/`
+- Alembic migrations in `apps/backend/alembic/`
 
 **MCP Patterns:**
 - FastMCP for tool registration
@@ -231,26 +231,26 @@ This project is optimized for Apple Silicon M3 Max (16 cores):
 
 ### Adding a New API Endpoint
 
-1. Create route in `backend/src/routers/`
-2. Define Pydantic request/response models in `backend/src/models/requests.py`
+1. Create route in `apps/backend/src/routers/`
+2. Define Pydantic request/response models in `apps/backend/src/models/requests.py`
 3. Implement business logic in service layer (`services/`)
-4. Add tests in `backend/tests/`
-5. Update frontend API client in `frontend/src/services/api.js`
+4. Add tests in `apps/backend/tests/`
+5. Update frontend API client in `apps/frontend/src/services/api.js`
 
 ### Adding a New MCP Tool
 
-1. Create tool function in `backend/src/mcp_server/tools/`
+1. Create tool function in `apps/backend/src/mcp_server/tools/`
 2. Decorate with `@mcp.tool()` and add comprehensive docstring
-3. Register in `backend/src/mcp_server/tools/__init__.py`
+3. Register in `apps/backend/src/mcp_server/tools/__init__.py`
 4. Add tests with 100% coverage requirement
 5. Document in `docs/guides/MCP_TOOLS_USAGE.md`
 
 ### Adding Database Models
 
-1. Create SQLAlchemy model in `backend/src/models/`
-2. Export from `backend/src/models/__init__.py`
-3. Generate migration: `cd backend && alembic revision --autogenerate -m "add model"`
-4. Review and edit migration in `backend/alembic/versions/`
+1. Create SQLAlchemy model in `apps/backend/src/models/`
+2. Export from `apps/backend/src/models/__init__.py`
+3. Generate migration: `cd apps/backend && alembic revision --autogenerate -m "add model"`
+4. Review and edit migration in `apps/backend/alembic/versions/`
 5. Apply: `alembic upgrade head`
 
 ## Coding Standards

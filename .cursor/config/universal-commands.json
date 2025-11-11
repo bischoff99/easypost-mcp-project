@@ -37,7 +37,7 @@
       "tier": "medium",
       "aliases": ["/test", "/t"],
       "syntax": "/test [path]",
-      "example": "/test backend/tests/",
+      "example": "/test apps/backend/tests/",
 
       "variables": {
         "path": "{{paths.tests}}",
@@ -218,7 +218,7 @@
       "tier": "heavy",
       "aliases": ["/optimize", "/opt"],
       "syntax": "/optimize [file]",
-      "example": "/optimize backend/src/services/processor.py",
+      "example": "/optimize apps/backend/src/services/processor.py",
 
       "variables": {
         "cpuCores": "{{hardware.cpuCores}}",
@@ -427,7 +427,7 @@
       "tier": "light",
       "aliases": ["/lint", "/l"],
       "syntax": "/lint [path]",
-      "example": "/lint backend/src/",
+      "example": "/lint apps/backend/src/",
 
       "variables": {
         "language": "{{stack.backend.language}}",
