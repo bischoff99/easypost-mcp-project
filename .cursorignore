@@ -1,0 +1,17 @@
+.artifacts/**
+.archive/**
+reviews/**
+**/*.zip
+**/*.log
+**/.venv/**
+**/venv/**
+**/node_modules/**
+**/dist/**
+**/build/**
+**/__pycache__/**
+**/.pytest_cache/**
+**/.mypy_cache/**
+**/.ruff_cache/**
+**/htmlcov/**
+**/coverage/**
+**/.git/**

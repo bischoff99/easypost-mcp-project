@@ -47,8 +47,8 @@ jobs:
         with:
           name: security-audits
           path: |
-            backend/audit-python.json
-            frontend/audit-npm.json
+            apps/backend/audit-python.json
+            apps/frontend/audit-npm.json
 
   secret-scanning:
     name: Secret Detection

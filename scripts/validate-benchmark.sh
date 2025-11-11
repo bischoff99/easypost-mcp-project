@@ -48,8 +48,8 @@ echo "1. CODE QUALITY VALIDATION"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # Linting errors
-if [ -d "backend/venv" ]; then
-    cd backend
+if [ -d "apps/backend/venv" ]; then
+    cd apps/backend
     source venv/bin/activate 2>/dev/null || true
 
     if command -v ruff >/dev/null 2>&1; then
@@ -70,12 +70,12 @@ echo "2. SECURITY VALIDATION"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # Hardcoded secrets
-SECRET_MATCHES=$(grep -r "EZAK\|EZTK\|pk_test\|sk_test" backend/src frontend/src 2>/dev/null | grep -v "EASYPOST_API_KEY\|api_key\|API_KEY\|# Remove API keys" | wc -l | tr -d ' ')
+SECRET_MATCHES=$(grep -r "EZAK\|EZTK\|pk_test\|sk_test" apps/backend/src apps/frontend/src 2>/dev/null | grep -v "EASYPOST_API_KEY\|api_key\|API_KEY\|# Remove API keys" | wc -l | tr -d ' ')
 check_metric "Hardcoded Secrets" "$SECRET_MATCHES" "0" "eq"
 
 # Security scanning (if bandit available)
-if [ -d "backend/venv" ]; then
-    cd backend
+if [ -d "apps/backend/venv" ]; then
+    cd apps/backend
     source venv/bin/activate 2>/dev/null || true
 
     if command -v bandit >/dev/null 2>&1; then
@@ -97,17 +97,17 @@ echo "3. TESTING VALIDATION"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # Test file count
-BACKEND_TESTS=$(find backend/tests -name "test_*.py" -type f 2>/dev/null | wc -l | tr -d ' ')
-FRONTEND_TESTS=$(find frontend/src/tests -name "*.test.*" -o -name "*.spec.*" 2>/dev/null | wc -l | tr -d ' ')
+BACKEND_TESTS=$(find apps/backend/tests -name "test_*.py" -type f 2>/dev/null | wc -l | tr -d ' ')
+FRONTEND_TESTS=$(find apps/frontend/src/tests -name "*.test.*" -o -name "*.spec.*" 2>/dev/null | wc -l | tr -d ' ')
 check_metric "Backend Test Files" "$BACKEND_TESTS" "15" "ge"
 check_metric "Frontend Test Files" "$FRONTEND_TESTS" "1" "ge"
 
 # Parallel configuration
-PYTEST_WORKERS=$(grep -E "-n [0-9]+" backend/pytest.ini 2>/dev/null | grep -oE "[0-9]+" | head -1)
+PYTEST_WORKERS=$(grep -E "-n [0-9]+" apps/backend/pytest.ini 2>/dev/null | grep -oE "[0-9]+" | head -1)
 if [ -z "$PYTEST_WORKERS" ]; then
     PYTEST_WORKERS=0
 fi
-VITEST_WORKERS=$(grep -E "maxThreads.*[0-9]+" frontend/vitest.config.js 2>/dev/null | grep -oE "[0-9]+" | head -1)
+VITEST_WORKERS=$(grep -E "maxThreads.*[0-9]+" apps/frontend/vitest.config.js 2>/dev/null | grep -oE "[0-9]+" | head -1)
 if [ -z "$VITEST_WORKERS" ]; then
     VITEST_WORKERS=0
 fi
@@ -141,8 +141,8 @@ echo "5. CONFIGURATION VALIDATION"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # Docker multi-stage (check for multiple FROM statements indicating multi-stage)
-BACKEND_FROM_COUNT=$(grep -c "^FROM" backend/Dockerfile 2>/dev/null || echo "0")
-FRONTEND_FROM_COUNT=$(grep -c "^FROM" frontend/Dockerfile 2>/dev/null || echo "0")
+BACKEND_FROM_COUNT=$(grep -c "^FROM" apps/backend/Dockerfile 2>/dev/null || echo "0")
+FRONTEND_FROM_COUNT=$(grep -c "^FROM" apps/frontend/Dockerfile 2>/dev/null || echo "0")
 # Multi-stage = 2+ FROM statements
 BACKEND_STAGES=$BACKEND_FROM_COUNT
 FRONTEND_STAGES=$FRONTEND_FROM_COUNT
@@ -171,16 +171,16 @@ echo "6. PERFORMANCE VALIDATION"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # Database pool configuration
-if [ -f "backend/src/database.py" ]; then
-    POOL_SIZE=$(grep "pool_size=" backend/src/database.py 2>/dev/null | grep -oE "[0-9]+" | head -1 || echo "0")
-    MAX_OVERFLOW=$(grep "max_overflow=" backend/src/database.py 2>/dev/null | grep -oE "[0-9]+" | head -1 || echo "0")
+if [ -f "apps/backend/src/database.py" ]; then
+    POOL_SIZE=$(grep "pool_size=" apps/backend/src/database.py 2>/dev/null | grep -oE "[0-9]+" | head -1 || echo "0")
+    MAX_OVERFLOW=$(grep "max_overflow=" apps/backend/src/database.py 2>/dev/null | grep -oE "[0-9]+" | head -1 || echo "0")
     check_metric "Database Pool Size" "$POOL_SIZE" "15" "ge"
     check_metric "Database Max Overflow" "$MAX_OVERFLOW" "20" "ge"
 fi
 
 # Worker configuration
-if [ -f "backend/src/services/easypost_service.py" ]; then
-    WORKERS=$(grep -E "max_workers|workers.*=" backend/src/services/easypost_service.py 2>/dev/null | grep -oE "[0-9]+" | head -1 || echo "0")
+if [ -f "apps/backend/src/services/easypost_service.py" ]; then
+    WORKERS=$(grep -E "max_workers|workers.*=" apps/backend/src/services/easypost_service.py 2>/dev/null | grep -oE "[0-9]+" | head -1 || echo "0")
     check_metric "ThreadPoolExecutor Workers" "$WORKERS" "16" "ge"
 fi
 

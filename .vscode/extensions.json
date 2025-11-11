@@ -31,7 +31,8 @@
     // ===================================
     // DOCUMENTATION - ESSENTIAL
     // ===================================
-    "yzhang.markdown-all-in-one"
+    "yzhang.markdown-all-in-one",
+    "openai.chatgpt"
   ],
   "unwantedRecommendations": [
     // Deprecated formatters (Ruff replaces both)
@@ -51,7 +52,6 @@
     "github.copilot-chat",
     "google.gemini-cli-vscode-ide-companion",
     "google.gemini-codeassist",
-    "openai.chatgpt",
     "rooveterinaryinc.roo-cline",
 
     // Removed - Nice-to-have productivity (not essential)

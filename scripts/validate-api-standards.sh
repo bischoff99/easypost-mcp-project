@@ -28,7 +28,7 @@ echo ""
 
 # Check 1: EasyPost client initialization pattern
 echo -e "${BLUE}✓ Checking: Client Initialization Pattern${NC}"
-if grep -r "easypost.EasyPostClient" backend/src/ | grep -q "api_key"; then
+if grep -r "easypost.EasyPostClient" apps/backend/src/ | grep -q "api_key"; then
     echo "  ✓ Using official EasyPostClient pattern"
     ((CHECKS_PASSED++))
 else
@@ -38,7 +38,7 @@ fi
 
 # Check 2: Async wrapper implementation
 echo -e "${BLUE}✓ Checking: Async/Sync Pattern${NC}"
-if grep -q "run_in_executor" backend/src/services/easypost_service.py; then
+if grep -q "run_in_executor" apps/backend/src/services/easypost_service.py; then
     echo "  ✓ Proper async wrapper (ThreadPoolExecutor)"
     echo "    Pattern: async def → run_in_executor → sync SDK call"
     ((CHECKS_PASSED++))
@@ -49,7 +49,7 @@ fi
 
 # Check 3: Error handling
 echo -e "${BLUE}✓ Checking: Error Handling${NC}"
-if grep -q "try:" backend/src/services/easypost_service.py && grep -q "except.*Exception" backend/src/services/easypost_service.py; then
+if grep -q "try:" apps/backend/src/services/easypost_service.py && grep -q "except.*Exception" apps/backend/src/services/easypost_service.py; then
     echo "  ✓ Exception handling implemented"
     ((CHECKS_PASSED++))
 else
@@ -76,7 +76,7 @@ declare -a REQUIRED_ENDPOINTS=(
 
 echo -e "${BLUE}Validating Core API Operations:${NC}"
 for endpoint in "${REQUIRED_ENDPOINTS[@]}"; do
-    if grep -q "def ${endpoint}" backend/src/services/easypost_service.py; then
+    if grep -q "def ${endpoint}" apps/backend/src/services/easypost_service.py; then
         echo "  ✓ ${endpoint}"
         ((CHECKS_PASSED++))
     else
@@ -126,7 +126,7 @@ echo -e "${BLUE}EasyPost SDK Best Practices:${NC}"
 
 # Check 1: API key from environment
 echo "1. API Key Management:"
-if grep -q "os.getenv.*EASYPOST_API_KEY" backend/src/ -r; then
+if grep -q "os.getenv.*EASYPOST_API_KEY" apps/backend/src/ -r; then
     echo "   ✓ Using environment variables (secure)"
     ((CHECKS_PASSED++))
 else
@@ -136,7 +136,7 @@ fi
 
 # Check 2: Address validation
 echo "2. Address Validation:"
-if grep -q "AddressModel" backend/src/services/easypost_service.py; then
+if grep -q "AddressModel" apps/backend/src/services/easypost_service.py; then
     echo "   ✓ Pydantic models for validation"
     ((CHECKS_PASSED++))
 else
@@ -146,7 +146,7 @@ fi
 
 # Check 3: Rate selection
 echo "3. Rate Selection:"
-if grep -q "lowest_rate\|cheapest" backend/src/ -r; then
+if grep -q "lowest_rate\|cheapest" apps/backend/src/ -r; then
     echo "   ✓ Smart rate selection implemented"
     ((CHECKS_PASSED++))
 else
@@ -156,7 +156,7 @@ fi
 
 # Check 4: Bulk operations
 echo "4. Bulk Operations:"
-if grep -q "create_bulk\|batch" backend/src/services/easypost_service.py; then
+if grep -q "create_bulk\|batch" apps/backend/src/services/easypost_service.py; then
     echo "   ✓ Bulk operations support (M3 Max optimized)"
     ((CHECKS_PASSED++))
 else
@@ -166,7 +166,7 @@ fi
 
 # Check 5: Webhook handling
 echo "5. Webhook Integration:"
-if [ -f "backend/src/routers/webhooks.py" ]; then
+if [ -f "apps/backend/src/routers/webhooks.py" ]; then
     echo "   ✓ Webhook router implemented"
     ((CHECKS_PASSED++))
 else
@@ -185,7 +185,7 @@ echo -e "${BLUE}API Development Standards (REST/OpenAPI):${NC}"
 
 # RESTful design
 echo "1. RESTful Design:"
-if grep -q "@router\\.get\|@router\\.post\|@router\\.put\|@router\\.delete" backend/src/routers/ -r; then
+if grep -q "@router\\.get\|@router\\.post\|@router\\.put\|@router\\.delete" apps/backend/src/routers/ -r; then
     echo "   ✓ Standard HTTP methods"
     ((CHECKS_PASSED++))
 else
@@ -205,7 +205,7 @@ fi
 
 # Response format
 echo "3. Response Format:"
-if grep -q '"status".*"data".*"message"' backend/src/ -r; then
+if grep -q '"status".*"data".*"message"' apps/backend/src/ -r; then
     echo "   ✓ Standardized JSON response format"
     echo "     Format: {status, data, message, request_id}"
     ((CHECKS_PASSED++))
@@ -216,7 +216,7 @@ fi
 
 # Type hints
 echo "4. Type Hints (Python):"
-if grep -q "-> Dict\|-> List\|-> Optional" backend/src/services/easypost_service.py; then
+if grep -q "-> Dict\|-> List\|-> Optional" apps/backend/src/services/easypost_service.py; then
     echo "   ✓ Full type hint coverage"
     ((CHECKS_PASSED++))
 else
@@ -226,7 +226,7 @@ fi
 
 # Async/await
 echo "5. Async Operations:"
-if grep -q "async def\|await" backend/src/services/easypost_service.py; then
+if grep -q "async def\|await" apps/backend/src/services/easypost_service.py; then
     echo "   ✓ Async/await pattern throughout"
     ((CHECKS_PASSED++))
 else
@@ -244,13 +244,13 @@ echo ""
 echo -e "${BLUE}Checking Dashboard API Usage:${NC}"
 
 # Check frontend API service
-if [ -f "frontend/src/services/api.js" ]; then
+if [ -f "apps/frontend/src/services/api.js" ]; then
     echo "1. API Service Layer:"
-    echo "   ✓ Centralized API client (frontend/src/services/api.js)"
+    echo "   ✓ Centralized API client (apps/frontend/src/services/api.js)"
     ((CHECKS_PASSED++))
 
     # Check for axios/fetch usage
-    if grep -q "axios\|fetch" frontend/src/services/api.js; then
+    if grep -q "axios\|fetch" apps/frontend/src/services/api.js; then
         echo "   ✓ HTTP client configured"
         ((CHECKS_PASSED++))
     fi
@@ -261,7 +261,7 @@ fi
 
 # Check environment configuration
 echo "2. API URL Configuration:"
-if grep -q "VITE_API_URL\|API_URL" frontend/src/ -r; then
+if grep -q "VITE_API_URL\|API_URL" apps/frontend/src/ -r; then
     echo "   ✓ Configurable API endpoints"
     ((CHECKS_PASSED++))
 else

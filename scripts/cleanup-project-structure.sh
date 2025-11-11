@@ -38,19 +38,19 @@ if [ -d ".ruff_cache" ]; then
     rm -rf .ruff_cache
 fi
 
-if [ -d "backend/.pytest_cache" ]; then
-    echo "  Removing backend/.pytest_cache/"
-    rm -rf backend/.pytest_cache
+if [ -d "apps/backend/.pytest_cache" ]; then
+    echo "  Removing apps/backend/.pytest_cache/"
+    rm -rf apps/backend/.pytest_cache
 fi
 
-if [ -d "backend/.mypy_cache" ]; then
-    echo "  Removing backend/.mypy_cache/"
-    rm -rf backend/.mypy_cache
+if [ -d "apps/backend/.mypy_cache" ]; then
+    echo "  Removing apps/backend/.mypy_cache/"
+    rm -rf apps/backend/.mypy_cache
 fi
 
-if [ -d "backend/__pycache__" ]; then
-    echo "  Removing backend/__pycache__/"
-    rm -rf backend/__pycache__
+if [ -d "apps/backend/__pycache__" ]; then
+    echo "  Removing apps/backend/__pycache__/"
+    rm -rf apps/backend/__pycache__
 fi
 
 echo "  ✅ Cache directories removed"
@@ -61,7 +61,7 @@ echo "-------------------------------------------"
 
 if [ -d "node_modules" ]; then
     echo "  ⚠️  Found node_modules at project root"
-    echo "  This should only exist in frontend/"
+    echo "  This should only exist in apps/frontend/"
     echo ""
     read -p "Remove root node_modules? (y/N) " -n 1 -r
     echo
@@ -69,7 +69,7 @@ if [ -d "node_modules" ]; then
         echo "  Removing node_modules/"
         rm -rf node_modules
         echo "  ✅ Removed root node_modules"
-        echo "  ℹ️  Run 'cd frontend && npm install' to reinstall in correct location"
+        echo "  ℹ️  Run 'cd apps/frontend && npm install' to reinstall in correct location"
     else
         echo "  Skipped"
     fi
@@ -125,7 +125,7 @@ echo "📝 Next steps:"
 echo "  1. Run: git status"
 echo "  2. Run: git add .gitignore"
 echo "  3. Run: git commit -m 'chore: cleanup project structure (remove caches, update gitignore)'"
-echo "  4. Optional: cd frontend && npm install (if node_modules was removed)"
+echo "  4. Optional: cd apps/frontend && npm install (if node_modules was removed)"
 echo ""
 echo "📚 For more details, see:"
 echo "   docs/reviews/PROJECT_STRUCTURE_REVIEW_2025.md"

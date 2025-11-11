@@ -67,36 +67,36 @@ echo ""
 
 # 5. Frontend fixes
 echo -e "${BLUE}5. Adding frontend fixes...${NC}"
-git add frontend/src/components/dashboard/StatsCard.jsx
-git add frontend/src/components/dashboard/StatsCard.test.jsx
-git add frontend/src/components/shipments/BulkUploadModal.jsx
-git add frontend/src/pages/DashboardPage.jsx
-git add frontend/src/pages/ShipmentsPage.jsx
-git add frontend/src/tests/e2e/dashboard.test.jsx
-git add frontend/src/tests/e2e/shipment-crud.test.js
-git add frontend/src/tests/setup.js
-git add frontend/vitest.config.js
-git add frontend/src/services/endpoints.js
-git add frontend/src/services/errors.js
-git add frontend/package.json
-git add frontend/package-lock.json
+git add apps/frontend/src/components/dashboard/StatsCard.jsx
+git add apps/frontend/src/components/dashboard/StatsCard.test.jsx
+git add apps/frontend/src/components/shipments/BulkUploadModal.jsx
+git add apps/frontend/src/pages/DashboardPage.jsx
+git add apps/frontend/src/pages/ShipmentsPage.jsx
+git add apps/frontend/src/tests/e2e/dashboard.test.jsx
+git add apps/frontend/src/tests/e2e/shipment-crud.test.js
+git add apps/frontend/src/tests/setup.js
+git add apps/frontend/vitest.config.js
+git add apps/frontend/src/services/endpoints.js
+git add apps/frontend/src/services/errors.js
+git add apps/frontend/package.json
+git add apps/frontend/package-lock.json
 echo "  ✓ Frontend fixes added"
 echo ""
 
 # 6. Backend fixes
 echo -e "${BLUE}6. Adding backend improvements...${NC}"
-git add backend/src/server.py
-git add backend/src/models/
-git add backend/src/services/
-git add backend/src/routers/
-git add backend/src/database.py
-git add backend/src/dependencies.py
-git add backend/src/lifespan.py
-git add backend/src/utils/
-git add backend/tests/
-git add backend/pytest.ini
-git add backend/OPTIONAL_OPTIMIZATIONS.md
-git add backend/alembic/versions/fc2aec2ac737_update_timestamp_defaults_to_server_side.py
+git add apps/backend/src/server.py
+git add apps/backend/src/models/
+git add apps/backend/src/services/
+git add apps/backend/src/routers/
+git add apps/backend/src/database.py
+git add apps/backend/src/dependencies.py
+git add apps/backend/src/lifespan.py
+git add apps/backend/src/utils/
+git add apps/backend/tests/
+git add apps/backend/pytest.ini
+git add apps/backend/OPTIONAL_OPTIMIZATIONS.md
+git add apps/backend/alembic/versions/fc2aec2ac737_update_timestamp_defaults_to_server_side.py
 echo "  ✓ Backend improvements added"
 echo ""
 
@@ -149,7 +149,7 @@ echo ""
 
 # Commit 2: Backend improvements
 echo -e "${BLUE}Commit 2: Backend API improvements${NC}"
-git add backend/
+git add apps/backend/
 git commit -m "feat(backend): improve API endpoints and validation
 
 - Fix analytics endpoint to use ShipmentMetricsResponse
@@ -166,7 +166,7 @@ echo ""
 
 # Commit 3: Frontend fixes
 echo -e "${BLUE}Commit 3: Frontend dashboard improvements${NC}"
-git add frontend/
+git add apps/frontend/
 git commit -m "fix(frontend): update dashboard to display honest data
 
 - Remove hardcoded fake trends from dashboard

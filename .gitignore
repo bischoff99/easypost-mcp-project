@@ -1,19 +1,34 @@
+# OS
+.DS_Store
+*.swp
+*.swo
+*~
+Thumbs.db
+
 # Python
+.venv/
+venv/
 __pycache__/
 *.py[cod]
-*$py.class
-*.so
+*.pyo
+*.pyd
 .Python
+htmlcov/
+.coverage*
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+dist/
 build/
 develop-eggs/
-dist/
 downloads/
 eggs/
 .eggs/
 **/venv/lib/
 **/venv/lib64/
-backend/lib/
-backend/lib64/
+apps/backend/lib/
+apps/backend/lib64/
 parts/
 sdist/
 var/
@@ -24,59 +39,14 @@ wheels/
 MANIFEST
 
 # Virtual environments
-venv/
 ENV/
 env/
-.venv
 
 # Testing
-.pytest_cache/
-.coverage
-htmlcov/
 .tox/
 .hypothesis/
 coverage.json
-frontend/coverage/
-
-# Linting/Formatting caches
-.ruff_cache/
-.mypy_cache/
-
-# IDEs
-.idea/
-*.swp
-*.swo
-*~
-
-# VS Code - Track settings, exclude workspace-specific files
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-!.vscode/snippets.code-snippets
-*.code-workspace
-
-# Cursor - Track rules and commands, exclude temporary/generated files
-.cursor/archive/
-.cursor/docs/
-.cursor/*RECOVERED*.md
-.cursor/*STATUS*.md
-.cursor/*COMPLETE*.md
-.cursor/*REVIEW*.md
-.cursor/*TEST*.sh
-.cursor/*WORKFLOW*.md
-.cursor/PROJECT_PROGRESS.md
-.cursor/QUICK_*.md
-.cursor/commands/v2/
-.cursor/Dockerfile
-
-# Cursor research archive - track it
-!.cursor/research-archive/
-
-# OS
-.DS_Store
-Thumbs.db
+apps/frontend/coverage/
 
 # Node
 node_modules/
@@ -91,13 +61,46 @@ dist/
 build/
 *.log
 
+# Artifacts (quarantined)
+.artifacts/
+.archive/
+
+# IDE/Tooling
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/snippets.code-snippets
+*.code-workspace
+.idea/
+
+# Cursor - Track rules and commands, exclude temporary/generated files
+.cursor/archive/
+.cursor/docs/
+.cursor/*RECOVERED*.md
+.cursor/*STATUS*.md
+.cursor/*COMPLETE*.md
+.cursor/*REVIEW*.md
+.cursor/*TEST*.sh
+.cursor/*WORKFLOW*.md
+.cursor/PROJECT_PROGRESS.md
+.cursor/QUICK_*.md
+.cursor/commands/v2/
+.cursor/Dockerfile
+.cursor/index/
+.cursor/cache/
+
+# Cursor research archive - track it
+!.cursor/research-archive/
+
 # Environment variables
 .env
 .env.local
 .env.*.local
-frontend/.env
-frontend/.env.production
-frontend/.env.local
+apps/frontend/.env
+apps/frontend/.env.production
+apps/frontend/.env.local
 
 # Keep these (safe to commit)
 !.env.example
@@ -111,8 +114,8 @@ labels/
 shipping-labels/
 data/
 downloads/
-backend/logs/
-frontend/logs/
+apps/backend/logs/
+apps/frontend/logs/
 ssl/
 
 # Script backups

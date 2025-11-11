@@ -4,12 +4,12 @@ on:
   push:
     branches: [ master, main, develop ]
     paths:
-      - 'backend/**'
+      - 'apps/backend/**'
       - '.github/workflows/backend-ci.yml'
   pull_request:
     branches: [ master, main, develop ]
     paths:
-      - 'backend/**'
+      - 'apps/backend/**'
 
 jobs:
   test:
@@ -59,7 +59,7 @@ jobs:
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v5
       with:
-        file: ./backend/coverage.xml
+        file: ./apps/backend/coverage.xml
         flags: backend
         name: backend-coverage
       continue-on-error: true

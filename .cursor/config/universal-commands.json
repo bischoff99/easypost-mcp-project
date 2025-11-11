@@ -502,6 +502,116 @@
         "expected": "5-10s",
         "workers": 1
       }
+    },
+
+    "clean": {
+      "description": "Parallel cleanup of build artifacts and caches",
+      "tier": "medium",
+      "aliases": ["/clean", "/cleanup"],
+      "syntax": "/clean [--deep]",
+      "example": "/clean --deep",
+
+      "mcpIntegration": {
+        "execute": {
+          "server": "Desktop Commander",
+          "action": "start_process",
+          "command": "bash scripts/clean_project_parallel.sh",
+          "timeout_ms": 30000,
+          "parallel": true
+        }
+      },
+
+      "performance": {
+        "m3Max": {
+          "expected": "1-2s standard, 5s deep",
+          "workers": 16,
+          "speedup": "10-15x vs sequential"
+        }
+      },
+
+      "cleans": [
+        "Python caches (__pycache__, .pytest_cache, .mypy_cache)",
+        "Node build artifacts (node_modules, dist, .vite)",
+        "Docker containers and volumes",
+        "Log files and temporary files",
+        "Cursor cache"
+      ],
+
+      "deepMode": {
+        "description": "Also removes Docker images and user-level caches",
+        "flag": "--deep",
+        "includes": [
+          "Docker system prune",
+          "pip cache",
+          "npm cache",
+          "User-level pytest/mypy caches"
+        ]
+      }
+    },
+
+    "export-backend": {
+      "description": "Export backend source code to timestamped zip archive",
+      "tier": "light",
+      "aliases": ["/export-backend", "/export-backend-src"],
+      "syntax": "/export-backend",
+      "example": "/export-backend",
+
+      "mcpIntegration": {
+        "execute": {
+          "server": "Desktop Commander",
+          "action": "start_process",
+          "command": "zsh scripts/export_backend_source.sh",
+          "timeout_ms": 30000,
+          "parallel": false
+        }
+      },
+
+      "excludes": [
+        "__pycache__",
+        "*.pyc, *.pyo",
+        "venv, .venv",
+        "tests",
+        "*.log, *.tmp, *.bak",
+        "build artifacts"
+      ],
+
+      "output": {
+        "format": "zip",
+        "naming": "backend_src_YYYYMMDD_HHMMSS.zip",
+        "location": "Desktop"
+      }
+    },
+
+    "export-frontend": {
+      "description": "Export frontend source code to timestamped zip archive",
+      "tier": "light",
+      "aliases": ["/export-frontend", "/export-frontend-src"],
+      "syntax": "/export-frontend",
+      "example": "/export-frontend",
+
+      "mcpIntegration": {
+        "execute": {
+          "server": "Desktop Commander",
+          "action": "start_process",
+          "command": "zsh scripts/export_frontend_source.sh",
+          "timeout_ms": 30000,
+          "parallel": false
+        }
+      },
+
+      "excludes": [
+        "node_modules",
+        "dist, build",
+        ".next, .vite",
+        "*.log, *.tmp, *.bak",
+        "test files"
+      ],
+
+      "output": {
+        "format": "zip",
+        "naming": "frontend_src_YYYYMMDD_HHMMSS.zip",
+        "location": "Desktop"
+      }
     }
   },
 

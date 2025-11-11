@@ -28,14 +28,14 @@ fi
 
 # Phase 2: Archive old test files
 echo "🧪 Phase 2: Archiving old test files..."
-if [ -d "$PROJECT_ROOT/backend/tests/manual" ]; then
-    mv "$PROJECT_ROOT/backend/tests/manual"/* "$ARCHIVE_DIR/manual-tests/" 2>/dev/null || true
+if [ -d "$PROJECT_ROOT/apps/backend/tests/manual" ]; then
+    mv "$PROJECT_ROOT/apps/backend/tests/manual"/* "$ARCHIVE_DIR/manual-tests/" 2>/dev/null || true
     echo "  ✓ Archived manual test files"
 fi
 
 # Phase 3: Archive old captured responses (>7 days)
 echo "📦 Phase 3: Archiving old test responses..."
-find "$PROJECT_ROOT/backend/tests/captured_responses" -name "*.json" -mtime +7 -exec mv {} "$ARCHIVE_DIR/test-responses/" \; 2>/dev/null || true
+find "$PROJECT_ROOT/apps/backend/tests/captured_responses" -name "*.json" -mtime +7 -exec mv {} "$ARCHIVE_DIR/test-responses/" \; 2>/dev/null || true
 echo "  ✓ Archived old captured responses"
 
 # Phase 4: Create cleanup log
@@ -49,10 +49,10 @@ cat > "$ARCHIVE_DIR/CLEANUP_LOG.md" << EOF
 - docs/reviews/archived-reviews/CLAUDE.md
 
 ### Manual Tests
-- backend/tests/manual/* (all files)
+- apps/backend/tests/manual/* (all files)
 
 ### Old Test Responses
-- backend/tests/captured_responses/*.json (>7 days old)
+- apps/backend/tests/captured_responses/*.json (>7 days old)
 
 ## Archive Location
 \`docs/archive/cleanup-2025-11-10/\`

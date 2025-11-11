@@ -3,7 +3,7 @@ set -e
 
 echo "🔧 Setting up backend..."
 
-cd backend
+cd apps/backend
 
 # Install uv if not present
 if ! command -v uv &> /dev/null; then

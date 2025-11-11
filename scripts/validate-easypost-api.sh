@@ -16,7 +16,7 @@ echo -e "${BLUE}║        EasyPost API Validation & Test Suite              ║
 echo -e "${BLUE}╚═══════════════════════════════════════════════════════════╝${NC}"
 echo ""
 
-cd backend
+cd apps/backend
 source venv/bin/activate
 
 # Test counter
