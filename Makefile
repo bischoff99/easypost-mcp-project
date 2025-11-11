@@ -32,33 +32,52 @@ help:
 	@echo "  make format       - Auto-format code"
 	@echo "  make check        - Run all quality checks"
 	@echo ""
+	@echo "Security:"
+	@echo "  make audit        - Audit dependencies for vulnerabilities"
+	@echo "  make security     - Comprehensive security scan"
+	@echo ""
 	@echo "Utilities:"
 	@echo "  make install      - Install all dependencies"
 	@echo "  make clean        - Clean build artifacts"
 	@echo "  make health       - Check server health"
 	@echo "  make benchmark    - Run performance benchmarks"
 
+# Detect venv location (supports both venv and .venv)
+VENV_BIN = $(shell if [ -d backend/venv ]; then echo backend/venv/bin; elif [ -d backend/.venv ]; then echo backend/.venv/bin; else echo "venv not found"; fi)
+
 # Start both servers in parallel
 dev:
 	@echo "🚀 Starting development servers..."
 	@echo "📦 Backend: http://localhost:8000"
 	@echo "⚡ Frontend: http://localhost:5173"
+	@if [ "$(VENV_BIN)" = "venv not found" ]; then \
+		echo "❌ Error: Virtual environment not found. Run 'make install' first."; \
+		exit 1; \
+	fi
 	@trap 'kill 0' EXIT; \
-	(cd backend && ./.venv/bin/uvicorn src.server:app --host 0.0.0.0 --port 8000 --reload) & \
+	(cd backend && $(VENV_BIN)/uvicorn src.server:app --host 0.0.0.0 --port 8000 --reload) & \
 	(cd frontend && npm run dev) & \
 	wait
 
 # Start with mock mode (faster development)
 dev-mock:
 	@echo "🎭 Starting with mock EasyPost API..."
+	@if [ "$(VENV_BIN)" = "venv not found" ]; then \
+		echo "❌ Error: Virtual environment not found. Run 'make install' first."; \
+		exit 1; \
+	fi
 	@trap 'kill 0' EXIT; \
-	(cd backend && MOCK_MODE=true ./.venv/bin/uvicorn src.server:app --reload) & \
+	(cd backend && MOCK_MODE=true $(VENV_BIN)/uvicorn src.server:app --reload) & \
 	(cd frontend && npm run dev) & \
 	wait
 
 # Backend only
 backend:
-	@cd backend && ./.venv/bin/uvicorn src.server:app --reload
+	@if [ "$(VENV_BIN)" = "venv not found" ]; then \
+		echo "❌ Error: Virtual environment not found. Run 'make install' first."; \
+		exit 1; \
+	fi
+	@cd backend && $(VENV_BIN)/uvicorn src.server:app --reload
 
 # Frontend only
 frontend:
@@ -67,27 +86,43 @@ frontend:
 # Run all tests
 test:
 	@echo "🧪 Running all tests..."
-	@cd backend && ./.venv/bin/pytest tests/ -v
+	@if [ "$(VENV_BIN)" = "venv not found" ]; then \
+		echo "❌ Error: Virtual environment not found. Run 'make install' first."; \
+		exit 1; \
+	fi
+	@cd backend && $(VENV_BIN)/pytest tests/ -v
 	@cd frontend && npm test -- --run
 
 # Fast tests (changed files only, parallel execution)
 test-fast:
 	@echo "⚡ Running fast tests..."
-	@cd backend && ./.venv/bin/pytest tests/ -v --lf --ff -n auto
+	@if [ "$(VENV_BIN)" = "venv not found" ]; then \
+		echo "❌ Error: Virtual environment not found. Run 'make install' first."; \
+		exit 1; \
+	fi
+	@cd backend && $(VENV_BIN)/pytest tests/ -v --lf --ff -n auto
 	@cd frontend && npm test -- --run --changed
 
 # Watch mode for tests
 test-watch:
 	@echo "👀 Starting test watch mode..."
+	@if [ "$(VENV_BIN)" = "venv not found" ]; then \
+		echo "❌ Error: Virtual environment not found. Run 'make install' first."; \
+		exit 1; \
+	fi
 	@trap 'kill 0' EXIT; \
-	(cd backend && ./.venv/bin/pytest-watch tests/ --clear) & \
+	(cd backend && $(VENV_BIN)/pytest-watch tests/ --clear) & \
 	(cd frontend && npm test) & \
 	wait
 
 # Coverage report
 test-cov:
 	@echo "📊 Running tests with coverage..."
-	@cd backend && ./.venv/bin/pytest tests/ -v --cov=src --cov-report=term-missing --cov-report=html
+	@if [ "$(VENV_BIN)" = "venv not found" ]; then \
+		echo "❌ Error: Virtual environment not found. Run 'make install' first."; \
+		exit 1; \
+	fi
+	@cd backend && $(VENV_BIN)/pytest tests/ -v --cov=src --cov-report=term-missing --cov-report=html
 	@cd frontend && npm run test:coverage
 	@echo "✅ Coverage reports generated:"
 	@echo "   Backend:  backend/htmlcov/index.html"
@@ -97,7 +132,9 @@ test-cov:
 build:
 	@echo "📦 Building production bundles..."
 	@cd frontend && npm run build
-	@cd backend && ./.venv/bin/python -m compileall src/
+	@if [ "$(VENV_BIN)" != "venv not found" ]; then \
+		cd backend && $(VENV_BIN)/python -m compileall src/; \
+	fi
 	@echo "✅ Build complete!"
 	@du -sh frontend/dist
 
@@ -129,13 +166,21 @@ prod-docker:
 # Linting
 lint:
 	@echo "🔍 Running linters..."
-	@cd backend && ./.venv/bin/ruff check src/ tests/
+	@if [ "$(VENV_BIN)" = "venv not found" ]; then \
+		echo "❌ Error: Virtual environment not found. Run 'make install' first."; \
+		exit 1; \
+	fi
+	@cd backend && $(VENV_BIN)/ruff check src/ tests/
 	@cd frontend && npm run lint
 
 # Auto-format
 format:
 	@echo "✨ Formatting code..."
-	@cd backend && ./.venv/bin/black src/ tests/ && ./.venv/bin/ruff check src/ tests/ --fix
+	@if [ "$(VENV_BIN)" = "venv not found" ]; then \
+		echo "❌ Error: Virtual environment not found. Run 'make install' first."; \
+		exit 1; \
+	fi
+	@cd backend && $(VENV_BIN)/black src/ tests/ && $(VENV_BIN)/ruff check src/ tests/ --fix
 	@cd frontend && npx prettier --write src/
 
 # Full quality check
@@ -168,20 +213,60 @@ health:
 # Database operations
 db-reset:
 	@echo "🔄 Resetting database..."
-	@cd backend && ./.venv/bin/alembic downgrade base && ./.venv/bin/alembic upgrade head
+	@if [ "$(VENV_BIN)" = "venv not found" ]; then \
+		echo "❌ Error: Virtual environment not found. Run 'make install' first."; \
+		exit 1; \
+	fi
+	@cd backend && $(VENV_BIN)/alembic downgrade base && $(VENV_BIN)/alembic upgrade head
 	@echo "✅ Database reset complete!"
 
 db-migrate:
 	@echo "📝 Creating migration..."
-	@cd backend && ./.venv/bin/alembic revision --autogenerate -m "$(m)"
+	@if [ "$(VENV_BIN)" = "venv not found" ]; then \
+		echo "❌ Error: Virtual environment not found. Run 'make install' first."; \
+		exit 1; \
+	fi
+	@cd backend && $(VENV_BIN)/alembic revision --autogenerate -m "$(m)"
 
 db-upgrade:
-	@cd backend && ./.venv/bin/alembic upgrade head
+	@if [ "$(VENV_BIN)" = "venv not found" ]; then \
+		echo "❌ Error: Virtual environment not found. Run 'make install' first."; \
+		exit 1; \
+	fi
+	@cd backend && $(VENV_BIN)/alembic upgrade head
 
 # Performance benchmark
 benchmark:
 	@echo "⚡ Running benchmarks..."
 	@./scripts/benchmark.sh
+
+# Security audit
+audit:
+	@echo "🔒 Running security audits..."
+	@if [ "$(VENV_BIN)" = "venv not found" ]; then \
+		echo "❌ Error: Virtual environment not found. Run 'make install' first."; \
+		exit 1; \
+	fi
+	@echo "📦 Auditing Python dependencies..."
+	@cd backend && $(VENV_BIN)/pip install pip-audit 2>/dev/null || pip install pip-audit
+	@cd backend && $(VENV_BIN)/pip-audit --requirement requirements.txt || true
+	@echo ""
+	@echo "📦 Auditing Node.js dependencies..."
+	@cd frontend && npm audit --audit-level=moderate || true
+	@echo ""
+	@echo "✅ Security audit complete!"
+
+# Security scan (comprehensive)
+security: audit
+	@echo "🛡️ Running comprehensive security scan..."
+	@if [ "$(VENV_BIN)" = "venv not found" ]; then \
+		echo "❌ Error: Virtual environment not found. Run 'make install' first."; \
+		exit 1; \
+	fi
+	@echo "🔍 Checking for secrets..."
+	@cd backend && $(VENV_BIN)/pip install detect-secrets 2>/dev/null || pip install detect-secrets
+	@detect-secrets scan --baseline .secrets.baseline || true
+	@echo "✅ Security scan complete!"
 
 # Structure validation
 validate-structure:

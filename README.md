@@ -4,21 +4,28 @@ Production-ready EasyPost shipping integration with MCP server and React fronten
 
 ## Quick Start
 
-### Backend
+### 1. Clone and Setup Environment
 ```bash
-cd backend
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-# Add your EasyPost API key to .env
-./start_backend.sh
+git clone <repository-url>
+cd easypost-mcp-project
+cp .env.example .env
+# Edit .env with your EasyPost API key
 ```
 
-### Frontend
+### 2. Install Dependencies
 ```bash
-cd frontend
-npm install
-./start_frontend.sh
+make install
+# Or manually:
+# cd backend && python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt
+# cd frontend && npm install
+```
+
+### 3. Start Development Servers
+```bash
+make dev
+# Or separately:
+# make backend   # Backend on http://localhost:8000
+# make frontend   # Frontend on http://localhost:5173
 ```
 
 ## URLs
