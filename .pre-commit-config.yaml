@@ -32,7 +32,7 @@ repos:
       - id: black
         language_version: python3.12
         args: [--line-length=100]
-        files: ^backend/
+        files: ^apps/backend/
 
   # Python linting
   - repo: https://github.com/astral-sh/ruff-pre-commit
@@ -40,16 +40,16 @@ repos:
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
-        files: ^backend/
+        files: ^apps/backend/
       - id: ruff-format
-        files: ^backend/
+        files: ^apps/backend/
 
   # JavaScript/TypeScript linting
   - repo: https://github.com/pre-commit/mirrors-eslint
     rev: v9.0.0
     hooks:
       - id: eslint
-        files: ^frontend/.*\.(js|jsx)$
+        files: ^apps/frontend/.*\.(js|jsx)$
         additional_dependencies:
           - eslint@9.39.1
           - '@eslint/js@9.39.1'
@@ -75,8 +75,8 @@ repos:
             node_modules/.*|
             venv/.*|
             \.venv/.*|
-            backend/htmlcov/.*|
-            frontend/coverage/.*
+            apps/backend/htmlcov/.*|
+            apps/frontend/coverage/.*
           )
 
   # YAML formatting
@@ -102,8 +102,8 @@ exclude: |
     node_modules/.*|
     venv/.*|
     \.venv/.*|
-    backend/htmlcov/.*|
-    frontend/coverage/.*|
+    apps/backend/htmlcov/.*|
+    apps/frontend/coverage/.*|
     docs/.*|
     \.git/.*
   )

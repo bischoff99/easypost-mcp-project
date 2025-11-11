@@ -1,0 +1,20 @@
+{
+  "$schema": "https://gofastmcp.com/public/schemas/fastmcp.json/v1.json",
+  "source": {
+    "type": "filesystem",
+    "path": "apps/backend/src/mcp_server/server.py",
+    "entrypoint": "mcp"
+  },
+  "environment": {
+    "type": "uv",
+    "python": ">=3.13",
+    "requirements": "apps/backend/requirements.txt",
+    "project": "apps/backend"
+  },
+  "deployment": {
+    "transport": "stdio",
+    "log_level": "INFO",
+    "cwd": "apps/backend"
+  }
+}
+
