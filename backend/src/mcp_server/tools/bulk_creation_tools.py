@@ -21,7 +21,8 @@ from src.services.database_service import DatabaseService
 from src.services.smart_customs import get_or_create_customs
 
 from .bulk_tools import (
-    STORE_ADDRESSES,
+    detect_product_category,
+    get_warehouse_address,
     parse_dimensions,
     parse_spreadsheet_line,
     parse_weight,
@@ -45,7 +46,7 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
     @mcp.tool(tags=["bulk", "create", "shipping", "m3-optimized"])
     async def create_bulk_shipments(
         spreadsheet_data: str,
-        from_city: str = None,
+        _from_city: str = None,
         purchase_labels: bool = False,
         carrier: str = None,
         dry_run: bool = False,
@@ -133,35 +134,10 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
 
             total_lines = len(lines)
 
-            # Auto-detect origin from spreadsheet column 1
-            if from_city is None:
-                first_line_data = parse_spreadsheet_line(lines[0])
-                origin_state = first_line_data["origin_state"]
-                # Map state names to default warehouse cities
-                # Must match keys in STORE_ADDRESSES structure
-                state_defaults = {
-                    "California": "Los Angeles",
-                    "Nevada": "Las Vegas",
-                    "New York": "New York",
-                }
-                from_city = state_defaults.get(origin_state, "Los Angeles")
-
-                if ctx:
-                    await ctx.info(f"📍 Auto-detected origin: {from_city}")
-
-            # Get origin address from warehouse lookup
-            from_address = None
-            for state_stores in STORE_ADDRESSES.values():
-                if from_city in state_stores:
-                    from_address = state_stores[from_city]
-                    break
-
-            # Fallback to Los Angeles if city not found
-            if from_address is None:
-                logger.warning(
-                    f"City '{from_city}' not found in warehouses, using Los Angeles default"
-                )
-                from_address = STORE_ADDRESSES["California"]["Los Angeles"]
+            # NOTE: Warehouse selection now happens PER-SHIPMENT based on:
+            # 1. origin_state column (California, Nevada, New York)
+            # 2. Product category detected from contents
+            # This ensures each shipment uses the correct specialized warehouse
 
             if ctx:
                 await ctx.info(f"📊 Validating {total_lines} shipments...")
@@ -267,11 +243,29 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                     data = validation_result["data"]
                     line_number = validation_result["line"]
 
-                    # Use sender address if provided, otherwise use warehouse address
-                    shipment_from_address = from_address  # Default to warehouse
+                    # PRIORITY 1: Use custom sender address if provided (columns 16-24)
+                    # PRIORITY 2: Auto-select warehouse by product category + origin state
                     if "sender_address" in data and data["sender_address"].get("name"):
-                        # Use provided sender address from spreadsheet data
+                        # Custom sender address provided - USE IT (ignores warehouse lookup)
                         shipment_from_address = data["sender_address"]
+                        warehouse_info = f"Custom sender: {shipment_from_address.get('name')}"
+                    else:
+                        # No custom sender - select warehouse by category + state
+                        # Detect product category from contents
+                        category = detect_product_category(data["contents"])
+                        origin_state = data.get("origin_state", "California")
+
+                        # Get appropriate warehouse for this product category and state
+                        shipment_from_address = get_warehouse_address(origin_state, category)
+
+                        warehouse_name = shipment_from_address.get(
+                            "company", shipment_from_address.get("name", "Unknown")
+                        )
+                        warehouse_city = shipment_from_address.get("city", "Unknown")
+                        warehouse_info = f"{warehouse_name} ({warehouse_city}, {origin_state})"
+
+                    if ctx and line_number % max(1, total_lines // 10) == 0:
+                        await ctx.info(f"📍 Shipment #{line_number}: {warehouse_info}")
 
                     # Build addresses and parcel
                     to_address = {
@@ -493,6 +487,16 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                         timeout=30.0,
                     )
 
+                    # Get recipient name early - needed for both success and error cases
+                    # Get recipient name - handle both dict and string ID cases
+                    if isinstance(to_address, dict):
+                        recipient_name = to_address.get("name")
+                    else:
+                        fname = data.get("recipient_name", "")
+                        lname = data.get("recipient_last_name", "")
+                        recipient_name = f"{fname} {lname}".strip()
+                    recipient_name = recipient_name or data.get("name") or "Unknown"
+
                     if result["status"] == "success":
                         # Extract rate info
                         rate_info = result.get("purchased_rate")
@@ -552,14 +556,6 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                             )
 
                         # Build result - only include cost if purchased
-                        # Get recipient name - handle both dict and string ID cases
-                        if isinstance(to_address, dict):
-                            recipient_name = to_address.get("name")
-                        else:
-                            fname = data.get("recipient_name", "")
-                            lname = data.get("recipient_last_name", "")
-                            recipient_name = f"{fname} {lname}".strip()
-                        recipient_name = recipient_name or data.get("name") or "Unknown"
                         result_dict = {
                             "line": line_number,
                             "status": "success",
@@ -718,17 +714,24 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                                 }
 
                                 # Create addresses if they don't exist
+                                # Get from_address from easypost_shipment object
                                 from_address_data = {
-                                    "name": from_address.get("name", ""),
-                                    "company": from_address.get("company", ""),
-                                    "street1": from_address.get("street1", ""),
-                                    "street2": from_address.get("street2", ""),
-                                    "city": from_address.get("city", ""),
-                                    "state": from_address.get("state", ""),
-                                    "zip": from_address.get("zip", ""),
-                                    "country": from_address.get("country", "US"),
-                                    "phone": from_address.get("phone", ""),
-                                    "email": from_address.get("email", ""),
+                                    "name": getattr(
+                                        easypost_shipment.from_address, "name", ""
+                                    ),
+                                    "company": getattr(
+                                        easypost_shipment.from_address, "company", ""
+                                    ),
+                                    "street1": easypost_shipment.from_address.street1,
+                                    "street2": getattr(
+                                        easypost_shipment.from_address, "street2", ""
+                                    ),
+                                    "city": easypost_shipment.from_address.city,
+                                    "state": getattr(easypost_shipment.from_address, "state", ""),
+                                    "zip": easypost_shipment.from_address.zip,
+                                    "country": easypost_shipment.from_address.country,
+                                    "phone": getattr(easypost_shipment.from_address, "phone", ""),
+                                    "email": getattr(easypost_shipment.from_address, "email", ""),
                                 }
 
                                 to_address_data = {
@@ -795,7 +798,6 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                 "status": "success",
                 "data": {
                     "batch_id": batch_operation.batch_id if batch_operation else None,
-                    "from_address": from_address,
                     "shipments": results,
                     "successful": successful,
                     "failed": failed,

@@ -141,7 +141,7 @@ build:
 # Docker build
 build-docker:
 	@echo "🐳 Building Docker images..."
-	@docker-compose build --parallel
+	@docker compose -f docker/docker-compose.yml build --parallel
 	@echo "✅ Docker images built!"
 
 # Production mode (local)
@@ -157,11 +157,11 @@ prod-docker:
 		cp .env.example .env.production 2>/dev/null || true; \
 		echo "📝 Please edit .env.production with production values"; \
 	fi
-	@docker-compose -f docker-compose.prod.yml --env-file .env.production up -d
+	@docker compose -f docker/docker-compose.prod.yml --env-file .env.production up -d
 	@echo "✅ Production services started!"
 	@echo "   Backend:  http://localhost:8000"
 	@echo "   Frontend: http://localhost:80"
-	@echo "   View logs: docker-compose -f docker-compose.prod.yml logs -f"
+	@echo "   View logs: docker compose -f docker/docker-compose.prod.yml logs -f"
 
 # Linting
 lint:

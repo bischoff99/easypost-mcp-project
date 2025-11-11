@@ -5,7 +5,7 @@ import globals from 'globals'
 
 export default [
   {
-    ignores: ['dist', 'node_modules', '*.config.js', '**/e2e-tests/**', '**/src/tests/e2e/**'],
+    ignores: ['dist', 'node_modules', '*.config.js', '**/e2e/**', '**/src/tests/e2e/**', 'coverage/**'],
   },
   js.configs.recommended,
   {
@@ -14,6 +14,7 @@ export default [
       ecmaVersion: 2020,
       globals: {
         ...globals.browser,
+        ...globals.node,
       },
       parserOptions: {
         ecmaVersion: 'latest',

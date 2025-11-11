@@ -128,3 +128,19 @@ docs/*.tar.gz
 
 # MCP setup guide (contains credentials)
 .env.mcp-setup-guide.txt
+/node_modules
+
+# REST Client configurations (contain secrets - added 2025-11-11)
+.cursor/rest-client-environments.json
+.thunder-client/thunder-environment.json
+
+# Keep template files (safe to commit)
+!.cursor/rest-client-environments.json.example
+!.thunder-client/thunder-environment.json.example
+
+# Cursor MCP configuration (may contain secrets)
+.cursor/mcp.json.local
+
+# Keep template/example files (safe to commit)
+!.cursor/mcp.json
+!.cursor/environment.json

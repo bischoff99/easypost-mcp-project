@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "description": "REST Client environment configuration template. Copy to rest-client-environments.json and use environment variables from .env file.",
+  "development": {
+    "baseUrl": "http://localhost:8000",
+    "apiUrl": "http://localhost:8000",
+    "frontendUrl": "http://localhost:5173",
+    "easypostApiKey": "${EASYPOST_API_KEY}",
+    "databaseUrl": "${DATABASE_URL}",
+    "environment": "development"
+  },
+  "production": {
+    "baseUrl": "http://localhost:80",
+    "apiUrl": "http://localhost:80/api",
+    "frontendUrl": "http://localhost:80",
+    "easypostApiKey": "${EASYPOST_API_KEY}",
+    "databaseUrl": "${DATABASE_URL}",
+    "environment": "production"
+  },
+  "staging": {
+    "baseUrl": "https://staging.example.com",
+    "apiUrl": "https://staging.example.com/api",
+    "frontendUrl": "https://staging.example.com",
+    "easypostApiKey": "${EASYPOST_API_KEY}",
+    "databaseUrl": "${DATABASE_URL}",
+    "environment": "staging"
+  }
+}

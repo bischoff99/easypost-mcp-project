@@ -26,14 +26,23 @@ The main MCP server for this project, providing tools to interact with the EasyP
 
 **Setup:**
 
-1. Ensure you have the EasyPost API key in your environment:
+1. Set required environment variables in your shell (before starting Cursor IDE):
    ```bash
    export EASYPOST_API_KEY="your_key_here"
+   export DATABASE_URL="postgresql+asyncpg://easypost:easypost@localhost:5432/easypost_mcp"
+   ```
+   
+   **Note**: These environment variables are read from your shell environment. The MCP server will inherit them automatically.
+
+2. Alternatively, load from `.env` file (recommended):
+   ```bash
+   # In project root
+   source .env  # or use direnv if configured
    ```
 
-2. The MCP server will automatically start when you open this project in Cursor IDE.
+3. The MCP server will automatically start when you open this project in Cursor IDE.
 
-3. Access tools via the MCP menu or by using natural language commands.
+4. Access tools via the MCP menu or by using natural language commands.
 
 ## File Structure
 
@@ -43,7 +52,19 @@ The main MCP server for this project, providing tools to interact with the EasyP
 └── mcp-README.md      # This documentation
 ```
 
-## Global vs Project MCP
+## Security
+
+**Important**: The `.cursor/mcp.json` file does not contain hardcoded API keys or credentials. All sensitive values are read from your shell environment variables. This ensures:
+
+- No secrets committed to version control
+- Portability across different machines
+- Easy rotation of API keys
+
+**Required Environment Variables:**
+- `EASYPOST_API_KEY` - Must be set in your shell environment
+- `DATABASE_URL` - PostgreSQL connection string (optional for development)
+
+Set these before starting Cursor IDE, or use a tool like `direnv` to load them automatically from `.env`.
 
 **Global MCP** (`~/.cursor/mcp.json`):
 - Shared across all projects
@@ -58,12 +79,18 @@ The main MCP server for this project, providing tools to interact with the EasyP
 
 **Server not starting:**
 1. Check that the virtual environment exists: `backend/venv/bin/python`
-2. Verify the API key is set: `echo $EASYPOST_API_KEY`
-3. Restart Cursor IDE
+2. Verify environment variables are set: `echo $EASYPOST_API_KEY`
+3. Ensure variables are exported in your shell (not just in `.env` file)
+4. Restart Cursor IDE after setting environment variables
 
 **Python path issues:**
-- The configuration uses absolute paths to ensure reliability
-- Update paths if you move the project directory
+- The configuration uses workspace-relative paths (`${workspaceFolder}`) for portability
+- Paths automatically resolve to your project location
+- No need to update paths when moving the project directory
+- **Note**: If `${workspaceFolder}` is not supported in your Cursor version, replace with absolute paths:
+  ```json
+  "command": "/absolute/path/to/project/backend/venv/bin/python"
+  ```
 
 **Database connection:**
 - Ensure PostgreSQL is running: `pg_isready`
