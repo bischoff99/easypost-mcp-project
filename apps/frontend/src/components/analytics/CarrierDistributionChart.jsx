@@ -8,22 +8,22 @@ import {
   ResponsiveContainer,
   Legend,
   Cell,
-} from 'recharts';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
+} from 'recharts'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 
 const data = [
   { carrier: 'USPS', shipments: 1205, cost: 15062 },
   { carrier: 'UPS', shipments: 842, cost: 13468 },
   { carrier: 'FedEx', shipments: 409, cost: 9815 },
   { carrier: 'DHL', shipments: 156, cost: 4680 },
-];
+]
 
 const COLORS = [
   'hsl(var(--primary))',
   'hsl(var(--secondary))',
   'hsl(var(--accent))',
   'hsl(var(--muted))',
-];
+]
 
 export default function CarrierDistributionChart() {
   return (
@@ -59,5 +59,5 @@ export default function CarrierDistributionChart() {
         </ResponsiveContainer>
       </CardContent>
     </Card>
-  );
+  )
 }

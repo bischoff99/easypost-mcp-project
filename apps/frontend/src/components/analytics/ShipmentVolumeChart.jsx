@@ -7,8 +7,8 @@ import {
   Tooltip,
   ResponsiveContainer,
   Legend,
-} from 'recharts';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
+} from 'recharts'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 
 const data = [
   { date: 'Jan 1', shipments: 45, cost: 560 },
@@ -21,7 +21,7 @@ const data = [
   { date: 'Feb 19', shipments: 78, cost: 975 },
   { date: 'Feb 26', shipments: 85, cost: 1062 },
   { date: 'Mar 5', shipments: 92, cost: 1150 },
-];
+]
 
 export default function ShipmentVolumeChart() {
   return (
@@ -67,5 +67,5 @@ export default function ShipmentVolumeChart() {
         </ResponsiveContainer>
       </CardContent>
     </Card>
-  );
+  )
 }

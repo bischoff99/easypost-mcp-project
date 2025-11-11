@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { Check, ChevronDown, Globe } from 'lucide-react';
-import * as Select from '@radix-ui/react-select';
-import { COUNTRIES, REGIONS } from '@/data/countries';
-import { Button } from '@/components/ui/Button';
+import { useState } from 'react'
+import { Check, ChevronDown, Globe } from 'lucide-react'
+import * as Select from '@radix-ui/react-select'
+import { COUNTRIES, REGIONS } from '@/data/countries'
+import { Button } from '@/components/ui/Button'
 
 /**
  * CountrySelector Component
@@ -10,9 +10,9 @@ import { Button } from '@/components/ui/Button';
  * Dropdown for selecting destination country with flags and regions
  */
 export default function CountrySelector({ value, onChange, disabled }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(false)
 
-  const selectedCountry = COUNTRIES.find((c) => c.code === value);
+  const selectedCountry = COUNTRIES.find((c) => c.code === value)
 
   return (
     <Select.Root value={value} onValueChange={onChange} open={open} onOpenChange={setOpen}>
@@ -73,7 +73,7 @@ export default function CountrySelector({ value, onChange, disabled }) {
         </Select.Content>
       </Select.Portal>
     </Select.Root>
-  );
+  )
 }
 
 /**
@@ -83,6 +83,6 @@ function getFlagEmoji(countryCode) {
   const codePoints = countryCode
     .toUpperCase()
     .split('')
-    .map((char) => 127397 + char.charCodeAt());
-  return String.fromCodePoint(...codePoints);
+    .map((char) => 127397 + char.charCodeAt())
+  return String.fromCodePoint(...codePoints)
 }

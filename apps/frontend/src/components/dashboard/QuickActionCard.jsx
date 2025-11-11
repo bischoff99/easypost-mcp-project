@@ -1,7 +1,7 @@
-import { motion } from 'framer-motion';
-import PropTypes from 'prop-types';
-import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
-import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion'
+import PropTypes from 'prop-types'
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
+import { cn } from '@/lib/utils'
 
 export default function QuickActionCard({
   title,
@@ -15,7 +15,7 @@ export default function QuickActionCard({
     primary: 'hover:bg-primary hover:text-primary-foreground',
     secondary: 'hover:bg-secondary hover:text-secondary-foreground',
     accent: 'hover:bg-accent hover:text-accent-foreground',
-  };
+  }
 
   return (
     <motion.div
@@ -40,7 +40,7 @@ export default function QuickActionCard({
         </CardHeader>
       </Card>
     </motion.div>
-  );
+  )
 }
 
 QuickActionCard.propTypes = {
@@ -50,4 +50,4 @@ QuickActionCard.propTypes = {
   onClick: PropTypes.func.isRequired,
   delay: PropTypes.number,
   color: PropTypes.oneOf(['primary', 'secondary', 'accent']),
-};
+}
