@@ -1,9 +1,9 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Separator } from '@/components/ui/Separator';
-import { Info } from 'lucide-react';
-import { formatCurrency } from '@/services/currencyService';
-import { calculateTaxesAndDuties } from '@/services/internationalShippingService';
-import { COUNTRIES } from '@/data/countries';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Separator } from '@/components/ui/Separator'
+import { Info } from 'lucide-react'
+import { formatCurrency } from '@/services/currencyService'
+import { calculateTaxesAndDuties } from '@/services/internationalShippingService'
+import { COUNTRIES } from '@/data/countries'
 
 /**
  * PriceBreakdown Component
@@ -12,7 +12,7 @@ import { COUNTRIES } from '@/data/countries';
  */
 export default function PriceBreakdown({ itemTotal, shippingRate, country, currency }) {
   if (!shippingRate) {
-    return null;
+    return null
   }
 
   // Calculate taxes and duties
@@ -20,12 +20,12 @@ export default function PriceBreakdown({ itemTotal, shippingRate, country, curre
     country,
     itemValue: itemTotal,
     shippingCost: shippingRate.rate,
-  });
+  })
 
-  const subtotal = itemTotal;
-  const shipping = shippingRate.rate;
-  const taxTotal = taxes.total;
-  const grandTotal = subtotal + shipping + taxTotal;
+  const subtotal = itemTotal
+  const shipping = shippingRate.rate
+  const taxTotal = taxes.total
+  const grandTotal = subtotal + shipping + taxTotal
 
   return (
     <Card>
@@ -94,7 +94,8 @@ export default function PriceBreakdown({ itemTotal, shippingRate, country, curre
             <div className="flex items-start gap-2 p-3 bg-green-50 dark:bg-green-950 rounded-lg">
               <Info className="h-4 w-4 text-green-600 mt-0.5" />
               <p className="text-xs text-green-700 dark:text-green-400">
-                No additional taxes or duties apply (under {formatCurrency(taxes.threshold, currency)} threshold)
+                No additional taxes or duties apply (under{' '}
+                {formatCurrency(taxes.threshold, currency)} threshold)
               </p>
             </div>
             <Separator />
@@ -115,13 +116,13 @@ export default function PriceBreakdown({ itemTotal, shippingRate, country, curre
         )}
       </CardContent>
     </Card>
-  );
+  )
 }
 
 /**
  * Get country name from code
  */
 function getCountryName(code) {
-  const country = COUNTRIES.find((c) => c.code === code);
-  return country ? country.name : code;
+  const country = COUNTRIES.find((c) => c.code === code)
+  return country ? country.name : code
 }

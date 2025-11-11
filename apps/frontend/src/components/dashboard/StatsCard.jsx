@@ -1,8 +1,8 @@
-import { motion } from 'framer-motion';
-import { TrendingUp, TrendingDown } from 'lucide-react';
-import PropTypes from 'prop-types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion'
+import { TrendingUp, TrendingDown } from 'lucide-react'
+import PropTypes from 'prop-types'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import { cn } from '@/lib/utils'
 
 export default function StatsCard({
   title,
@@ -15,9 +15,9 @@ export default function StatsCard({
   delay = 0,
 }) {
   // Support both 'title' and 'name' props for compatibility
-  const displayTitle = title || name;
-  const isPositive = trend === 'up';
-  const showTrend = change && trend;
+  const displayTitle = title || name
+  const isPositive = trend === 'up'
+  const showTrend = change && trend
 
   return (
     <motion.div
@@ -54,7 +54,7 @@ export default function StatsCard({
         </CardContent>
       </Card>
     </motion.div>
-  );
+  )
 }
 
 StatsCard.propTypes = {
@@ -66,4 +66,4 @@ StatsCard.propTypes = {
   trend: PropTypes.oneOf(['up', 'down']), // Optional trend
   icon: PropTypes.elementType.isRequired,
   delay: PropTypes.number,
-};
+}

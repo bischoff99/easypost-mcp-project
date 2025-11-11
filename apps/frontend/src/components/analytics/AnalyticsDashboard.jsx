@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect } from 'react';
-import PropTypes from 'prop-types';
+import { useState, useCallback, useEffect } from 'react'
+import PropTypes from 'prop-types'
 import {
   BarChart,
   Bar,
@@ -14,15 +14,15 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-} from 'recharts';
-import { TrendingUp, Package, DollarSign, TruckIcon } from 'lucide-react';
-import { Card } from '../ui/Card';
-import { Skeleton } from '../ui/Skeleton';
-import { Button } from '../ui/Button';
-import api from '../../services/api';
-import { toast } from 'sonner';
+} from 'recharts'
+import { TrendingUp, Package, DollarSign, TruckIcon } from 'lucide-react'
+import { Card } from '../ui/Card'
+import { Skeleton } from '../ui/Skeleton'
+import { Button } from '../ui/Button'
+import api from '../../services/api'
+import { toast } from 'sonner'
 
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
 
 /**
  * AnalyticsDashboard - Comprehensive shipping analytics
@@ -36,34 +36,34 @@ const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'
  * @param {number} props.days - Number of days to analyze (default: 30)
  */
 export default function AnalyticsDashboard({ days = 30 }) {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   const fetchAnalytics = useCallback(async () => {
-    setLoading(true);
-    setError('');
+    setLoading(true)
+    setError('')
 
     try {
-      const response = await api.get(`/analytics?days=${days}`);
+      const response = await api.get(`/analytics?days=${days}`)
 
       if (response.data.status === 'success') {
-        setData(response.data.data);
+        setData(response.data.data)
       } else {
-        throw new Error(response.data.message || 'Failed to fetch analytics');
+        throw new Error(response.data.message || 'Failed to fetch analytics')
       }
     } catch (err) {
-      const errorMsg = err.response?.data?.detail || err.message || 'Failed to load analytics';
-      setError(errorMsg);
-      toast.error(`Analytics Error: ${errorMsg}`);
+      const errorMsg = err.response?.data?.detail || err.message || 'Failed to load analytics'
+      setError(errorMsg)
+      toast.error(`Analytics Error: ${errorMsg}`)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  }, [days]);
+  }, [days])
 
   useEffect(() => {
-    fetchAnalytics();
-  }, [fetchAnalytics]);
+    fetchAnalytics()
+  }, [fetchAnalytics])
 
   if (loading) {
     return (
@@ -83,7 +83,7 @@ export default function AnalyticsDashboard({ days = 30 }) {
           ))}
         </div>
       </div>
-    );
+    )
   }
 
   if (error) {
@@ -95,14 +95,14 @@ export default function AnalyticsDashboard({ days = 30 }) {
           Retry
         </Button>
       </Card>
-    );
+    )
   }
 
   if (!data) {
-    return <div data-testid="analytics-no-data">No analytics data available</div>;
+    return <div data-testid="analytics-no-data">No analytics data available</div>
   }
 
-  const { summary, by_carrier, by_date, top_routes } = data;
+  const { summary, by_carrier, by_date, top_routes } = data
 
   return (
     <div className="space-y-6" data-testid="analytics-dashboard">
@@ -269,9 +269,9 @@ export default function AnalyticsDashboard({ days = 30 }) {
         </div>
       </Card>
     </div>
-  );
+  )
 }
 
 AnalyticsDashboard.propTypes = {
   days: PropTypes.number,
-};
+}

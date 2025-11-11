@@ -1,15 +1,15 @@
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import CountrySelector from './CountrySelector';
-import ShippingOptions from './ShippingOptions';
-import PriceBreakdown from './PriceBreakdown';
-import useShippingRates from '@/hooks/useShippingRates';
-import { getCurrencyFromCountry } from '@/services/currencyService';
-import { Loader2 } from 'lucide-react';
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
+import CountrySelector from './CountrySelector'
+import ShippingOptions from './ShippingOptions'
+import PriceBreakdown from './PriceBreakdown'
+import useShippingRates from '@/hooks/useShippingRates'
+import { getCurrencyFromCountry } from '@/services/currencyService'
+import { Loader2 } from 'lucide-react'
 
 /**
  * InternationalShippingForm Component
@@ -21,11 +21,11 @@ import { Loader2 } from 'lucide-react';
  * - Price breakdown with taxes
  */
 export default function InternationalShippingForm() {
-  const { t } = useTranslation();
-  const { getRates, rates, isLoading, error: _error } = useShippingRates();
+  const { t } = useTranslation()
+  const { getRates, rates, isLoading, error: _error } = useShippingRates()
 
-  const [selectedCountry, setSelectedCountry] = useState('GB');
-  const [selectedRate, setSelectedRate] = useState(null);
+  const [selectedCountry, setSelectedCountry] = useState('GB')
+  const [selectedRate, setSelectedRate] = useState(null)
   const [formData, setFormData] = useState({
     name: '',
     street1: '',
@@ -34,27 +34,27 @@ export default function InternationalShippingForm() {
     state: '',
     zip: '',
     phone: '',
-  });
+  })
 
-  const currency = getCurrencyFromCountry(selectedCountry);
-  const itemTotal = 100; // Example item total
+  const currency = getCurrencyFromCountry(selectedCountry)
+  const itemTotal = 100 // Example item total
 
   const handleInputChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
-    });
-  };
+    })
+  }
 
   const handleCountryChange = (country) => {
-    setSelectedCountry(country);
-    setSelectedRate(null);
-  };
+    setSelectedCountry(country)
+    setSelectedRate(null)
+  }
 
   const handleGetRates = async () => {
     if (!formData.street1 || !formData.city || !formData.zip) {
-      toast.error('Please fill in all required fields');
-      return;
+      toast.error('Please fill in all required fields')
+      return
     }
 
     try {
@@ -77,15 +77,15 @@ export default function InternationalShippingForm() {
           height: 6,
           weight: 16,
         },
-      });
+      })
 
-      toast.success('Shipping rates retrieved');
+      toast.success('Shipping rates retrieved')
     } catch (err) {
       toast.error('Failed to get rates', {
         description: err.message || 'Please try again',
-      });
+      })
     }
-  };
+  }
 
   return (
     <div className="container mx-auto max-w-6xl py-8 px-4">
@@ -108,9 +108,7 @@ export default function InternationalShippingForm() {
               <CardContent className="space-y-4">
                 {/* Country Selector */}
                 <div>
-                  <label className="text-sm font-medium mb-2 block">
-                    {t('address.country')}
-                  </label>
+                  <label className="text-sm font-medium mb-2 block">{t('address.country')}</label>
                   <CountrySelector
                     value={selectedCountry}
                     onChange={handleCountryChange}
@@ -120,9 +118,7 @@ export default function InternationalShippingForm() {
 
                 {/* Name */}
                 <div>
-                  <label className="text-sm font-medium mb-2 block">
-                    {t('address.name')}
-                  </label>
+                  <label className="text-sm font-medium mb-2 block">{t('address.name')}</label>
                   <Input
                     name="name"
                     value={formData.name}
@@ -133,9 +129,7 @@ export default function InternationalShippingForm() {
 
                 {/* Street Address */}
                 <div>
-                  <label className="text-sm font-medium mb-2 block">
-                    {t('address.street1')} *
-                  </label>
+                  <label className="text-sm font-medium mb-2 block">{t('address.street1')} *</label>
                   <Input
                     name="street1"
                     value={formData.street1}
@@ -147,9 +141,7 @@ export default function InternationalShippingForm() {
 
                 {/* Street 2 */}
                 <div>
-                  <label className="text-sm font-medium mb-2 block">
-                    {t('address.street2')}
-                  </label>
+                  <label className="text-sm font-medium mb-2 block">{t('address.street2')}</label>
                   <Input
                     name="street2"
                     value={formData.street2}
@@ -160,9 +152,7 @@ export default function InternationalShippingForm() {
 
                 {/* City */}
                 <div>
-                  <label className="text-sm font-medium mb-2 block">
-                    {t('address.city')} *
-                  </label>
+                  <label className="text-sm font-medium mb-2 block">{t('address.city')} *</label>
                   <Input
                     name="city"
                     value={formData.city}
@@ -174,9 +164,7 @@ export default function InternationalShippingForm() {
 
                 {/* State/Province */}
                 <div>
-                  <label className="text-sm font-medium mb-2 block">
-                    {t('address.state')}
-                  </label>
+                  <label className="text-sm font-medium mb-2 block">{t('address.state')}</label>
                   <Input
                     name="state"
                     value={formData.state}
@@ -187,9 +175,7 @@ export default function InternationalShippingForm() {
 
                 {/* Postal Code */}
                 <div>
-                  <label className="text-sm font-medium mb-2 block">
-                    {t('address.zip')} *
-                  </label>
+                  <label className="text-sm font-medium mb-2 block">{t('address.zip')} *</label>
                   <Input
                     name="zip"
                     value={formData.zip}
@@ -201,9 +187,7 @@ export default function InternationalShippingForm() {
 
                 {/* Phone */}
                 <div>
-                  <label className="text-sm font-medium mb-2 block">
-                    {t('address.phone')}
-                  </label>
+                  <label className="text-sm font-medium mb-2 block">{t('address.phone')}</label>
                   <Input
                     name="phone"
                     value={formData.phone}
@@ -212,11 +196,7 @@ export default function InternationalShippingForm() {
                   />
                 </div>
 
-                <Button
-                  onClick={handleGetRates}
-                  disabled={isLoading}
-                  className="w-full"
-                >
+                <Button onClick={handleGetRates} disabled={isLoading} className="w-full">
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Get Shipping Rates
                 </Button>
@@ -245,5 +225,5 @@ export default function InternationalShippingForm() {
         </div>
       </div>
     </div>
-  );
+  )
 }

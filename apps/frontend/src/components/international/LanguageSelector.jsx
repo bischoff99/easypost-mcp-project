@@ -1,7 +1,7 @@
-import { useTranslation } from 'react-i18next';
-import * as Select from '@radix-ui/react-select';
-import { Check, ChevronDown, Languages } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import { useTranslation } from 'react-i18next'
+import * as Select from '@radix-ui/react-select'
+import { Check, ChevronDown, Languages } from 'lucide-react'
+import { Button } from '@/components/ui/Button'
 
 /**
  * LanguageSelector Component
@@ -9,21 +9,21 @@ import { Button } from '@/components/ui/Button';
  * Dropdown for selecting UI language
  */
 export default function LanguageSelector() {
-  const { i18n } = useTranslation();
+  const { i18n } = useTranslation()
 
   const languages = [
     { code: 'en', name: 'English', flag: '🇺🇸' },
     { code: 'es', name: 'Español', flag: '🇪🇸' },
     { code: 'fr', name: 'Français', flag: '🇫🇷' },
     { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
-  ];
+  ]
 
-  const currentLanguage = languages.find((lang) => lang.code === i18n.language) || languages[0];
+  const currentLanguage = languages.find((lang) => lang.code === i18n.language) || languages[0]
 
   const changeLanguage = (code) => {
-    i18n.changeLanguage(code);
-    localStorage.setItem('preferred-language', code);
-  };
+    i18n.changeLanguage(code)
+    localStorage.setItem('preferred-language', code)
+  }
 
   return (
     <Select.Root value={i18n.language} onValueChange={changeLanguage}>
@@ -61,5 +61,5 @@ export default function LanguageSelector() {
         </Select.Content>
       </Select.Portal>
     </Select.Root>
-  );
+  )
 }
