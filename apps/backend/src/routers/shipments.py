@@ -1,26 +1,29 @@
 """Shipment management endpoints."""
 
-import asyncio
 import logging
 from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 from starlette import status
 
 from src.dependencies import EasyPostDep
 from src.models.requests import (
-    BulkShipmentsRequest,
     BuyShipmentRequest,
     RatesRequest,
     ShipmentRequest,
 )
+from src.models.responses import (
+    BuyShipmentResponse,
+    CreateShipmentResponse,
+    RatesResponse,
+    RefundShipmentResponse,
+    ShipmentDetailResponse,
+    ShipmentsListResponse,
+)
 from src.utils.monitoring import metrics
 
 logger = logging.getLogger(__name__)
-limiter = Limiter(key_func=get_remote_address)
 
 MAX_REQUEST_LOG_SIZE = 1000
 
@@ -31,9 +34,10 @@ router = APIRouter(tags=["shipments"])  # Prefix added when including in app
 rates_router = APIRouter(tags=["rates"])
 
 
-@rates_router.post("/rates")
-@limiter.limit("10/minute")
-async def get_rates(request: Request, rates_request: RatesRequest, service: EasyPostDep):
+@rates_router.post("/rates", response_model=RatesResponse)
+async def get_rates(
+    request: Request, rates_request: RatesRequest, service: EasyPostDep
+) -> dict[str, Any]:
     """Get shipping rates from EasyPost."""
     request_id = getattr(request.state, "request_id", "unknown")
 
@@ -67,11 +71,10 @@ async def get_rates(request: Request, rates_request: RatesRequest, service: Easy
         ) from e
 
 
-@router.post("/shipments")
-@limiter.limit("10/minute")
+@router.post("/shipments", response_model=CreateShipmentResponse)
 async def create_shipment(
     request: Request, shipment_request: ShipmentRequest, service: EasyPostDep
-):
+) -> dict[str, Any]:
     """Create a shipment with EasyPost."""
     request_id = getattr(request.state, "request_id", "unknown")
 
@@ -106,9 +109,10 @@ async def create_shipment(
         ) from e
 
 
-@router.post("/shipments/buy")
-@limiter.limit("10/minute")
-async def buy_shipment(request: Request, buy_request: BuyShipmentRequest, service: EasyPostDep):
+@router.post("/shipments/buy", response_model=BuyShipmentResponse)
+async def buy_shipment(
+    request: Request, buy_request: BuyShipmentRequest, service: EasyPostDep
+) -> dict[str, Any]:
     """Buy a shipment with selected rate."""
     request_id = getattr(request.state, "request_id", "unknown")
 
@@ -164,130 +168,11 @@ async def buy_shipment(request: Request, buy_request: BuyShipmentRequest, servic
         ) from e
 
 
-@router.post("/bulk-shipments")
-@limiter.limit("5/minute")
-async def create_bulk_shipments(
-    request: Request, bulk_request: BulkShipmentsRequest, service: EasyPostDep
-):
-    """Create multiple shipments concurrently."""
-    request_id = getattr(request.state, "request_id", "unknown")
 
-    try:
-        logger.info(
-            f"[{request_id}] Bulk shipment request received ({len(bulk_request.shipments)} items)"
-        )
-
-        shipments = bulk_request.shipments
-        if not shipments:
-            metrics.track_api_call("bulk_create_shipments", True)
-            return {
-                "status": "success",
-                "data": {
-                    "total": 0,
-                    "successful": 0,
-                    "failed": 0,
-                    "errors": [],
-                    "results": [],
-                },
-                "timestamp": datetime.now(UTC).isoformat(),
-            }
-
-        concurrency = min(8, len(shipments))
-        semaphore = asyncio.Semaphore(concurrency)
-
-        async def process(index: int, shipment_req: ShipmentRequest):
-            async with semaphore:
-                payload = shipment_req.model_dump()
-                try:
-                    result = await service.create_shipment(
-                        to_address=payload["to_address"],
-                        from_address=payload["from_address"],
-                        parcel=payload["parcel"],
-                        carrier=payload.get("carrier", "USPS"),
-                        service=payload.get("service"),
-                        buy_label=False,
-                    )
-                    return index, result, None
-                except Exception as exc:
-                    return index, None, str(exc)
-
-        tasks = [
-            asyncio.create_task(process(idx, shipment)) for idx, shipment in enumerate(shipments)
-        ]
-        raw_results = await asyncio.gather(*tasks, return_exceptions=True)
-
-        successes = 0
-        errors: list[dict[str, Any]] = []
-        results: list[dict[str, Any]] = []
-
-        for outcome in raw_results:
-            if isinstance(outcome, Exception):
-                errors.append(
-                    {"index": len(errors) + 1, "message": str(outcome)[:MAX_REQUEST_LOG_SIZE]}
-                )
-                continue
-
-            index, result, error = outcome
-            if error:
-                errors.append({"index": index + 1, "message": error[:MAX_REQUEST_LOG_SIZE]})
-            else:
-                results.append({"index": index + 1, "result": result})
-                if result.get("status") == "success":
-                    successes += 1
-                else:
-                    errors.append(
-                        {
-                            "index": index + 1,
-                            "message": result.get("message", "Unknown error")[
-                                :MAX_REQUEST_LOG_SIZE
-                            ],
-                        }
-                    )
-
-        failed = len(errors)
-        metrics.track_api_call("bulk_create_shipments", failed == 0)
-
-        response_payload = {
-            "total": len(shipments),
-            "successful": successes,
-            "failed": failed,
-            "errors": errors,
-            "results": results,
-        }
-
-        status_message = (
-            "All shipments created successfully"
-            if failed == 0
-            else "Bulk shipment processing completed with errors"
-        )
-
-        logger.info(
-            f"[{request_id}] Bulk shipment processing complete "
-            f"(success={successes}, failed={failed})"
-        )
-
-        return {
-            "status": "success",
-            "message": status_message,
-            "data": response_payload,
-            "timestamp": datetime.now(UTC).isoformat(),
-        }
-
-    except Exception as e:
-        error_msg = str(e)[:MAX_REQUEST_LOG_SIZE]
-        logger.error(f"[{request_id}] Bulk shipment error: {error_msg}")
-        metrics.track_api_call("bulk_create_shipments", False)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error processing bulk shipments: {error_msg}",
-        ) from e
-
-
-@router.post("/shipments/{shipment_id}/buy")
-@limiter.limit("10/minute")
+@router.post("/shipments/{shipment_id}/buy", response_model=BuyShipmentResponse)
 async def buy_existing_shipment(
     request: Request, shipment_id: str, rate_id: str, service: EasyPostDep
-):
+) -> dict[str, Any]:
     """Buy an existing shipment with selected rate."""
     request_id = getattr(request.state, "request_id", "unknown")
 
@@ -311,9 +196,10 @@ async def buy_existing_shipment(
         ) from e
 
 
-@router.post("/shipments/{shipment_id}/refund")
-@limiter.limit("10/minute")
-async def refund_shipment(request: Request, shipment_id: str, service: EasyPostDep):
+@router.post("/shipments/{shipment_id}/refund", response_model=RefundShipmentResponse)
+async def refund_shipment(
+    request: Request, shipment_id: str, service: EasyPostDep
+) -> dict[str, Any]:
     """Refund a shipment."""
     request_id = getattr(request.state, "request_id", "unknown")
 
@@ -341,10 +227,10 @@ async def refund_shipment(request: Request, shipment_id: str, service: EasyPostD
         ) from e
 
 
-@router.get("/shipments")
+@router.get("/shipments", response_model=ShipmentsListResponse)
 async def list_shipments(
     request: Request, service: EasyPostDep, page_size: int = 20, before_id: str | None = None
-):
+) -> dict[str, Any]:
     """List shipments from EasyPost."""
     request_id = getattr(request.state, "request_id", "unknown")
 
@@ -368,9 +254,10 @@ async def list_shipments(
         ) from e
 
 
-@router.get("/shipments/{shipment_id}")
-@limiter.limit("10/minute")
-async def get_shipment_detail(request: Request, shipment_id: str, service: EasyPostDep):
+@router.get("/shipments/{shipment_id}", response_model=ShipmentDetailResponse)
+async def get_shipment_detail(
+    request: Request, shipment_id: str, service: EasyPostDep
+) -> dict[str, Any]:
     """Retrieve detailed information for a single shipment."""
     request_id = getattr(request.state, "request_id", "unknown")
 
@@ -389,6 +276,7 @@ async def get_shipment_detail(request: Request, shipment_id: str, service: EasyP
             raise HTTPException(status_code=status_code, detail=detail)
 
         metrics.track_api_call("get_shipment_detail", True)
+
         return result
 
     except HTTPException:

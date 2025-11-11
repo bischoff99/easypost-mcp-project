@@ -183,7 +183,7 @@ describe.skip('Shipment CRUD Operations', () => {
 
   describe('List Shipments', () => {
     it('retrieves shipment list', async () => {
-      const response = await api.get('/shipments?limit=10');
+      const response = await api.get('/db/shipments?limit=10');
 
       expect(response.data.status).toBe('success');
       expect(Array.isArray(response.data.data)).toBe(true);
@@ -191,7 +191,7 @@ describe.skip('Shipment CRUD Operations', () => {
     });
 
     it('supports pagination', async () => {
-      const page1 = await api.get('/shipments?limit=5');
+      const page1 = await api.get('/db/shipments?limit=5');
       const page2 = await api.get('/shipments?limit=5&after_id=' + page1.data.data[4].id);
 
       expect(page1.data.data.length).toBe(5);
@@ -237,7 +237,7 @@ describe.skip('Shipment CRUD Operations', () => {
       expect(trackResponse.data.data.tracking_number).toBe(trackingNumber);
 
       // Step 5: Verify in shipment list
-      const listResponse = await api.get('/shipments?limit=100');
+      const listResponse = await api.get('/db/shipments?limit=100');
       const shipmentInList = listResponse.data.data.find(
         (s) => s.tracking_number === trackingNumber
       );

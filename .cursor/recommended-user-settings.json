@@ -1,0 +1,201 @@
+{
+  // ===== Existing Settings (Keep) =====
+  "window.commandCenter": true,
+  "workbench.colorTheme": "Cursor Dark Midnight",
+  "makefile.configureOnOpen": true,
+  "redhat.telemetry.enabled": true,
+  "workbench.editorAssociations": {
+    "*.code-workspace": "default"
+  },
+  "yaml.schemas": {
+    "file:///Users/andrejs/.cursor/extensions/continue.continue-1.2.10-darwin-arm64/config-yaml-schema.json": [
+      ".continue/**/*.yaml"
+    ]
+  },
+
+  // ===== GitLens AI (Keep) =====
+  "gitlens.ai.model": "ollama:llama-fast-custom:latest",
+  "gitlens.ai.gitkraken.model": "gemini:gemini-2.0-flash",
+  "gitlens.ai.ollama.url": "http://localhost:11434",
+
+  // ===== Cursor-Specific Settings (Keep) =====
+  "cursor.terminal.usePreviewBox": true,
+  "cursor.cpp.enablePartialAccepts": true,
+  "cursor.composer.shouldAllowCustomModes": true,
+
+  // ===== Builder Settings (Keep) =====
+  "builder.serverUrl": "http://localhost:5173",
+  "builder.command": "make dev",
+  "builder.openInBrowser": false,
+
+  // ===== CRITICAL FIX: Python Language Server =====
+  "python.languageServer": "Pylance",
+  "python.analysis.typeCheckingMode": "basic",
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.completeFunctionParens": true,
+  "python.analysis.inlayHints.functionReturnTypes": true,
+  "python.analysis.inlayHints.variableTypes": true,
+
+  // ===== Security (Official Cursor Recommendation) =====
+  "security.workspace.trust.enabled": true,
+
+  // ===== Files & Auto-save =====
+  "files.autoSave": "onFocusChange",
+  "files.autoSaveDelay": 1000,
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.eol": "\n",
+
+  // ===== Editor Defaults =====
+  "editor.formatOnSave": true,
+  "editor.formatOnPaste": true,
+  "editor.rulers": [100],
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.detectIndentation": false,
+  "editor.bracketPairColorization.enabled": true,
+  "editor.guides.bracketPairs": true,
+  "editor.minimap.enabled": true,
+  "editor.minimap.renderCharacters": false,
+  "editor.inlineSuggest.enabled": true,
+
+  // ===== Language-Specific Formatting =====
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 4,
+    "editor.rulers": [100],
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    }
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2,
+    "editor.rulers": [100]
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2,
+    "editor.rulers": [100]
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2,
+    "editor.rulers": [100]
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2,
+    "editor.rulers": [100]
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.tabSize": 2
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.tabSize": 2
+  },
+  "[yaml]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  },
+  "[markdown]": {
+    "editor.wordWrap": "on",
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.quickSuggestions": {
+      "comments": "on",
+      "strings": "on",
+      "other": "on"
+    }
+  },
+
+  // ===== File Exclusions (Performance) =====
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/*.pyc": true,
+    "**/.pytest_cache": true,
+    "**/.mypy_cache": true,
+    "**/.ruff_cache": true,
+    "**/node_modules": true,
+    "**/.venv": true,
+    "**/venv": true,
+    "**/.git": false,
+    "**/dist": true,
+    "**/build": true,
+    "**/*.egg-info": true,
+    "**/.DS_Store": true
+  },
+  "files.watcherExclude": {
+    "**/__pycache__/**": true,
+    "**/.venv/**": true,
+    "**/venv/**": true,
+    "**/node_modules/**": true,
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/dist/**": true,
+    "**/build/**": true,
+    "**/*.egg-info/**": true
+  },
+  "search.exclude": {
+    "**/__pycache__": true,
+    "**/.venv": true,
+    "**/venv": true,
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/*.egg-info": true,
+    "**/htmlcov": true,
+    "**/coverage": true,
+    "**/.git": true
+  },
+
+  // ===== Terminal =====
+  "terminal.integrated.cursorBlinking": true,
+  "terminal.integrated.cursorStyle": "line",
+  "terminal.integrated.gpuAcceleration": "on",
+  "terminal.integrated.scrollback": 10000,
+
+  // ===== Git =====
+  "git.autofetch": true,
+  "git.confirmSync": false,
+  "git.enableSmartCommit": true,
+  "git.ignoreLimitWarning": true,
+  "diffEditor.ignoreTrimWhitespace": false,
+
+  // ===== JavaScript/TypeScript =====
+  "javascript.updateImportsOnFileMove.enabled": "always",
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "javascript.suggest.autoImports": true,
+  "typescript.suggest.autoImports": true,
+
+  // ===== Prettier =====
+  "prettier.printWidth": 100,
+  "prettier.semi": true,
+  "prettier.singleQuote": true,
+  "prettier.trailingComma": "es5",
+  "prettier.tabWidth": 2,
+
+  // ===== Performance (M3 Max Optimized) =====
+  "files.maxMemoryForLargeFilesMB": 16384,
+  "search.maxResults": 50000,
+  "search.quickOpen.history.filterSortOrder": "recency",
+
+  // ===== Workbench =====
+  "workbench.startupEditor": "welcomePageInEmptyWorkbench",
+  "workbench.editor.enablePreview": false,
+  "workbench.editor.highlightModifiedTabs": true,
+  "workbench.iconTheme": "vs-seti",
+
+  // ===== Extensions =====
+  "extensions.autoUpdate": true,
+  "extensions.ignoreRecommendations": false
+}
+
+
+

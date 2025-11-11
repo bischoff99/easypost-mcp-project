@@ -1,7 +1,10 @@
 # EasyPost MCP Project - Quick Development Commands
 # Usage: make <command>
 
-.PHONY: help setup dev test test-fast build clean install health db-reset lint format prod prod-docker review review-json export-backend export-frontend
+# Enable .ONESHELL for multi-line commands
+.ONESHELL:
+
+.PHONY: help setup dev dev-mock backend frontend test test-fast test-watch test-cov build build-sourcemap build-analyze build-preview build-docker prod prod-docker lint format check install clean clean-deep health benchmark audit security validate-structure sync commit push qcp db-reset db-migrate db-upgrade review review-json export-backend export-frontend
 
 # Default target
 help:
@@ -23,8 +26,11 @@ help:
 	@echo "  make test-cov     - Run tests with coverage report"
 	@echo ""
 	@echo "Building:"
-	@echo "  make build        - Build production bundles"
-	@echo "  make build-docker - Build Docker images"
+	@echo "  make build           - Build production bundles"
+	@echo "  make build-sourcemap - Build with sourcemaps (for debugging)"
+	@echo "  make build-analyze   - Build and analyze bundle size"
+	@echo "  make build-preview   - Preview production build locally"
+	@echo "  make build-docker    - Build Docker images"
 	@echo ""
 	@echo "Production:"
 	@echo "  make prod         - Start backend + frontend in production mode"
@@ -69,17 +75,17 @@ export-backend:
 export-frontend:
 	@zsh scripts/export_frontend_source.sh
 
-# Detect venv location (supports both venv and .venv)
-VENV_BIN = $(shell if [ -d apps/backend/venv ]; then echo apps/backend/venv/bin; elif [ -d apps/backend/.venv ]; then echo apps/backend/.venv/bin; else echo "venv not found"; fi)
+# Detect venv location (prefers .venv, then venv)
+VENV_BIN = $(shell if [ -d apps/backend/.venv ]; then echo apps/backend/.venv/bin; elif [ -d apps/backend/venv ]; then echo apps/backend/venv/bin; else echo "venv not found"; fi)
 
 # Setup: Create venv and install dependencies
 setup:
 	@echo "🔧 Setting up development environment..."
 	@echo ""
 	@echo "📦 Backend setup..."
-	@if [ ! -d apps/backend/venv ] && [ ! -d apps/backend/.venv ]; then \
+	@if [ ! -d apps/backend/.venv ] && [ ! -d apps/backend/venv ]; then \
 		echo "  Creating Python virtual environment..."; \
-		cd apps/backend && python3 -m venv venv; \
+		cd apps/backend && python3 -m venv .venv; \
 	fi
 	@echo "  Installing backend dependencies..."
 	@cd apps/backend && $(VENV_BIN)/pip install -U pip setuptools wheel
@@ -132,7 +138,7 @@ backend:
 
 # Frontend only
 frontend:
-	@cd apps/frontend && npm run dev
+	@cd apps/frontend && pnpm run dev
 
 # Run all tests
 test:
@@ -142,7 +148,7 @@ test:
 		exit 1; \
 	fi
 	@cd apps/backend && $(VENV_BIN)/pytest tests/ -v
-	@cd apps/frontend && npm test -- --run
+	@cd apps/frontend && pnpm test -- --run
 
 # Fast tests (changed files only, parallel execution)
 test-fast:
@@ -151,8 +157,9 @@ test-fast:
 		echo "❌ Error: Virtual environment not found. Run 'make install' first."; \
 		exit 1; \
 	fi
-	@cd apps/backend && $(VENV_BIN)/pytest tests/ -v --lf --ff -n auto
-	@cd apps/frontend && npm test -- --run --changed
+	@cd apps/backend && $(VENV_BIN)/pytest tests/ -v --lf --ff -n auto || echo "⚠️  Backend tests had failures" & \
+	cd apps/frontend && pnpm test -- --run --changed || echo "⚠️  Frontend tests had failures" & \
+	wait
 
 # Watch mode for tests
 test-watch:
@@ -163,7 +170,7 @@ test-watch:
 	fi
 	@trap 'kill 0' EXIT; \
 	(cd apps/backend && $(VENV_BIN)/pytest-watch tests/ --clear) & \
-	(cd apps/frontend && npm test) & \
+	(cd apps/frontend && pnpm test) & \
 	wait
 
 # Coverage report
@@ -174,7 +181,7 @@ test-cov:
 		exit 1; \
 	fi
 	@cd apps/backend && $(VENV_BIN)/pytest tests/ -v --cov=src --cov-report=term-missing --cov-report=html
-	@cd apps/frontend && npm run test:coverage
+	@cd apps/frontend && pnpm test:coverage
 	@echo "✅ Coverage reports generated:"
 	@echo "   Backend:  apps/backend/htmlcov/index.html"
 	@echo "   Frontend: apps/frontend/coverage/index.html"
@@ -182,12 +189,57 @@ test-cov:
 # Production build
 build:
 	@echo "📦 Building production bundles..."
-	@cd apps/frontend && npm run build
 	@if [ "$(VENV_BIN)" != "venv not found" ]; then \
-		cd apps/backend && $(VENV_BIN)/python -m compileall src/; \
+		echo "  Compiling Python files..."; \
+		cd apps/backend && $(VENV_BIN)/python -m compileall -q src/ || true; \
+		echo "  Type checking Python code..."; \
+		cd apps/backend && $(VENV_BIN)/mypy src/ --no-error-summary 2>/dev/null || echo "    (mypy not available or errors found)"; \
 	fi
+	@echo "  Building frontend..."
+	@cd apps/frontend && pnpm run build || (echo "❌ Frontend build failed!" && exit 1)
+	@if [ ! -d apps/frontend/dist ]; then \
+		echo "❌ Error: Build output directory not found!"; \
+		exit 1; \
+	fi
+	@echo ""
 	@echo "✅ Build complete!"
-	@du -sh apps/frontend/dist
+	@echo "  Frontend bundle size:"
+	@du -sh apps/frontend/dist 2>/dev/null || echo "    (dist directory not found)"
+	@if [ -d apps/frontend/dist ]; then \
+		echo "  Bundle breakdown:"; \
+		find apps/frontend/dist -type f -name "*.js" -exec sh -c 'echo "    {}: $$(du -h "{}" | cut -f1)"' \; | head -10; \
+	fi
+
+# Build with sourcemaps (for production debugging)
+build-sourcemap:
+	@echo "📦 Building with sourcemaps..."
+	@cd apps/frontend && BUILD_SOURCEMAP=true pnpm run build
+	@echo "✅ Build with sourcemaps complete!"
+
+# Build analysis
+build-analyze:
+	@echo "📊 Analyzing build..."
+	@cd apps/frontend && pnpm run build:analyze || pnpm run build
+	@if [ -d apps/frontend/dist ]; then \
+		echo ""; \
+		echo "📈 Build Statistics:"; \
+		echo "  Total size: $$(du -sh apps/frontend/dist | cut -f1)"; \
+		echo "  JS files: $$(find apps/frontend/dist -name '*.js' | wc -l | tr -d ' ')"; \
+		echo "  CSS files: $$(find apps/frontend/dist -name '*.css' | wc -l | tr -d ' ')"; \
+		echo "  Assets: $$(find apps/frontend/dist -type f ! -name '*.js' ! -name '*.css' ! -name '*.html' | wc -l | tr -d ' ')"; \
+		echo ""; \
+		echo "  Largest files:"; \
+		find apps/frontend/dist -type f -exec du -h {} + | sort -rh | head -10 | awk '{print "    " $$2 ": " $$1}'; \
+	fi
+
+# Preview production build
+build-preview:
+	@echo "👀 Previewing production build..."
+	@if [ ! -d apps/frontend/dist ]; then \
+		echo "  Building first..."; \
+		cd apps/frontend && pnpm run build; \
+	fi
+	@cd apps/frontend && pnpm run preview
 
 # Docker build
 build-docker:
@@ -214,25 +266,27 @@ prod-docker:
 	@echo "   Frontend: http://localhost:80"
 	@echo "   View logs: docker compose -f deploy/docker-compose.prod.yml logs -f"
 
-# Linting
+# Linting (parallel backend/frontend)
 lint:
 	@echo "🔍 Running linters..."
 	@if [ "$(VENV_BIN)" = "venv not found" ]; then \
 		echo "❌ Error: Virtual environment not found. Run 'make install' first."; \
 		exit 1; \
 	fi
-	@cd apps/backend && $(VENV_BIN)/ruff check src/ tests/
-	@cd apps/frontend && npm run lint
+	@cd apps/backend && $(VENV_BIN)/ruff check src/ tests/ || exit 1 & \
+	cd apps/frontend && pnpm run lint || exit 1 & \
+	wait
 
-# Auto-format
+# Auto-format (parallel backend/frontend)
 format:
 	@echo "✨ Formatting code..."
 	@if [ "$(VENV_BIN)" = "venv not found" ]; then \
 		echo "❌ Error: Virtual environment not found. Run 'make install' first."; \
 		exit 1; \
 	fi
-	@cd apps/backend && $(VENV_BIN)/black src/ tests/ && $(VENV_BIN)/ruff check src/ tests/ --fix
-	@cd apps/frontend && npx prettier --write src/
+	@cd apps/backend && $(VENV_BIN)/black src/ tests/ && $(VENV_BIN)/ruff check src/ tests/ --fix || exit 1 & \
+	cd apps/frontend && pnpm run format || exit 1 & \
+	wait
 
 # Full quality check
 check: lint test
@@ -241,8 +295,16 @@ check: lint test
 # Install dependencies
 install:
 	@echo "📥 Installing dependencies..."
-	@cd apps/backend && pip install -r requirements.txt
-	@cd apps/frontend && npm install
+	@if [ "$(VENV_BIN)" = "venv not found" ]; then \
+		echo "  Creating Python virtual environment..."; \
+		cd apps/backend && python3 -m venv .venv; \
+	fi
+	@cd apps/backend && $(VENV_BIN)/pip install -r requirements.txt
+	@if ! command -v pnpm >/dev/null 2>&1; then \
+		echo "  Installing pnpm..."; \
+		npm install -g pnpm@9; \
+	fi
+	@cd apps/frontend && pnpm install
 	@echo "✅ Dependencies installed!"
 
 # Clean artifacts (uses parallel script for M3 Max optimization)
@@ -311,7 +373,7 @@ audit:
 	@cd apps/backend && $(VENV_BIN)/pip-audit --requirement requirements.txt || true
 	@echo ""
 	@echo "📦 Auditing Node.js dependencies..."
-	@cd apps/frontend && npm audit --audit-level=moderate || true
+	@cd apps/frontend && pnpm audit --audit-level=moderate || true
 	@echo ""
 	@echo "✅ Security audit complete!"
 

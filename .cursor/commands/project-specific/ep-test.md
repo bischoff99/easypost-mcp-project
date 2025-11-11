@@ -1,7 +1,7 @@
-Run EasyPost project tests (M3 Max: 16 parallel workers).
+Run EasyPost project tests with auto-detected parallel workers.
 
 **Domain**: EasyPost MCP development
-**Performance**: 16 parallel pytest workers
+**Performance**: Auto-detects optimal worker count based on your system
 
 ## Usage
 
@@ -29,7 +29,7 @@ Run EasyPost project tests (M3 Max: 16 parallel workers).
 
 **Smart Test Execution:**
 1. Auto-detects test type from filename/path
-2. Runs with pytest -n 16 (M3 Max optimization)
+2. Runs with pytest -n auto (auto-detects optimal workers)
 3. Shows clear pass/fail summary
 4. Handles both backend and frontend tests
 
@@ -65,23 +65,23 @@ Run EasyPost project tests (M3 Max: 16 parallel workers).
 ```bash
 cd backend
 source venv/bin/activate
-pytest -n 16 -v --tb=short tests/
+pytest -n auto -v --tb=short tests/
 ```
 
 **For specific file:**
 ```bash
-pytest -n 16 tests/integration/test_bulk_performance.py::test_parsing_performance -v
+pytest -n auto tests/integration/test_bulk_performance.py::test_parsing_performance -v
 ```
 
 ## Output Format
 
 ```
 ╔═══════════════════════════════════════════════════════════╗
-║            EASYPOST PROJECT TESTS (M3 Max)               ║
+║            EASYPOST PROJECT TESTS                         ║
 ╚═══════════════════════════════════════════════════════════╝
 
 Test Suite: Integration Tests
-Workers: 16 (pytest-xdist)
+Workers: Auto-detected (pytest-xdist)
 
 Running tests...
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -99,7 +99,7 @@ tests/integration/test_easypost_integration.py::test_get_tracking ✓
    Passed: 6/6
    Failed: 0
    Duration: 2.4s
-   Workers: 16
+   Workers: Auto-detected
 
 📊 Coverage: 87%
    backend/src/services/easypost_service.py: 92%
@@ -113,7 +113,7 @@ When running benchmarks (`/ep-test --benchmark`):
 
 ```
 ╔═══════════════════════════════════════════════════════════╗
-║         PERFORMANCE BENCHMARKS (M3 Max)                  ║
+║         PERFORMANCE BENCHMARKS                            ║
 ╚═══════════════════════════════════════════════════════════╝
 
 BULK SHIPMENT CREATION BENCHMARK
@@ -175,5 +175,4 @@ Total:                  36.40ms (27472/s)
 /ep-dev                # Start dev environment
 ```
 
-**Fast, parallel, M3 Max optimized testing!**
-
+**Fast, parallel, auto-optimized testing!**

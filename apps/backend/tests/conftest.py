@@ -1,6 +1,11 @@
 """Pytest configuration and shared fixtures."""
 
+import os
 from unittest.mock import AsyncMock, MagicMock
+
+# Set test environment variables before importing app
+os.environ.setdefault("EASYPOST_API_KEY", "test_key_for_pytest")
+os.environ.setdefault("DATABASE_URL", "")
 
 import pytest
 from httpx import AsyncClient

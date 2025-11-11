@@ -1,7 +1,5 @@
 import { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
 import { ChevronDown, ChevronUp, ChevronsUpDown, Search } from 'lucide-react';
-import PropTypes from 'prop-types';
 import {
   Table,
   TableBody,
@@ -203,11 +201,8 @@ export default function DataTable({
               </TableRow>
             ) : (
               paginatedData.map((row, index) => (
-                <motion.tr
+                <TableRow
                   key={row.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
                   className={cn(
                     'border-b transition-colors',
                     onRowClick && 'cursor-pointer hover:bg-muted/50',
@@ -230,7 +225,7 @@ export default function DataTable({
                       {column.render ? column.render(row) : row[column.key]}
                     </TableCell>
                   ))}
-                </motion.tr>
+                  </tr>
               ))
             )}
           </TableBody>
@@ -290,27 +285,6 @@ export default function DataTable({
     </div>
   );
 }
-
-DataTable.propTypes = {
-  columns: PropTypes.arrayOf(
-    PropTypes.shape({
-      key: PropTypes.string.isRequired,
-      header: PropTypes.string.isRequired,
-      sortable: PropTypes.bool,
-      className: PropTypes.string,
-      cellClassName: PropTypes.string,
-      render: PropTypes.func,
-    })
-  ).isRequired,
-  data: PropTypes.arrayOf(PropTypes.object).isRequired,
-  onRowClick: PropTypes.func,
-  onRowSelect: PropTypes.func,
-  isLoading: PropTypes.bool,
-  emptyMessage: PropTypes.string,
-  searchPlaceholder: PropTypes.string,
-  pageSize: PropTypes.number,
-  className: PropTypes.string,
-};
 
 
 

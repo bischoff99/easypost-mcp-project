@@ -16,8 +16,8 @@
         "--log-level",
         "debug"
       ],
-      "cwd": "${workspaceFolder}/backend",
-      "envFile": "${workspaceFolder}/backend/.env",
+      "cwd": "${workspaceFolder}/apps/backend",
+      "envFile": "${workspaceFolder}/apps/backend/.env",
       "console": "integratedTerminal",
       "justMyCode": false
     },
@@ -26,8 +26,8 @@
       "type": "debugpy",
       "request": "launch",
       "module": "src.mcp",
-      "cwd": "${workspaceFolder}/backend",
-      "envFile": "${workspaceFolder}/backend/.env",
+      "cwd": "${workspaceFolder}/apps/backend",
+      "envFile": "${workspaceFolder}/apps/backend/.env",
       "console": "externalTerminal",
       "justMyCode": false
     },
@@ -38,7 +38,7 @@
       "program": "${file}",
       "console": "integratedTerminal",
       "justMyCode": false,
-      "envFile": "${workspaceFolder}/backend/.env"
+      "envFile": "${workspaceFolder}/apps/backend/.env"
     },
     {
       "name": "Python: Debug Tests",
@@ -46,7 +46,7 @@
       "request": "launch",
       "module": "pytest",
       "args": ["-vv", "-s", "--tb=short", "--no-cov", "-n", "0", "${file}"],
-      "cwd": "${workspaceFolder}/backend",
+      "cwd": "${workspaceFolder}/apps/backend",
       "console": "integratedTerminal",
       "justMyCode": false
     },
@@ -56,7 +56,7 @@
       "request": "launch",
       "module": "pytest",
       "args": ["tests/unit", "-vv", "-s", "--tb=short", "--no-cov", "-n", "0"],
-      "cwd": "${workspaceFolder}/backend",
+      "cwd": "${workspaceFolder}/apps/backend",
       "console": "integratedTerminal",
       "justMyCode": false
     },
@@ -66,7 +66,7 @@
       "request": "launch",
       "module": "pytest",
       "args": ["tests/integration", "-vv", "-s", "--tb=short", "-n", "0"],
-      "cwd": "${workspaceFolder}/backend",
+      "cwd": "${workspaceFolder}/apps/backend",
       "console": "integratedTerminal",
       "justMyCode": false
     },
@@ -76,7 +76,7 @@
       "request": "launch",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
-      "cwd": "${workspaceFolder}/frontend",
+      "cwd": "${workspaceFolder}/apps/frontend",
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen"
     },
@@ -86,10 +86,13 @@
       "request": "launch",
       "module": "uvicorn",
       "args": ["src.server:app", "--host", "0.0.0.0", "--port", "8000", "--log-level", "info"],
-      "cwd": "${workspaceFolder}/backend",
-      "envFile": "${workspaceFolder}/.env.production",
+      "cwd": "${workspaceFolder}/apps/backend",
+      "envFile": "${workspaceFolder}/apps/backend/.env",
       "console": "integratedTerminal",
-      "justMyCode": false
+      "justMyCode": false,
+      "env": {
+        "ENVIRONMENT": "production"
+      }
     },
     {
       "name": "Python: Debug Current Test File",
@@ -107,7 +110,7 @@
         "-k",
         "${input:testName}"
       ],
-      "cwd": "${workspaceFolder}/backend",
+      "cwd": "${workspaceFolder}/apps/backend",
       "console": "integratedTerminal",
       "justMyCode": false
     },
@@ -116,7 +119,7 @@
       "type": "chrome",
       "request": "launch",
       "url": "http://localhost:5173",
-      "webRoot": "${workspaceFolder}/frontend/src",
+      "webRoot": "${workspaceFolder}/apps/frontend/src",
       "sourceMaps": true,
       "sourceMapPathOverrides": {
         "webpack:///./src/*": "${webRoot}/*"
@@ -132,7 +135,7 @@
       },
       "pathMappings": [
         {
-          "localRoot": "${workspaceFolder}/backend",
+          "localRoot": "${workspaceFolder}/apps/backend",
           "remoteRoot": "."
         }
       ]
@@ -147,7 +150,7 @@
       },
       "pathMappings": [
         {
-          "localRoot": "${workspaceFolder}/backend/src",
+          "localRoot": "${workspaceFolder}/apps/backend/src",
           "remoteRoot": "/app/backend/src"
         }
       ],
@@ -159,7 +162,7 @@
       "request": "launch",
       "module": "pytest",
       "args": ["-vv", "-s", "--tb=long", "--no-cov", "-n", "0", "-k", "${input:testPattern}"],
-      "cwd": "${workspaceFolder}/backend",
+      "cwd": "${workspaceFolder}/apps/backend",
       "console": "integratedTerminal",
       "justMyCode": false
     }

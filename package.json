@@ -4,8 +4,7 @@
   "version": "0.1.0",
   "packageManager": "pnpm@9.0.0",
   "workspaces": [
-    "apps/frontend",
-    "packages/core/ts"
+    "apps/frontend"
   ],
   "scripts": {
     "dev": "echo \"Run per-app: cd apps/frontend && pnpm run dev\"",

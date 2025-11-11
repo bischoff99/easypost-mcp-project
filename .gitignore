@@ -54,7 +54,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
-pnpm-lock.yaml
+# Note: pnpm-lock.yaml is tracked for reproducibility
 
 # Build outputs
 dist/
@@ -75,6 +75,7 @@ build/
 !.vscode/keybindings.json
 *.code-workspace
 .idea/
+.vscode/thunder-client-settings.json
 
 # Cursor - Track rules and commands, exclude temporary/generated files
 .cursor/archive/
@@ -148,3 +149,5 @@ docs/*.tar.gz
 # Keep template/example files (safe to commit)
 !.cursor/mcp.json
 !.cursor/environment.json
+
+.config/

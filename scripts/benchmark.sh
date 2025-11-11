@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 
-# EasyPost MCP M3 Max Performance Benchmark
+# EasyPost MCP Performance Benchmark
 # Run this script to measure performance improvements
 
-set -e
+set -euo pipefail
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -12,7 +12,7 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-echo -e "${BLUE}=== M3 Max Development Benchmark ===${NC}"
+echo -e "${BLUE}=== Development Benchmark ===${NC}"
 echo ""
 
 # System info
@@ -97,10 +97,9 @@ echo ""
 # Performance Summary
 echo -e "${GREEN}=== Performance Summary ===${NC}"
 echo "✅ ThreadPoolExecutor: Dynamic scaling with CPU cores"
-echo "✅ Uvicorn: Multi-worker setup with uvloop"
-echo "✅ Vite: SWC transpilation + M3 optimizations"
+echo "✅ Uvicorn: Multi-worker setup"
+echo "✅ Vite: SWC transpilation"
 echo "✅ Testing: Parallel execution (pytest-xdist + Vitest threads)"
-echo "✅ Metal GPU: Safari acceleration enabled"
 echo ""
 
 echo -e "${BLUE}Expected Performance Gains:${NC}"

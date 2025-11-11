@@ -23,7 +23,7 @@ export default function CostBreakdownChart() {
         <CardDescription>Spending by carrier</CardDescription>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
+        <ResponsiveContainer width="100%" height={300} debounce={300}>
           <PieChart>
             <Pie
               data={data}

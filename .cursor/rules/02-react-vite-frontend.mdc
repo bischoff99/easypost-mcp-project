@@ -1,6 +1,6 @@
 ---
 description: "Complete React, Vite, and TailwindCSS frontend development guide"
-globs: ["apps/frontend/**/*.jsx", "apps/frontend/**/*.js", "**/*.jsx"]
+globs: ["apps/frontend/**/*.jsx", "apps/frontend/**/*.js", "apps/frontend/**/*.ts", "apps/frontend/**/*.tsx"]
 alwaysApply: false
 ---
 

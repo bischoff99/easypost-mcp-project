@@ -1,6 +1,8 @@
 # EasyPost MCP Project
 
-Production-ready EasyPost shipping integration with MCP server and React frontend.
+**Personal-use** EasyPost shipping integration with MCP server and React frontend.
+
+> **Note**: This project has been simplified for personal use. Enterprise features (webhooks, database-backed endpoints, bulk operations) have been removed. The core MCP server functionality remains intact.
 
 ## Quick Start
 
@@ -32,6 +34,7 @@ make dev
 - Frontend: http://localhost:5173
 - Backend: http://localhost:8000
 - Health: http://localhost:8000/health
+- API Docs: http://localhost:8000/docs
 
 ## Project Structure
 
@@ -40,48 +43,121 @@ easypost-mcp-project/
 ├── apps/
 │   ├── backend/      # FastAPI/Python backend service
 │   │   ├── src/      # Source code
+│   │   │   ├── mcp_server/  # MCP tools (core product)
+│   │   │   ├── routers/     # API endpoints (simplified)
+│   │   │   └── services/     # Business logic
 │   │   ├── tests/    # Test suite (unit + integration)
 │   │   └── alembic/  # Database migrations
 │   └── frontend/     # React/Vite frontend service
 │       ├── src/      # Source code
-│       └── e2e/      # End-to-end tests
-├── packages/
-│   └── core/         # Shared code (Python + TypeScript)
+│       └── tests/    # Tests
 ├── deploy/           # Docker Compose configurations
 ├── docs/             # Project documentation
-├── scripts/          # Utility scripts
-└── data/             # Generated data (gitignored)
+└── scripts/          # Utility scripts
 ```
 
 ## Features
-✅ CORS configured
-✅ Error handling
-✅ Async/await
-✅ Input validation
-✅ Logging
 
-## Architecture & Integration
+### Core Features (Personal Use)
+✅ **MCP Server** - AI agent tools for shipment management (core product)  
+✅ **Basic API** - Simple FastAPI endpoints for frontend  
+✅ **React Frontend** - Management interface  
+✅ **Simplified Analytics** - Basic shipping statistics  
+✅ **Error handling** - Comprehensive error handling  
+✅ **Input validation** - Pydantic validation  
+✅ **Logging** - Structured logging  
 
-### PostgreSQL Database (Dual-Pool Strategy)
-- **SQLAlchemy ORM Pool:** 50 connections (CRUD operations)
-- **asyncpg Direct Pool:** 32 connections (bulk operations)
-- **M3 Max Optimized:** 82 total connections
-- **Production-ready:** Handles 1000+ req/s
+### Removed (Enterprise Features)
+❌ Webhook system  
+❌ Database-backed endpoints (`/api/db/*`)  
+❌ Bulk operations endpoints (use MCP tools instead)  
+❌ Complex parallel analytics processing  
+❌ Request ID middleware (disabled by default)  
 
-### Reverse Proxy (Optional - Production)
-- **nginx configuration:** Single URL, no CORS
-- **Performance:** 20x faster static asset delivery
-- **Setup:** `bash scripts/setup-nginx-proxy.sh`
-- **Benefits:** Edge rate limiting, browser caching
+## Architecture
 
-### Documentation
-- **[CLAUDE.md](CLAUDE.md)** - Comprehensive guide for AI assistants (Claude Code, Cursor, etc.)
-- **[Complete Integration Guide](docs/guides/PROXY_AND_DATABASE_INTEGRATION.md)** - Architecture, usage patterns, deployment
-- **[Quick Reference](docs/guides/QUICK_REFERENCE.md)** - Code templates, commands, troubleshooting
-- **[Architecture Diagrams](ARCHITECTURE_DIAGRAM.md)** - Visual data flow and request patterns
-- **[Proxy Benefits](docs/guides/PROXY_BENEFITS.md)** - Detailed proxy analysis
+### MCP Server (Core Product)
+The MCP server provides AI agent tools for:
+- Creating shipments
+- Getting rates
+- Tracking shipments
+- Bulk operations (via MCP tools, not API endpoints)
 
-### Workflows & Commands
-- **[✅ Current Workflows](.cursor/commands/WORKFLOWS-CURRENT.md)** - All working make commands & development patterns
-- **[🔴 Future Workflows](.cursor/commands/WORKFLOW-EXAMPLES.md)** - Aspirational workflow templates (24% implemented)
-- **[Makefile](Makefile)** - 25+ quick development commands (`make help` to see all)
+**Location**: `apps/backend/src/mcp_server/`  
+**Endpoint**: `/mcp` (HTTP transport)
+
+### FastAPI Backend (Management Interface)
+Simplified API for the React frontend:
+- `/api/rates` - Get shipping rates
+- `/api/shipments` - Create and manage shipments
+- `/api/tracking` - Track shipments
+- `/api/analytics` - Basic shipping statistics
+
+### Database
+- **SQLAlchemy ORM** - Single pool for CRUD operations
+- **PostgreSQL** - Stores shipment data for MCP tool context
+- Database models remain for MCP tools that need context
+
+### Frontend
+- **React 19** + **Vite 7.2** + **TailwindCSS 4**
+- Pages: Dashboard, Shipments, Analytics, Tracking
+- Simplified UI focused on core functionality
+
+## Documentation
+
+- **[CLAUDE.md](CLAUDE.md)** - Comprehensive guide for AI assistants
+- **[Commands README](.cursor/commands/README.md)** - Universal slash commands system
+- **[Current Workflows](.cursor/commands/WORKFLOWS-CURRENT.md)** - Working make commands
+- **[Quick Reference](docs/guides/QUICK_REFERENCE.md)** - Code templates and patterns
+
+## Development
+
+### Testing
+```bash
+make test             # Run all tests
+make test-fast        # Fast tests (changed files only)
+make test-cov         # Coverage report
+```
+
+### Code Quality
+```bash
+make lint             # Lint code
+make format           # Auto-format
+make check            # Lint + test
+```
+
+### Database
+```bash
+make db-reset         # Reset database
+make db-upgrade       # Apply migrations
+```
+
+## MCP Server Usage
+
+The MCP server can be used with Claude Desktop or other MCP clients:
+
+```json
+{
+  "mcpServers": {
+    "easypost": {
+      "command": "/path/to/backend/venv/bin/python",
+      "args": ["-m", "src.mcp_server"],
+      "env": {
+        "EASYPOST_API_KEY": "your_key_here",
+        "DATABASE_URL": "postgresql+asyncpg://..."
+      }
+    }
+  }
+}
+```
+
+## Simplifications for Personal Use
+
+This project has been optimized for personal use by removing:
+1. **Webhook system** - Not needed for personal use
+2. **Database-backed endpoints** - Use EasyPost API directly
+3. **Bulk operations API** - Use MCP tools instead
+4. **Complex analytics** - Simplified to sequential processing
+5. **Request ID middleware** - Disabled by default (set `DEBUG=true` to enable)
+
+**Result**: Leaner codebase focused on core MCP functionality while maintaining a simple management interface.

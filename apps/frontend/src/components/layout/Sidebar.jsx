@@ -4,8 +4,6 @@ import {
   Package,
   TruckIcon,
   BarChart3,
-  BookUser,
-  Settings,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
@@ -18,8 +16,6 @@ const navigation = [
   { name: 'Shipments', href: '/shipments', icon: Package },
   { name: 'Tracking', href: '/tracking', icon: TruckIcon },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
-  { name: 'Addresses', href: '/addresses', icon: BookUser },
-  { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
 export default function Sidebar() {

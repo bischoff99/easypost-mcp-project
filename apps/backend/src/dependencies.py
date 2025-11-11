@@ -2,7 +2,6 @@
 
 from typing import Annotated
 
-import asyncpg
 from fastapi import Depends
 from fastmcp.server.dependencies import get_context
 
@@ -31,22 +30,6 @@ def get_easypost_service() -> EasyPostService:
         return EasyPostService(api_key=settings.EASYPOST_API_KEY)
 
 
-def get_db_pool() -> asyncpg.Pool | None:
-    """
-    Dependency provider for database connection pool.
-
-    Returns None if database is not configured.
-    """
-    try:
-        ctx = get_context()
-        lifespan_ctx = ctx.request_context.lifespan_context
-        if isinstance(lifespan_ctx, dict):
-            return lifespan_ctx.get("db_pool")
-        return lifespan_ctx.db_pool
-    except (AttributeError, RuntimeError, KeyError):
-        return None
-
-
 def get_rate_limiter():
     """
     Dependency provider for API rate limiter.
@@ -68,5 +51,4 @@ def get_rate_limiter():
 
 # Type aliases for clean endpoint annotations
 EasyPostDep = Annotated[EasyPostService, Depends(get_easypost_service)]
-DBPoolDep = Annotated[asyncpg.Pool | None, Depends(get_db_pool)]
 SettingsDep = Annotated[Settings, Depends(get_settings)]

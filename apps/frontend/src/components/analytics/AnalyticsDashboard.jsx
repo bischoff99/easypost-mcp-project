@@ -1,5 +1,4 @@
 import { useState, useCallback, useEffect } from 'react'
-import PropTypes from 'prop-types'
 import {
   BarChart,
   Bar,
@@ -162,7 +161,7 @@ export default function AnalyticsDashboard({ days = 30 }) {
         {/* Shipment Volume Over Time */}
         <Card className="p-6" data-testid="chart-volume">
           <h3 className="text-lg font-semibold mb-4">Shipment Volume</h3>
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={300} debounce={300}>
             <LineChart data={by_date}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="date" />
@@ -183,7 +182,7 @@ export default function AnalyticsDashboard({ days = 30 }) {
         {/* Cost Over Time */}
         <Card className="p-6" data-testid="chart-cost">
           <h3 className="text-lg font-semibold mb-4">Shipping Costs</h3>
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={300} debounce={300}>
             <LineChart data={by_date}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="date" />
@@ -204,7 +203,7 @@ export default function AnalyticsDashboard({ days = 30 }) {
         {/* Carrier Distribution */}
         <Card className="p-6" data-testid="chart-carriers">
           <h3 className="text-lg font-semibold mb-4">Carrier Distribution</h3>
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={300} debounce={300}>
             <PieChart>
               <Pie
                 data={by_carrier}
@@ -227,7 +226,7 @@ export default function AnalyticsDashboard({ days = 30 }) {
         {/* Top Routes */}
         <Card className="p-6" data-testid="chart-routes">
           <h3 className="text-lg font-semibold mb-4">Top Routes</h3>
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={300} debounce={300}>
             <BarChart data={top_routes.slice(0, 5)}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="origin" />
@@ -270,8 +269,4 @@ export default function AnalyticsDashboard({ days = 30 }) {
       </Card>
     </div>
   )
-}
-
-AnalyticsDashboard.propTypes = {
-  days: PropTypes.number,
 }

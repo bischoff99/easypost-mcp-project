@@ -124,140 +124,112 @@ Run comprehensive performance benchmarks (M3 Max optimized).
 
 ---
 
-## Maintenance Scripts
+## Additional Development Scripts
 
-### `cleanup-codebase.sh`
-Comprehensive codebase cleanup and optimization.
+### `dev.sh` / `dev_local.sh`
+Alternative development startup scripts.
 
 ```bash
-./scripts/cleanup-codebase.sh
+./scripts/dev.sh
+# or
+./scripts/dev_local.sh
 ```
 
-**What it does:**
-- Removes Python caches (`__pycache__`, `.pyc`)
-- Cleans test artifacts (`.pytest_cache`, `htmlcov`)
-- Removes build outputs (`dist/`, `build/`)
-- Cleans node_modules cache (`.vite`)
-- Formats code (black, prettier)
-- Runs linters (ruff, eslint)
-- Shows disk space saved
+**What they do:**
+- Start PostgreSQL Docker container
+- Setup and start backend server
+- Setup and start frontend server
+- Handle cleanup on exit
 
-**Warning:** Removes cached files (safe operation)
+**Difference:** `dev_local.sh` includes more error checking and user feedback
 
 ---
 
-### `cleanup-unused-code.sh`
-Detect and optionally remove unused code.
+### `start-prod.sh`
+Start production servers.
 
 ```bash
-./scripts/cleanup-unused-code.sh
+./scripts/start-prod.sh
 ```
 
 **What it does:**
-- Finds unused Python imports (via autoflake)
-- Detects unused React components
-- Identifies commented code blocks
-- Finds empty files
-- Generates report of findings
-
-**Requirements:** macOS (uses `mdfind` for Spotlight search)
-**Note:** Review findings before deleting
+- Starts backend in production mode
+- Starts frontend production build
+- Uses production environment variables
 
 ---
 
-### `optimize-structure.sh`
-Optimize project structure and organization.
+## Utility Scripts
+
+### `monitor-database.sh`
+Monitor PostgreSQL database activity.
 
 ```bash
-./scripts/optimize-structure.sh
+./scripts/monitor-database.sh
 ```
 
 **What it does:**
-- Analyzes directory structure
-- Suggests improvements
-- Optionally reorganizes files
-- Updates imports after moves
-
-**Warning:** May move files - commit changes first
+- Shows active connections
+- Displays query statistics
+- Monitors database performance
 
 ---
 
-### `verify-structure.sh`
-Verify project structure integrity.
+### `setup-nginx-proxy.sh`
+Setup Nginx reverse proxy for production.
 
 ```bash
-./scripts/verify-structure.sh
+./scripts/setup-nginx-proxy.sh
 ```
 
 **What it does:**
-- Checks required directories exist
-- Verifies configuration files
-- Validates imports
-- Checks for broken links in docs
-- Generates structure report
-
-**Output:** Pass/fail report with recommendations
+- Configures Nginx for frontend/backend routing
+- Sets up SSL certificates (if available)
+- Configures proxy headers
 
 ---
 
-## Setup Scripts
 
-### `setup-pnpm.sh`
-Install and configure pnpm package manager.
+### `test-full-functionality.sh`
+Run comprehensive functionality tests.
 
 ```bash
-./scripts/setup-pnpm.sh
+./scripts/test-full-functionality.sh
 ```
 
 **What it does:**
-- Installs pnpm globally
-- Configures pnpm for project
-- Migrates from npm if needed
-- Faster installs and better disk usage
+- Runs full test suite
+- Tests API endpoints
+- Validates database operations
+- Checks frontend functionality
 
 ---
 
-### `setup-uv.sh`
-Install and configure uv (fast Python package installer).
+### `get-bulk-rates.py`
+Python script for bulk rate testing.
 
 ```bash
-./scripts/setup-uv.sh
+python scripts/get-bulk-rates.py
 ```
 
 **What it does:**
-- Installs uv package manager
-- Configures for faster pip installs
-- 10-100x faster than pip
+- Tests bulk shipment rate retrieval
+- Validates bulk operations
+- Useful for debugging bulk tools
 
 ---
 
-### `install-universal-commands.sh`
-Install universal slash commands system.
+### `verify_mcp_server.py`
+Verify MCP server configuration.
 
 ```bash
-./scripts/install-universal-commands.sh
+python scripts/verify_mcp_server.py
 ```
 
 **What it does:**
-- Installs `.cursor/commands/` structure
-- Copies universal command templates
-- Sets up command aliases
-- Configures for project
-
----
-
-### `create-dev-toolkit-repo.sh`
-Create a portable dev toolkit repository.
-
-```bash
-./scripts/create-dev-toolkit-repo.sh
-```
-
-**What it does:**
-- Packages scripts for reuse
-- Creates standalone toolkit repo
-- Includes documentation
-- Useful for sharing across projects
+- Validates MCP server setup
+- Tests tool registration
+- Checks resource providers
 
 ---
 
@@ -284,23 +256,22 @@ make dev
 ./scripts/benchmark.sh
 ```
 
-### Maintenance Workflow
+### Utility Workflow
 ```bash
-# Clean before commit
-./scripts/cleanup-codebase.sh
+# Monitor database
+./scripts/monitor-database.sh
 
-# Verify structure
-./scripts/verify-structure.sh
+# Test full functionality
+./scripts/test-full-functionality.sh
 
-# Find unused code
-./scripts/cleanup-unused-code.sh
+# Verify MCP server
+python scripts/verify_mcp_server.py
 ```
 
 ## Script Requirements
 
 ### macOS-Specific Scripts
 - `start-dev.sh` - Uses `osascript` for Terminal
-- `cleanup-unused-code.sh` - Uses `mdfind` for Spotlight
 
 ### General Requirements
 - `bash` - All scripts
@@ -397,7 +368,6 @@ make backend      # ./scripts/start-backend.sh
 make frontend     # ./scripts/start-frontend.sh
 make test         # Comprehensive tests
 make test-fast    # ./scripts/quick-test.sh
-make clean        # ./scripts/cleanup-codebase.sh
 make benchmark    # ./scripts/benchmark.sh
 ```
 

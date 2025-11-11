@@ -1,6 +1,4 @@
-import { motion } from 'framer-motion'
 import { TrendingUp, TrendingDown } from 'lucide-react'
-import PropTypes from 'prop-types'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { cn } from '@/lib/utils'
 
@@ -23,11 +21,7 @@ export default function MetricCard({
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.3, delay }}
-    >
+    <div>
       <Card className="relative overflow-hidden">
         <div className={cn('absolute top-0 right-0 w-32 h-32 opacity-10', colorClasses[color])}>
           <Icon className="w-full h-full" />
@@ -55,16 +49,6 @@ export default function MetricCard({
           </div>
         </CardContent>
       </Card>
-    </motion.div>
+    </div>
   )
-}
-
-MetricCard.propTypes = {
-  title: PropTypes.string.isRequired,
-  value: PropTypes.string.isRequired,
-  change: PropTypes.string.isRequired,
-  trend: PropTypes.oneOf(['up', 'down']).isRequired,
-  icon: PropTypes.elementType.isRequired,
-  color: PropTypes.oneOf(['primary', 'secondary', 'success', 'warning']),
-  delay: PropTypes.number,
 }

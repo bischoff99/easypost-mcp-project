@@ -65,6 +65,9 @@ class Settings:
     # Environment
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
 
+    # Bulk operations concurrency (M3 Max: 16 cores)
+    MAX_BULK_CONCURRENCY: int = int(os.getenv("MAX_BULK_CONCURRENCY", "16"))
+
     def validate(self):
         """Validate required configuration."""
         errors = []

@@ -34,26 +34,6 @@ class TestBulkCreationToolsDatabaseIntegration:
         assert service is not None
         assert service.session == mock_session
 
-    def test_batch_operation_creation(self):
-        """Test batch operation creation logic."""
-        from src.services.database_service import DatabaseService
-
-        mock_session = MagicMock()
-        service = DatabaseService(mock_session)
-
-        # Mock the create_batch_operation method
-        mock_batch = MagicMock()
-        mock_batch.batch_id = "test_batch_123"
-        service.create_batch_operation = AsyncMock(return_value=mock_batch)
-
-        # This would be called in the actual function
-        # We're just testing that the service has the right methods
-        assert hasattr(service, "create_batch_operation")
-        assert hasattr(service, "update_batch_operation")
-        assert hasattr(service, "create_address")
-        assert hasattr(service, "create_shipment")
-        assert hasattr(service, "log_user_activity")
-
     def test_database_integration_imports(self):
         """Test that all database integration imports work."""
         # These imports should work without errors

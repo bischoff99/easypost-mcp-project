@@ -1,4 +1,4 @@
-Run tests with M3 Max parallel execution (16 workers).
+Run tests with auto-detected parallel execution.
 
 **Context-aware**: Uses `{{path}}` from arguments or defaults to project test directory.
 
@@ -8,24 +8,24 @@ Automatically detects test framework from project:
 
 **Python Projects:**
 - Detects: `pytest.ini`, `import pytest`, `conftest.py`
-- Runs: `pytest -n {{workers.pytest}} {{path}} -v --tb=short`
-- Workers: 16 on M3 Max (from .dev-config.json)
+- Runs: `pytest -n auto {{path}} -v --tb=short`
+- Workers: Auto-detected based on CPU cores (from .dev-config.json)
 
 **JavaScript/TypeScript Projects:**
 - Detects: `vitest.config.js`, `jest.config.js`
-- Vitest: `vitest run --threads {{workers.vitest}} {{path}}`
-- Jest: `jest --maxWorkers={{workers.jest}} {{path}} --verbose`
-- Workers: 16-20 on M3 Max
+- Vitest: `vitest run --threads auto {{path}}`
+- Jest: `jest --maxWorkers=auto {{path}} --verbose`
+- Workers: Auto-detected based on system
 
 **Go Projects:**
 - Detects: `*_test.go` files
-- Runs: `go test -parallel {{workers.go}} -v {{path}}/...`
-- Workers: 16 on M3 Max
+- Runs: `go test -parallel auto -v {{path}}/...`
+- Workers: Auto-detected
 
 **Rust Projects:**
 - Detects: `Cargo.toml`, `tests/` directory
-- Runs: `cargo test --jobs {{workers.rust}} {{path}}`
-- Workers: 16 on M3 Max
+- Runs: `cargo test --jobs auto {{path}}`
+- Workers: Auto-detected
 
 ## MCP Integration
 
@@ -50,24 +50,24 @@ Automatically detects test framework from project:
 
 ```json
 {{paths.tests}}              // "backend/tests" or auto-detect
-{{workers.pytest}}           // 16 (M3 Max)
-{{workers.vitest}}           // 20 (M3 Max)
-{{workers.jest}}             // 16 (M3 Max)
-{{workers.go}}               // 16 (M3 Max)
+{{workers.pytest}}           // Auto-detected from CPU cores
+{{workers.vitest}}           // Auto-detected from CPU cores
+{{workers.jest}}             // Auto-detected from CPU cores
+{{workers.go}}               // Auto-detected from CPU cores
 {{testing.backend.framework}} // "pytest", "vitest", etc.
 ```
 
 ## Performance Expectations
 
-**M3 Max (16 cores, 128GB RAM):**
-- Full test suite: 4-6 seconds
-- Speedup: 15x vs sequential
-- Worker utilization: 90%+
+**Auto-Detected Workers:**
+- Full test suite: Scales with CPU cores
+- Speedup: Proportional to available cores
+- Worker utilization: Optimized for your system
 
-**Standard Hardware (4 cores):**
-- Full test suite: 30-60 seconds
-- Speedup: 4x vs sequential
-- Workers: Auto-scaled to 4
+**Example Performance:**
+- High-end systems (16+ cores): 4-6 seconds, 15x speedup
+- Standard systems (4 cores): 30-60 seconds, 4x speedup
+- Workers: Auto-scaled to match your hardware
 
 ## Usage Examples
 
@@ -91,14 +91,14 @@ Automatically detects test framework from project:
 ## Output Format
 
 ```
-🧪 Running tests with 16 parallel workers...
+🧪 Running tests with auto-detected parallel workers...
 Framework: pytest (auto-detected)
 Path: backend/tests/
 
 ✅ 45/45 tests passed in 4.2s
-Workers: 16
-CPU Usage: 94%
-Speedup: 14.3x vs sequential
+Workers: Auto-detected
+CPU Usage: Optimized
+Speedup: Proportional to available cores
 
 Performance metrics:
 - Fastest test: 0.02s

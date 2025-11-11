@@ -1,11 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 # Production startup script for EasyPost MCP
 # Builds frontend and starts both servers in production mode
 
-set -e
+set -euo pipefail
 
 # Get the directory where this script is located
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${(%):-%x}")" && pwd)"
 # Project root is one level up from scripts directory
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 BACKEND_DIR="${PROJECT_ROOT}/backend"

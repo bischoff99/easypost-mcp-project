@@ -1,6 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 
 # Quick functionality test - runs in ~10 seconds
+
+set -euo pipefail
 
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'

@@ -1,11 +1,14 @@
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import { shipmentAPI } from '@/services/api';
 import { DollarSign, MapPin, Package, Ruler, ArrowLeft } from 'lucide-react';
 import { useState, useOptimistic, useActionState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { logger } from '@/lib/logger';
+import { useMutation } from '@tanstack/react-query';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 /**
  * CreateShipmentPage Component
@@ -17,13 +20,65 @@ import { logger } from '@/lib/logger';
  * 4. Select carrier and buy
  */
 
-export default function CreateShipmentPage() {
+function CreateShipmentPageContent() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
   const [rates, setRates] = useState([]);
   const [selectedRate, setSelectedRate] = useState(null);
   const [_isPending, startTransition] = useTransition();
+
+  // Form data state - declared early to be accessible in useActionState
+  const [formData, setFormData] = useState({
+    from_address: {
+      name: '',
+      street1: '',
+      city: '',
+      state: '',
+      zip: '',
+      country: 'US',
+      phone: '',
+    },
+    to_address: {
+      name: '',
+      street1: '',
+      city: '',
+      state: '',
+      zip: '',
+      country: 'US',
+      phone: '',
+    },
+    parcel: {
+      length: '',
+      width: '',
+      height: '',
+      weight: '',
+    },
+  });
+
+  // React Query mutation for getting rates
+  const {
+    mutate: getRates,
+    isPending: isLoadingRates,
+    error: _ratesError,
+  } = useMutation({
+    mutationFn: async (shipmentData) => {
+      const response = await shipmentAPI.getRates(shipmentData);
+      if (response.status === 'success' && response.data) {
+        return response.data;
+      }
+      throw new Error(response.message || 'Failed to get rates');
+    },
+    onSuccess: (data) => {
+      setRates(data);
+      setStep(3);
+      toast.success('Rates retrieved successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to get rates', {
+        description: error.message || 'Unable to fetch shipping rates',
+      });
+    },
+  });
 
   // Optimistic UI for rates - show rates immediately while fetching
   const [optimisticRates, addOptimisticRates] = useOptimistic(
@@ -55,15 +110,18 @@ export default function CreateShipmentPage() {
         shipmentData = formDataOrPayload;
       }
 
+      // Get current formData from state
+      const currentFormData = formData;
+
       try {
         const response = await shipmentAPI.buyShipment({
-          from_address: shipmentData.from_address || formData.from_address,
-          to_address: shipmentData.to_address || formData.to_address,
+          from_address: shipmentData.from_address || currentFormData.from_address,
+          to_address: shipmentData.to_address || currentFormData.to_address,
           parcel: {
-            length: parseFloat(shipmentData.parcel?.length || formData.parcel.length),
-            width: parseFloat(shipmentData.parcel?.width || formData.parcel.width),
-            height: parseFloat(shipmentData.parcel?.height || formData.parcel.height),
-            weight: parseFloat(shipmentData.parcel?.weight || formData.parcel.weight),
+            length: parseFloat(shipmentData.parcel?.length || currentFormData.parcel.length),
+            width: parseFloat(shipmentData.parcel?.width || currentFormData.parcel.width),
+            height: parseFloat(shipmentData.parcel?.height || currentFormData.parcel.height),
+            weight: parseFloat(shipmentData.parcel?.weight || currentFormData.parcel.weight),
           },
           rate_id: shipmentData.rate_id || selectedRate.id,
         });
@@ -93,33 +151,6 @@ export default function CreateShipmentPage() {
     { success: false, error: null }
   );
 
-  const [formData, setFormData] = useState({
-    from_address: {
-      name: '',
-      street1: '',
-      city: '',
-      state: '',
-      zip: '',
-      country: 'US',
-      phone: '',
-    },
-    to_address: {
-      name: '',
-      street1: '',
-      city: '',
-      state: '',
-      zip: '',
-      country: 'US',
-      phone: '',
-    },
-    parcel: {
-      length: '',
-      width: '',
-      height: '',
-      weight: '',
-    },
-  });
-
   const handleInputChange = (section, field, value) => {
     setFormData((prev) => ({
       ...prev,
@@ -131,46 +162,20 @@ export default function CreateShipmentPage() {
   };
 
   const handleGetRates = async () => {
-    try {
-      setIsLoading(true);
+    // Optimistically show loading state
+    addOptimisticRates([]);
 
-      // Optimistically show loading state
-      addOptimisticRates([]);
-
-      const response = await shipmentAPI.getRates({
-        from_address: formData.from_address,
-        to_address: formData.to_address,
-        parcel: {
-          length: parseFloat(formData.parcel.length),
-          width: parseFloat(formData.parcel.width),
-          height: parseFloat(formData.parcel.height),
-          weight: parseFloat(formData.parcel.weight),
-        },
-      });
-
-      if (response.status === 'success' && response.data) {
-        // Update both actual and optimistic state
-        setRates(response.data);
-        addOptimisticRates(response.data);
-        setStep(3);
-        toast.success('Rates Retrieved', {
-          description: `Found ${response.data.length} available rates`,
-        });
-      } else {
-        toast.error('Failed to get rates', {
-          description: response.message || 'Please try again',
-        });
-        addOptimisticRates([]);
-      }
-    } catch (error) {
-      logger.error('Failed to fetch rates:', error);
-      toast.error('Error', {
-        description: error.message || 'Failed to fetch rates',
-      });
-      addOptimisticRates([]);
-    } finally {
-      setIsLoading(false);
-    }
+    // Use React Query mutation instead of direct API call
+    getRates({
+      from_address: formData.from_address,
+      to_address: formData.to_address,
+      parcel: {
+        length: parseFloat(formData.parcel.length),
+        width: parseFloat(formData.parcel.width),
+        height: parseFloat(formData.parcel.height),
+        weight: parseFloat(formData.parcel.weight),
+      },
+    });
   };
 
   const handleBuyShipment = () => {
@@ -396,8 +401,8 @@ export default function CreateShipmentPage() {
                 <Button variant="outline" onClick={() => setStep(1)}>
                   Back
                 </Button>
-                <Button onClick={handleGetRates} disabled={isLoading}>
-                  {isLoading ? 'Getting Rates...' : 'Get Rates'}
+                <Button onClick={handleGetRates} disabled={isLoadingRates} aria-label="Get shipping rates">
+                  {isLoadingRates ? 'Getting Rates...' : 'Get Rates'}
                 </Button>
               </div>
             </div>
@@ -442,10 +447,11 @@ export default function CreateShipmentPage() {
                     </div>
                   </button>
                   ))
-                ) : isLoading ? (
+                ) : isLoadingRates ? (
                   <div className="text-center py-8 text-muted-foreground">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-                    Fetching rates...
+                    <Skeleton className="h-8 w-full mb-2" />
+                    <Skeleton className="h-8 w-full mb-2" />
+                    <Skeleton className="h-8 w-full" />
                   </div>
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">No rates available</div>
@@ -465,5 +471,13 @@ export default function CreateShipmentPage() {
         </div>
       </Card>
     </div>
+  );
+}
+
+export default function CreateShipmentPage() {
+  return (
+    <ErrorBoundary>
+      <CreateShipmentPageContent />
+    </ErrorBoundary>
   );
 }

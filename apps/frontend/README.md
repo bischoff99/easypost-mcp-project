@@ -222,10 +222,10 @@ Custom configuration in `tailwind.config.js`:
 
 ```javascript
 // Theme toggle
-import { useThemeStore } from '@/stores/useThemeStore';
+import useUIStore from '@/stores/useUIStore';
 
-const { theme, toggleTheme } = useThemeStore();
-// theme: 'light' | 'dark' | 'system'
+const { theme, toggleTheme } = useUIStore();
+// theme: 'light' | 'dark'
 ```
 
 ### CSS Classes

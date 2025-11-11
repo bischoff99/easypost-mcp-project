@@ -3,7 +3,7 @@ import { Separator } from '@/components/ui/Separator'
 import { Info } from 'lucide-react'
 import { formatCurrency } from '@/services/currencyService'
 import { calculateTaxesAndDuties } from '@/services/internationalShippingService'
-import { COUNTRIES } from '@/data/countries'
+import { COUNTRIES } from '@/lib/constants/countries'
 
 /**
  * PriceBreakdown Component

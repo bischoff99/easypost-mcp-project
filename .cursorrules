@@ -1,5 +1,49 @@
 # EasyPost MCP Project - Cursor AI Rules
 
+## Project Principles (Always Apply)
+
+**This is a personal-use project, NOT an enterprise product.**
+
+### Core Values
+- **Simplicity**: Prefer simple solutions over complex ones
+- **YAGNI**: You Aren't Gonna Need It - don't build for hypothetical needs
+- **Maintainability**: Code should be understandable by one person
+- **Personal use**: Single user, no multi-tenancy
+
+### Hard Constraints
+- Max workers: 16 (not 32+)
+- Max DB connections: 20 (not 80+)
+- No enterprise features: webhooks, audit logs, multi-tenancy
+- No premature optimization: Measure first, optimize only if needed
+
+### AI Assistant Guidelines
+When suggesting features:
+- Default to simpler solutions
+- Question enterprise patterns (webhooks, microservices, etc.)
+- Prefer existing tools over custom solutions
+- Ask "Is this needed for personal use?" before suggesting
+
+### Red Flags - Reject These Patterns
+- Webhook systems → Use polling instead
+- Multi-tenancy → Single user only
+- Complex caching layers → Simple in-memory is fine
+- Microservices → Monolith is fine
+- Rate limiting middleware → Handle in business logic
+- Distributed systems → Direct calls are fine
+- Message queues → Direct function calls
+- Event sourcing → Direct database writes
+- CQRS → Simple CRUD
+
+### The 3-Question Test
+Before adding any feature, answer:
+1. **Do I need this now?** (Not "might need")
+2. **Can I build it simpler?** (Always yes)
+3. **Will this make maintenance harder?** (If yes, reject)
+
+If any answer suggests complexity → Simplify or reject
+
+---
+
 This project uses a comprehensive rules system located in `.cursor/rules/` directory.
 
 ## Quick Reference
@@ -17,7 +61,6 @@ For detailed rules, see:
 
 - **Backend:** `apps/backend/` - FastAPI + FastMCP server
 - **Frontend:** `apps/frontend/` - React + Vite
-- **Packages:** `packages/core/` - Shared code
 - **Deploy:** `deploy/` - Docker configurations
 
 ## Key Conventions
@@ -34,4 +77,3 @@ For detailed rules, see:
 - **Tools:** Shipment creation, tracking, rate comparison
 
 For complete rules and conventions, see `.cursor/rules/` directory.
-

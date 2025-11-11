@@ -1,11 +1,23 @@
 {
   "metadata": {
-    "version": "1.0.0",
-    "lastUpdated": "2025-11-04",
+    "version": "1.1.0",
+    "lastUpdated": "2025-11-11",
     "maintainer": "andrejs",
     "cursorVersion": "0.40+",
-    "schemaVersion": "1.0",
+    "schemaVersion": "1.1",
     "changelog": [
+      {
+        "version": "1.1.0",
+        "date": "2025-11-11",
+        "changes": [
+          "Simplified for personal use",
+          "Removed hardware-specific values",
+          "Removed detection patterns",
+          "Removed workflow definitions",
+          "Removed optimization flags",
+          "Kept essential project context for AI"
+        ]
+      },
       {
         "version": "1.0.0",
         "date": "2025-11-04",
@@ -22,7 +34,19 @@
   "project": {
     "name": "EasyPost MCP",
     "type": "fullstack",
-    "description": "Shipping and logistics automation with EasyPost API"
+    "description": "Shipping and logistics automation with EasyPost API",
+    "scope": "personal-use",
+    "constraints": {
+      "maxWorkers": 16,
+      "maxDbConnections": 20,
+      "enterpriseFeatures": false,
+      "multiTenancy": false
+    },
+    "principles": {
+      "yagni": true,
+      "simplicity": "high",
+      "targetAudience": "personal"
+    }
   },
 
   "stack": {
@@ -41,72 +65,21 @@
       "stateManagement": "zustand",
       "styling": "tailwindcss",
       "components": "shadcn-ui"
-    },
-    "detection": {
-      "backend": {
-        "fastapi": ["from fastapi import", "FastAPI()", "uvicorn.run"],
-        "django": ["from django import", "INSTALLED_APPS", "django.contrib"],
-        "flask": ["from flask import", "Flask(__name__)"],
-        "express": ["const express =", "app.listen", "require('express')"],
-        "nest": ["@Module", "@Controller", "NestFactory"],
-        "gin": ["gin.Default()", "import \"github.com/gin-gonic/gin\""],
-        "actix": ["actix_web::", "HttpServer::new"]
-      },
-      "frontend": {
-        "react": ["import React", "from 'react'", "useState", "useEffect"],
-        "vue": ["import { ref", "from 'vue'", "<template>", "defineComponent"],
-        "svelte": ["<script>", "$:", "export let"],
-        "solid": ["import { createSignal", "from 'solid-js'"],
-        "angular": ["@Component", "import { Component", "from '@angular"]
-      },
-      "testing": {
-        "pytest": ["pytest.ini", "import pytest", "conftest.py", "@pytest"],
-        "vitest": ["vitest.config", "import { describe", "from 'vitest'"],
-        "jest": ["jest.config", "describe(", "test(", "from '@testing-library"],
-        "go-test": ["_test.go", "func Test", "t *testing.T"],
-        "cargo-test": ["#[test]", "#[cfg(test)]", "cargo test"]
-      },
-      "build": {
-        "vite": ["vite.config", "import { defineConfig"],
-        "webpack": ["webpack.config", "module.exports"],
-        "rollup": ["rollup.config", "export default"],
-        "esbuild": ["esbuild.config", "require('esbuild')"]
-      }
-    }
-  },
-
-  "hardware": {
-    "type": "M3 Max",
-    "cpuCores": 16,
-    "performanceCores": 12,
-    "efficiencyCores": 4,
-    "ramGB": 128,
-    "workers": {
-      "python": 32,
-      "uvicorn": 33,
-      "vitest": 20,
-      "pytest": 16
-    },
-    "optimization": {
-      "threadPoolMax": 40,
-      "batchSizeOptimal": 150,
-      "memoryPerWorker": "4GB",
-      "cacheSize": "32GB"
     }
   },
 
   "paths": {
-    "root": "/Users/andrejs/Developer/github/andrejs/easypost-mcp-project",
-    "backend": "backend/src",
-    "frontend": "frontend/src",
+    "root": "/Users/andrejs/Projects/personal/easypost-mcp-project",
+    "backend": "apps/backend/src",
+    "frontend": "apps/frontend/src",
     "tests": {
-      "backend": "backend/tests",
-      "frontend": "frontend/src"
+      "backend": "apps/backend/tests",
+      "frontend": "apps/frontend/src/tests"
     },
-    "components": "frontend/src/components",
+    "components": "apps/frontend/src/components",
     "services": {
-      "backend": "backend/src/services",
-      "frontend": "frontend/src/services"
+      "backend": "apps/backend/src/services",
+      "frontend": "apps/frontend/src/services"
     }
   },
 
@@ -131,99 +104,13 @@
     "backend": {
       "framework": "pytest",
       "parallel": true,
-      "coverage": 80,
-      "mocking": ["easypost", "external-apis"]
+      "coverage": 36
     },
     "frontend": {
       "framework": "vitest",
       "library": "testing-library/react",
       "parallel": true,
       "coverage": 70
-    }
-  },
-
-  "optimization": {
-    "enabled": true,
-    "features": {
-      "uvloop": true,
-      "threadPoolScaling": true,
-      "parallelTests": true,
-      "codeSplitting": true,
-      "lazyLoading": true
-    }
-  },
-
-  "customization": {
-    "primaryDomain": "shipping",
-    "mainService": "EasyPostService",
-    "apiProvider": "EasyPost",
-    "keyFeatures": ["shipment-creation", "tracking", "rate-comparison", "bulk-processing"]
-  },
-
-  "workflows": {
-    "universal": {
-      "pre-commit": {
-        "description": "Before committing code",
-        "commands": "make format && make lint && /test",
-        "estimated_time": "15s",
-        "category": "quality"
-      },
-      "pre-push": {
-        "description": "Before pushing to remote",
-        "commands": "/test --coverage && make lint && /fix",
-        "estimated_time": "25s",
-        "category": "quality"
-      },
-      "debug": {
-        "description": "Debug failing code",
-        "commands": "/test || (/explain && /fix)",
-        "estimated_time": "20s",
-        "category": "development"
-      },
-      "ship": {
-        "description": "Prepare code for shipping",
-        "commands": "/fix && /test --coverage && /optimize && make lint",
-        "estimated_time": "45s",
-        "category": "release"
-      }
-    },
-    "easypost": {
-      "ep-morning": {
-        "description": "Morning startup and verification",
-        "commands": "/ep-dev && /test",
-        "estimated_time": "8s",
-        "category": "daily"
-      },
-      "ep-test-all": {
-        "description": "Run all tests including integration",
-        "commands": "/ep-test unit && /ep-test integration",
-        "estimated_time": "12s",
-        "category": "testing"
-      },
-      "ep-quality-gate": {
-        "description": "Complete quality check before release",
-        "commands": "make format && make lint && /ep-test && /ep-benchmark",
-        "estimated_time": "60s",
-        "category": "release"
-      },
-      "ep-parallel-test": {
-        "description": "All tests in parallel",
-        "commands": "/test backend/tests/unit & /test backend/tests/integration & /ep-benchmark",
-        "estimated_time": "8s",
-        "category": "testing"
-      },
-      "ep-feature-dev": {
-        "description": "Feature development workflow",
-        "commands": "/api /endpoint POST && /test && /optimize",
-        "estimated_time": "30s",
-        "category": "development"
-      },
-      "ep-debug-api": {
-        "description": "Debug EasyPost API issues",
-        "commands": "/ep-test integration || (/explain && /fix)",
-        "estimated_time": "25s",
-        "category": "debugging"
-      }
     }
   }
 }

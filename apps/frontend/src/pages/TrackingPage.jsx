@@ -5,45 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import { formatDate } from '@/lib/utils';
-import { logger } from '@/lib/logger';
 import { shipmentAPI } from '@/services/api';
-
-const mockTrackingData = {
-  tracking_number: 'EZ1234567890',
-  status: 'in_transit',
-  carrier: 'USPS',
-  service: 'Priority Mail',
-  est_delivery: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-  from: { city: 'San Francisco', state: 'CA', zip: '94102' },
-  to: { city: 'New York', state: 'NY', zip: '10001' },
-  events: [
-    {
-      status: 'out_for_delivery',
-      message: 'Out for delivery',
-      location: 'New York, NY 10001',
-      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      status: 'in_transit',
-      message: 'Arrived at distribution center',
-      location: 'Newark, NJ 07102',
-      timestamp: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      status: 'in_transit',
-      message: 'In transit',
-      location: 'Philadelphia, PA 19019',
-      timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      status: 'accepted',
-      message: 'Shipment accepted',
-      location: 'San Francisco, CA 94102',
-      timestamp: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(),
-    },
-  ],
-};
+import { useQuery } from '@tanstack/react-query';
 
 const statusIcons = {
   accepted: Clock,
@@ -52,38 +17,37 @@ const statusIcons = {
   delivered: CheckCircle,
 };
 
-export default function TrackingPage() {
+function TrackingPageContent() {
   const [trackingNumber, setTrackingNumber] = useState('');
-  const [trackingData, setTrackingData] = useState(null);
-  const [loading, setLoading] = useState(false);
 
-  const handleTrack = async () => {
+  // Fetch tracking data using React Query
+  const {
+    data: trackingData,
+    isLoading,
+    error: _error,
+    refetch,
+  } = useQuery({
+    queryKey: ['tracking', trackingNumber],
+    queryFn: async () => {
+      if (!trackingNumber.trim()) {
+        return null;
+      }
+      const response = await shipmentAPI.getTracking(trackingNumber.trim());
+      if (response.status === 'success' && response.data) {
+        return response.data;
+      }
+      throw new Error(response.message || 'Failed to fetch tracking information');
+    },
+    enabled: false, // Only fetch when manually triggered
+    retry: false,
+  });
+
+  const handleTrack = () => {
     if (!trackingNumber.trim()) {
       toast.error('Please enter a tracking number');
       return;
     }
-
-    setLoading(true);
-    try {
-      // Call real tracking API
-      const response = await shipmentAPI.getTracking(trackingNumber.trim());
-
-      if (response.status === 'success' && response.data) {
-        setTrackingData(response.data);
-        toast.success('Tracking information retrieved');
-      } else {
-        // Fallback to mock data for demo
-        toast.info('Using Demo Data', { description: 'Showing sample tracking for demonstration' });
-        setTrackingData(mockTrackingData);
-      }
-    } catch (error) {
-      // Log error in development only
-      logger.error('Tracking error:', error);
-      toast.info('Using Demo Data', { description: 'Showing sample tracking for demonstration' });
-      setTrackingData(mockTrackingData);
-    } finally {
-      setLoading(false);
-    }
+    refetch();
   };
 
   return (
@@ -98,7 +62,7 @@ export default function TrackingPage() {
       <Card>
         <CardHeader>
           <CardTitle>Enter Tracking Number</CardTitle>
-          <CardDescription>Track your package by entering the tracking number</CardDescription>
+          <CardDescription id="tracking-description">Track your package by entering the tracking number</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex gap-2">
@@ -107,10 +71,12 @@ export default function TrackingPage() {
               value={trackingNumber}
               onChange={(e) => setTrackingNumber(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleTrack()}
+              aria-label="Tracking number input"
+              aria-describedby="tracking-description"
             />
-            <Button onClick={handleTrack} disabled={!trackingNumber || loading}>
+            <Button onClick={handleTrack} disabled={!trackingNumber.trim() || isLoading} aria-label="Track shipment">
               <Search className="h-4 w-4 mr-2" />
-              {loading ? 'Tracking...' : 'Track'}
+              {isLoading ? 'Tracking...' : 'Track'}
             </Button>
           </div>
         </CardContent>
@@ -224,7 +190,7 @@ export default function TrackingPage() {
       )}
 
       {/* Empty State */}
-      {!trackingData && !loading && (
+      {!trackingData && !isLoading && (
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Package className="h-12 w-12 text-muted-foreground mb-4" />
@@ -234,5 +200,13 @@ export default function TrackingPage() {
         </Card>
       )}
     </div>
+  );
+}
+
+export default function TrackingPage() {
+  return (
+    <ErrorBoundary>
+      <TrackingPageContent />
+    </ErrorBoundary>
   );
 }

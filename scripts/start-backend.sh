@@ -1,5 +1,5 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env zsh
+set -euo pipefail
 
 echo "🔧 Setting up backend..."
 

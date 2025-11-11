@@ -1,7 +1,7 @@
-Run EasyPost performance benchmarks (M3 Max validation).
+Run EasyPost performance benchmarks to validate optimizations.
 
 **Domain**: Performance testing
-**Performance**: Validates M3 Max optimizations
+**Performance**: Measures sequential vs parallel performance improvements
 
 ## Usage
 
@@ -28,23 +28,23 @@ Run EasyPost performance benchmarks (M3 Max validation).
 1. Runs benchmark tests from `test_bulk_performance.py`
 2. Measures sequential vs parallel performance
 3. Calculates speedup ratios
-4. Validates M3 Max optimizations working
+4. Validates parallel optimizations working
 5. Generates performance report
 
 ## Benchmarks
 
 ### 1. Bulk Shipment Creation
-**Test**: Sequential vs 16 parallel workers
+**Test**: Sequential vs auto-detected parallel workers
 **Expected**: >5x speedup
 **Validates**: ThreadPoolExecutor, asyncio.gather()
 
 ### 2. Batch Tracking
-**Test**: Sequential vs 16 parallel tracking calls
+**Test**: Sequential vs auto-detected parallel tracking calls
 **Expected**: >8x speedup
 **Validates**: Parallel API calls
 
 ### 3. Analytics Processing
-**Test**: Sequential vs 16-chunk parallel aggregation
+**Test**: Sequential vs auto-detected parallel aggregation
 **Expected**: 5x+ speedup
 **Validates**: asyncio.gather() for CPU tasks
 
@@ -69,11 +69,10 @@ python tests/integration/test_bulk_performance.py
 
 ```
 ╔═══════════════════════════════════════════════════════════╗
-║       EASYPOST PERFORMANCE BENCHMARKS (M3 Max)           ║
+║       EASYPOST PERFORMANCE BENCHMARKS                     ║
 ╚═══════════════════════════════════════════════════════════╝
 
-Hardware: M3 Max (16 cores, 128GB RAM)
-Workers: 16 parallel (pytest-xdist)
+Workers: Auto-detected (pytest-xdist)
 
 Running benchmarks...
 
@@ -130,12 +129,12 @@ All benchmarks: PASSED (4/4)
 Total duration: 3.8s
 
 Performance Gains:
-  Bulk Creation:   9.5x faster (16 workers)
-  Batch Tracking:  9.0x faster (16 workers)
-  Analytics:       5.2x faster (16 chunks)
+  Bulk Creation:   9.5x faster (auto-detected workers)
+  Batch Tracking:  9.0x faster (auto-detected workers)
+  Analytics:       5.2x faster (auto-detected chunks)
   Parsing:         Fast (36ms/1000 iterations)
 
-M3 Max Utilization: OPTIMAL ✅
+System Utilization: OPTIMAL ✅
 
 Recommendations:
   ✓ Parallel processing working as expected
@@ -169,10 +168,9 @@ Last baseline: 2025-11-02 14:30:00
 ```json
 {
   "timestamp": "2025-11-03T17:30:00Z",
-  "hardware": {
-    "model": "M3 Max",
-    "cores": 16,
-    "ram": "128GB"
+  "system": {
+    "cores": "auto-detected",
+    "workers": "auto-detected"
   },
   "benchmarks": {
     "bulk_creation": {
@@ -224,5 +222,4 @@ Run with --debug for detailed analysis
 /clean                 # Clean build artifacts
 ```
 
-**Validate M3 Max optimizations - prove the speedup!**
-
+**Validate parallel optimizations - prove the speedup!**
