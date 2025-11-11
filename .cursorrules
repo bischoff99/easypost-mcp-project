@@ -1,0 +1,36 @@
+# EasyPost MCP Project - Cursor AI Rules
+
+This project uses a comprehensive rules system located in `.cursor/rules/` directory.
+
+## Quick Reference
+
+For detailed rules, see:
+- `.cursor/rules/00-INDEX.mdc` - Complete rules index
+- `.cursor/rules/01-fastapi-python.mdc` - Backend best practices
+- `.cursor/rules/02-react-vite-frontend.mdc` - Frontend best practices
+- `.cursor/rules/03-testing-best-practices.mdc` - Testing strategy
+- `.cursor/rules/04-mcp-development.mdc` - MCP tool development
+- `.cursor/rules/05-m3-max-optimizations.mdc` - Performance optimization
+
+## Project Structure
+
+- **Backend:** `apps/backend/` - FastAPI + FastMCP server
+- **Frontend:** `apps/frontend/` - React + Vite
+- **Packages:** `packages/core/` - Shared code
+- **Deploy:** `deploy/` - Docker configurations
+
+## Key Conventions
+
+- **Python:** snake_case functions, PascalCase classes, type hints required
+- **JavaScript:** camelCase functions, PascalCase components, strict TypeScript
+- **Testing:** pytest (backend), vitest (frontend), parallel execution
+- **Performance:** Optimized for M3 Max (16 cores, 128GB RAM)
+
+## MCP Server
+
+- **Entry Point:** `apps/backend/src/mcp_server/server.py`
+- **Configuration:** `.cursor/mcp.json`
+- **Tools:** Shipment creation, tracking, rate comparison
+
+For complete rules and conventions, see `.cursor/rules/` directory.
+
