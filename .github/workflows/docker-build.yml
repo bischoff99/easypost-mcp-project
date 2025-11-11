@@ -42,7 +42,7 @@ jobs:
     - name: Build and push Backend Docker image
       uses: deploy/build-push-action@v6
       with:
-        context: ./backend
+        context: ./apps/backend
         file: ./apps/backend/Dockerfile.prod
         push: ${{ github.event_name != 'pull_request' }}
         tags: ${{ steps.meta.outputs.tags }}
@@ -80,7 +80,7 @@ jobs:
     - name: Build and push Frontend Docker image
       uses: deploy/build-push-action@v6
       with:
-        context: ./frontend
+        context: ./apps/frontend
         file: ./apps/frontend/Dockerfile.prod
         push: ${{ github.event_name != 'pull_request' }}
         tags: ${{ steps.meta.outputs.tags }}

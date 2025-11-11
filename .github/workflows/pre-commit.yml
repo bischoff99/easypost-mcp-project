@@ -25,13 +25,13 @@ jobs:
 
       - name: Install backend dependencies
         run: |
-          cd backend
+          cd apps/backend
           pip install -r requirements.txt
           pip install pre-commit
 
       - name: Install frontend dependencies
         run: |
-          cd frontend
+          cd apps/frontend
           npm ci
 
       - name: Run pre-commit

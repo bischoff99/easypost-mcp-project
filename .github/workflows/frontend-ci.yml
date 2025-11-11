@@ -30,29 +30,29 @@ jobs:
 
     - name: Install dependencies
       run: |
-        cd frontend
+        cd apps/frontend
         npm ci
 
     - name: Lint with ESLint
       run: |
-        cd frontend
+        cd apps/frontend
         npx eslint . --ext .js,.jsx --max-warnings 0
       continue-on-error: true
 
     - name: Format check with Prettier
       run: |
-        cd frontend
+        cd apps/frontend
         npx prettier --check "src/**/*.{js,jsx,css}"
       continue-on-error: true
 
     - name: Run tests
       run: |
-        cd frontend
+        cd apps/frontend
         npm test -- --run --coverage
 
     - name: Build
       run: |
-        cd frontend
+        cd apps/frontend
         npm run build
 
     - name: Upload coverage to Codecov
