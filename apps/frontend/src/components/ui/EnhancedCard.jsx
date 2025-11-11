@@ -1,5 +1,3 @@
-import { motion } from 'framer-motion';
-import PropTypes from 'prop-types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './Card';
 import { cn } from '@/lib/utils';
 
@@ -25,11 +23,7 @@ export default function EnhancedCard({
   delay = 0,
 }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay }}
-      whileHover={hoverable ? { y: -4, scale: 1.02 } : {}}
+    <div
       className={cn(
         onClick && 'cursor-pointer',
         className
@@ -66,29 +60,12 @@ export default function EnhancedCard({
         </div>
 
         {hoverable && (
-          <motion.div
-            className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/50 via-primary to-primary/50"
-            initial={{ scaleX: 0 }}
-            whileHover={{ scaleX: 1 }}
-            transition={{ duration: 0.3 }}
-          />
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/50 via-primary to-primary/50 transition-transform duration-300 hover:scale-x-100" />
         )}
       </Card>
-    </motion.div>
+    </div>
   );
 }
-
-EnhancedCard.propTypes = {
-  title: PropTypes.string,
-  description: PropTypes.string,
-  children: PropTypes.node,
-  icon: PropTypes.elementType,
-  gradient: PropTypes.bool,
-  hoverable: PropTypes.bool,
-  onClick: PropTypes.func,
-  className: PropTypes.string,
-  delay: PropTypes.number,
-};
 
 
 

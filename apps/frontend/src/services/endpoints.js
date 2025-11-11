@@ -23,16 +23,12 @@ export const ENDPOINTS = {
 
   // Analytics
   ANALYTICS: '/analytics',
-  STATS: '/stats',
-  CARRIER_PERFORMANCE: '/carrier-performance',
 
   // Database
   DB_SHIPMENTS: '/db/shipments',
   DB_SHIPMENT_BY_ID: (id) => `/db/shipments/${id}`,
   DB_ADDRESSES: '/db/addresses',
   DB_ANALYTICS: '/db/analytics/dashboard',
-  DB_BATCH_OPERATIONS: '/db/batch-operations',
-  DB_USER_ACTIVITY: '/db/user-activity',
 
   // Webhooks
   WEBHOOKS_EASYPOST: '/webhooks/easypost',

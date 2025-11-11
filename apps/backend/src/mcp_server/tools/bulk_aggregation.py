@@ -7,47 +7,6 @@ These functions handle result aggregation and summary generation.
 from datetime import datetime
 from typing import Any
 
-from src.services.database_service import DatabaseService
-
-
-async def setup_database_tracking(
-    db_service: DatabaseService | None,
-    start_time: datetime,
-    ctx: Any | None = None,
-) -> tuple[Any | None, str | None]:
-    """
-    Setup database tracking for batch operation.
-
-    I/O operation - database calls.
-    Complexity: 5
-    Returns: (batch_operation, batch_id)
-    """
-    if not db_service:
-        return None, None
-
-    try:
-        from time import time
-
-        batch_id = f"bulk_{int(time())}"
-        batch_operation = await db_service.create_batch_operation(
-            {
-                "batch_id": batch_id,
-                "operation_type": "create_shipments",
-                "status": "processing",
-                "started_at": start_time,
-                "total_items": 0,  # Will be updated after validation
-                "source": "mcp",
-            }
-        )
-        if ctx:
-            await ctx.info(f"📊 Database tracking enabled (batch: {batch_id})")
-        # Return batch_id from the created operation (in case it was modified)
-        return batch_operation, getattr(batch_operation, "batch_id", batch_id)
-    except Exception as e:
-        if ctx:
-            await ctx.info(f"⚠️  Database tracking unavailable: {e}")
-        return None, None
-
 
 def aggregate_results(
     results: list[dict[str, Any]],

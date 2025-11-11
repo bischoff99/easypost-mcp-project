@@ -1,3 +1,4 @@
+import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import InternationalShippingForm from '@/components/international/InternationalShippingForm';
 
 /**
@@ -5,6 +6,14 @@ import InternationalShippingForm from '@/components/international/InternationalS
  *
  * Page for creating international shipments
  */
-export default function InternationalShippingPage() {
+function InternationalShippingPageContent() {
   return <InternationalShippingForm />;
+}
+
+export default function InternationalShippingPage() {
+  return (
+    <ErrorBoundary>
+      <InternationalShippingPageContent />
+    </ErrorBoundary>
+  );
 }

@@ -1,24 +1,22 @@
-import { Bell, CheckCheck, Trash2 } from 'lucide-react';
+import { Bell } from 'lucide-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { useNotificationsStore } from '@/stores/useNotificationsStore';
-import { formatRelativeTime } from '@/lib/utils';
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 /**
  * NotificationsDropdown Component
  *
- * Dropdown menu showing notifications with unread badge
+ * Simplified notifications dropdown using local state instead of Zustand.
+ * Notifications are ephemeral and don't need persistence.
  */
 export default function NotificationsDropdown() {
-  const { notifications, unreadCount, markAsRead, markAllAsRead, clearNotifications } =
-    useNotificationsStore();
+  const [notifications, setNotifications] = useState([]);
 
   // Initialize with sample notifications if empty
   useEffect(() => {
     if (notifications.length === 0) {
-      const sampleNotifications = [
+      setNotifications([
         {
           id: '1',
           title: 'Shipment Created',
@@ -43,10 +41,25 @@ export default function NotificationsDropdown() {
           read: false,
           createdAt: new Date(Date.now() - 7200000).toISOString(),
         },
-      ];
-      useNotificationsStore.getState().setNotifications(sampleNotifications);
+      ]);
     }
-  }, [notifications.length]);
+  }, []);
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  const markAsRead = (id) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+    );
+  };
+
+  const markAllAsRead = () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  };
+
+  const clearNotifications = () => {
+    setNotifications([]);
+  };
 
   const getNotificationIcon = (type) => {
     switch (type) {
@@ -107,7 +120,6 @@ export default function NotificationsDropdown() {
                   className="h-7 text-xs"
                   onClick={markAllAsRead}
                 >
-                  <CheckCheck className="h-3 w-3 mr-1" />
                   Mark all read
                 </Button>
               )}
@@ -148,7 +160,7 @@ export default function NotificationsDropdown() {
                             {notification.message}
                           </p>
                           <p className="text-xs text-muted-foreground mt-1">
-                            {formatRelativeTime(new Date(notification.createdAt))}
+                            {new Date(notification.createdAt).toLocaleString()}
                           </p>
                         </div>
                         {!notification.read && (
@@ -170,7 +182,6 @@ export default function NotificationsDropdown() {
                 className="w-full h-7 text-xs"
                 onClick={clearNotifications}
               >
-                <Trash2 className="h-3 w-3 mr-1" />
                 Clear all
               </Button>
             </div>

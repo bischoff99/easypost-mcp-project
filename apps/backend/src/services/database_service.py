@@ -13,13 +13,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models import (
     Address,
-    AnalyticsSummary,
-    BatchOperation,
-    CarrierPerformance,
     Shipment,
     ShipmentEvent,
-    SystemMetrics,
-    UserActivity,
 )
 
 logger = logging.getLogger(__name__)
@@ -124,105 +119,6 @@ class DatabaseService:
         await self.session.commit()
         return result.scalar_one_or_none()
 
-    # Analytics Operations
-    async def create_analytics_summary(self, summary_data: dict[str, Any]) -> AnalyticsSummary:
-        """Create analytics summary."""
-        summary = AnalyticsSummary(**summary_data)
-        self.session.add(summary)
-        await self.session.commit()
-        await self.session.refresh(summary)
-        return summary
-
-    async def get_analytics_summary_by_date(self, date, period: str) -> AnalyticsSummary | None:
-        """Get analytics summary for specific date and period."""
-        from datetime import date as date_type
-
-        # Convert string to date if needed
-        if isinstance(date, str):
-            date = date_type.fromisoformat(date)
-
-        stmt = select(AnalyticsSummary).where(
-            AnalyticsSummary.date == date, AnalyticsSummary.period == period
-        )
-        result = await self.session.execute(stmt)
-        return result.scalar_one_or_none()
-
-    async def get_carrier_performance_record(
-        self, carrier: str, service: str, date: str
-    ) -> CarrierPerformance | None:
-        """Get carrier performance record for specific carrier/service/date."""
-        stmt = select(CarrierPerformance).where(
-            CarrierPerformance.carrier == carrier,
-            CarrierPerformance.service == service,
-            CarrierPerformance.date == date,
-        )
-        result = await self.session.execute(stmt)
-        return result.scalar_one_or_none()
-
-    async def create_carrier_performance(
-        self, performance_data: dict[str, Any]
-    ) -> CarrierPerformance:
-        """Create carrier performance record."""
-        performance = CarrierPerformance(**performance_data)
-        self.session.add(performance)
-        await self.session.commit()
-        await self.session.refresh(performance)
-        return performance
-
-    # User Activity Tracking
-    async def log_user_activity(self, activity_data: dict[str, Any]) -> UserActivity:
-        """Log user activity."""
-        activity = UserActivity(**activity_data)
-        self.session.add(activity)
-        await self.session.commit()
-        await self.session.refresh(activity)
-        return activity
-
-    # System Metrics
-    async def record_system_metrics(self, metrics_data: dict[str, Any]) -> SystemMetrics:
-        """Record system performance metrics."""
-        metrics = SystemMetrics(**metrics_data)
-        self.session.add(metrics)
-        await self.session.commit()
-        await self.session.refresh(metrics)
-        return metrics
-
-    # Batch Operations
-    async def create_batch_operation(self, batch_data: dict[str, Any]) -> BatchOperation:
-        """Create batch operation record."""
-        # Ensure created_at is set if not provided
-        if "created_at" not in batch_data:
-            from datetime import UTC, datetime
-
-            batch_data["created_at"] = datetime.now(UTC)
-
-        batch = BatchOperation(**batch_data)
-        self.session.add(batch)
-        await self.session.commit()
-        await self.session.refresh(batch)
-        logger.info(f"Created batch operation {batch.batch_id}")
-        return batch
-
-    async def update_batch_operation(
-        self, batch_id: str, update_data: dict[str, Any]
-    ) -> BatchOperation | None:
-        """Update batch operation."""
-        stmt = (
-            update(BatchOperation)
-            .where(BatchOperation.batch_id == batch_id)
-            .values(**update_data)
-            .returning(BatchOperation)
-        )
-        result = await self.session.execute(stmt)
-        await self.session.commit()
-        return result.scalar_one_or_none()
-
-    async def get_batch_operation(self, batch_id: str) -> BatchOperation | None:
-        """Get batch operation by ID."""
-        stmt = select(BatchOperation).where(BatchOperation.batch_id == batch_id)
-        result = await self.session.execute(stmt)
-        return result.scalar_one_or_none()
-
     # Utility Methods
     async def get_shipment_count(self) -> int:
         """Get total shipment count."""
@@ -235,12 +131,6 @@ class DatabaseService:
         stmt = select(Shipment.status, func.count(Shipment.id)).group_by(Shipment.status)
         result = await self.session.execute(stmt)
         return dict(result.all())
-
-    async def get_recent_activities(self, limit: int = 10) -> list[UserActivity]:
-        """Get recent user activities."""
-        stmt = select(UserActivity).order_by(UserActivity.timestamp.desc()).limit(limit)
-        result = await self.session.execute(stmt)
-        return list(result.scalars().all())
 
     # API Endpoint Methods
     async def get_shipments_with_details(
@@ -307,23 +197,11 @@ class DatabaseService:
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_addresses_with_stats(
+    async def get_addresses(
         self, limit: int = 50, offset: int = 0, filters: dict[str, Any] | None = None
     ) -> list[Address]:
-        """Get addresses with usage statistics."""
-        # Get addresses with shipment counts
-        stmt = (
-            select(
-                Address,
-                func.count(Shipment.from_address_id).label("from_count"),
-                func.count(Shipment.to_address_id).label("to_count"),
-            )
-            .outerjoin(
-                Shipment,
-                (Shipment.from_address_id == Address.id) | (Shipment.to_address_id == Address.id),
-            )
-            .group_by(Address.id)
-        )
+        """Get addresses with pagination."""
+        stmt = select(Address)
 
         # Apply filters
         if filters:
@@ -336,15 +214,7 @@ class DatabaseService:
 
         stmt = stmt.limit(limit).offset(offset)
         result = await self.session.execute(stmt)
-
-        addresses = []
-        for row in result:
-            address = row[0]
-            # Add usage statistics
-            address.usage_count = row[1] + row[2]  # from_count + to_count
-            addresses.append(address)
-
-        return addresses
+        return list(result.scalars().all())
 
     async def get_addresses_count(self, filters: dict[str, Any] | None = None) -> int:
         """Get total addresses count with filters."""
@@ -499,59 +369,3 @@ class DatabaseService:
             )
 
         return routes
-
-    async def get_batch_operations(
-        self, limit: int = 20, offset: int = 0, filters: dict[str, Any] | None = None
-    ) -> list[BatchOperation]:
-        """Get batch operations with pagination."""
-        stmt = select(BatchOperation)
-
-        # Apply filters
-        if filters and filters.get("status"):
-            stmt = stmt.where(BatchOperation.status == filters["status"])
-
-        stmt = stmt.limit(limit).offset(offset).order_by(BatchOperation.created_at.desc())
-        result = await self.session.execute(stmt)
-        return list(result.scalars().all())
-
-    async def get_batch_operations_count(self, filters: dict[str, Any] | None = None) -> int:
-        """Get total batch operations count."""
-        stmt = select(func.count(BatchOperation.id))
-
-        # Apply filters
-        if filters and filters.get("status"):
-            stmt = stmt.where(BatchOperation.status == filters["status"])
-
-        result = await self.session.execute(stmt)
-        return result.scalar()
-
-    async def get_user_activity(
-        self, limit: int = 50, offset: int = 0, action: str | None = None, hours: int = 24
-    ) -> list[UserActivity]:
-        """Get user activity logs."""
-        from datetime import datetime, timedelta
-
-        start_time = datetime.now(UTC) - timedelta(hours=hours)
-
-        stmt = select(UserActivity).where(UserActivity.timestamp >= start_time)
-
-        if action:
-            stmt = stmt.where(UserActivity.action == action)
-
-        stmt = stmt.limit(limit).offset(offset).order_by(UserActivity.timestamp.desc())
-        result = await self.session.execute(stmt)
-        return list(result.scalars().all())
-
-    async def get_user_activity_count(self, action: str | None = None, hours: int = 24) -> int:
-        """Get user activity count."""
-        from datetime import datetime, timedelta
-
-        start_time = datetime.now(UTC) - timedelta(hours=hours)
-
-        stmt = select(func.count(UserActivity.id)).where(UserActivity.timestamp >= start_time)
-
-        if action:
-            stmt = stmt.where(UserActivity.action == action)
-
-        result = await self.session.execute(stmt)
-        return result.scalar()

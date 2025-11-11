@@ -6,8 +6,6 @@
  * 2. Shipments page navigation and filtering
  * 3. Tracking functionality
  * 4. Analytics page rendering
- * 5. Address Book CRUD operations
- * 6. Settings page functionality
  *
  * Run with: node frontend/src/tests/e2e/frontend-automated-tests.js
  */
@@ -156,58 +154,6 @@ async function testAnalyticsPage(page) {
 }
 
 /**
- * Test Suite: Address Book Page
- */
-async function testAddressBookPage(page) {
-  console.log('\n📇 Testing Address Book Page...');
-
-  await page.goto(`${FRONTEND_URL}/addresses`, { waitUntil: 'networkidle2', timeout: 30000 });
-  await wait(2000);
-  await page.screenshot({ path: join(SCREENSHOT_DIR, '06-address-book-page.png') });
-
-  const addressBookContent = await page.evaluate(() => {
-    return {
-      pageLoaded: document.body.textContent.includes('Address') ||
-                  document.body.textContent.includes('Book'),
-      hasAddButton: Array.from(document.querySelectorAll('button')).some(btn =>
-        btn.textContent.includes('Add') || btn.textContent.includes('New')
-      ),
-      hasSearch: document.querySelector('input[type="search"], input[placeholder*="Search"]') !== null,
-      hasAddressList: document.querySelectorAll('[class*="Card"], [class*="card"]').length > 0
-    };
-  });
-
-  console.log('✅ Address Book page loaded:', addressBookContent);
-  return addressBookContent;
-}
-
-/**
- * Test Suite: Settings Page
- */
-async function testSettingsPage(page) {
-  console.log('\n⚙️  Testing Settings Page...');
-
-  await page.goto(`${FRONTEND_URL}/settings`, { waitUntil: 'networkidle2', timeout: 30000 });
-  await wait(2000);
-  await page.screenshot({ path: join(SCREENSHOT_DIR, '07-settings-page.png') });
-
-  const settingsContent = await page.evaluate(() => {
-    return {
-      pageLoaded: document.body.textContent.includes('Settings') ||
-                  document.body.textContent.includes('Preferences'),
-      hasFormFields: document.querySelectorAll('input, select').length > 0,
-      hasSaveButton: Array.from(document.querySelectorAll('button')).some(btn =>
-        btn.textContent.includes('Save')
-      ),
-      hasSections: document.querySelectorAll('[class*="Card"], [class*="card"]').length > 0
-    };
-  });
-
-  console.log('✅ Settings page loaded:', settingsContent);
-  return settingsContent;
-}
-
-/**
  * Test Suite: Navigation and Sidebar
  */
 async function testNavigation(page) {
@@ -220,7 +166,7 @@ async function testNavigation(page) {
     const links = Array.from(document.querySelectorAll('a[href]'));
     const navLinks = links.filter(link => {
       const href = link.getAttribute('href');
-      return ['/shipments', '/tracking', '/analytics', '/addresses', '/settings'].some(path =>
+      return ['/shipments', '/tracking', '/analytics'].some(path =>
         href === path || href.includes(path)
       );
     });
@@ -339,12 +285,6 @@ async function runAllTests() {
     // Test Analytics Page
     results.analytics = await testAnalyticsPage(page);
 
-    // Test Address Book Page
-    results.addressBook = await testAddressBookPage(page);
-
-    // Test Settings Page
-    results.settings = await testSettingsPage(page);
-
     // Print summary
     console.log('\n' + '='.repeat(60));
     console.log('📊 TEST SUMMARY');
@@ -353,8 +293,6 @@ async function runAllTests() {
     console.log(`✅ Shipments: ${results.shipments?.pageLoaded ? 'PASS' : 'FAIL'}`);
     console.log(`✅ Tracking: ${results.tracking?.hasInput ? 'PASS' : 'FAIL'}`);
     console.log(`✅ Analytics: ${results.analytics?.pageLoaded ? 'PASS' : 'FAIL'}`);
-    console.log(`✅ Address Book: ${results.addressBook?.pageLoaded ? 'PASS' : 'FAIL'}`);
-    console.log(`✅ Settings: ${results.settings?.pageLoaded ? 'PASS' : 'FAIL'}`);
     console.log(`✅ Navigation: ${results.navigation?.hasNavLinks ? 'PASS' : 'FAIL'}`);
     console.log(`✅ API Connectivity: ${results.apiConnectivity?.pageLoaded ? 'PASS' : 'FAIL'}`);
     console.log('='.repeat(60));

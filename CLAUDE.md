@@ -4,11 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-EasyPost MCP is a production-ready shipping integration with:
+EasyPost MCP is a **personal-use** shipping integration with:
 - **Backend**: FastAPI + FastMCP server for EasyPost API integration
 - **Frontend**: React 19 + Vite 7.2 + TailwindCSS 4
-- **Database**: PostgreSQL with dual-pool strategy (SQLAlchemy ORM + asyncpg direct)
+- **Database**: PostgreSQL with SQLAlchemy ORM (simplified from dual-pool)
 - **MCP Tools**: AI agent tools for shipment creation, tracking, and rate comparison
+
+> **Note**: Enterprise features (webhooks, database-backed endpoints, bulk API operations) have been removed for personal use. The core MCP server functionality remains intact.
 
 ## Development Commands
 
@@ -84,10 +86,10 @@ make prod-docker
 ```
 apps/backend/src/
 ├── server.py           # FastAPI app with MCP integration
-├── routers/            # API endpoints (shipments, tracking, analytics, webhooks)
+├── routers/            # API endpoints (shipments, tracking, analytics - simplified)
 ├── services/           # Business logic (easypost_service, database_service)
 ├── models/             # Pydantic request/response & SQLAlchemy ORM models
-├── mcp_server/         # FastMCP tools, prompts, and resources
+├── mcp_server/         # FastMCP tools, prompts, and resources (core product)
 │   ├── tools/          # MCP tools for AI agents
 │   ├── prompts/        # Prompt templates
 │   └── resources/      # Resource providers
@@ -110,27 +112,20 @@ apps/frontend/src/
 └── tests/              # Unit and E2E tests
 ```
 
-### Database Dual-Pool Strategy
+### Database Strategy (Simplified for Personal Use)
 
-**When to use each pool:**
+**SQLAlchemy ORM Pool** (`Depends(get_db)`):
+- Single CRUD operations
+- Type-safe queries with relationships
+- Pydantic serialization
+- Example: `async def get_shipment(id: UUID, db: AsyncSession = Depends(get_db))`
 
-1. **SQLAlchemy ORM Pool** (`Depends(get_db)`):
-   - Single CRUD operations
-   - Type-safe queries with relationships
-   - Pydantic serialization
-   - Example: `async def get_shipment(id: UUID, db: AsyncSession = Depends(get_db))`
+**DatabaseService** (recommended abstraction):
+- Business logic layer wrapping SQLAlchemy
+- Consistent error handling
+- Example: `service = DatabaseService(db); await service.create_shipment(data)`
 
-2. **asyncpg Direct Pool** (`request.app.state.db_pool`):
-   - Bulk operations (100+ records)
-   - Analytics aggregations
-   - Raw SQL for performance
-   - Parallel processing
-   - Example: `await pool.fetch("SELECT * FROM shipments WHERE ...")`
-
-3. **DatabaseService** (recommended abstraction):
-   - Business logic layer wrapping SQLAlchemy
-   - Consistent error handling
-   - Example: `service = DatabaseService(db); await service.create_shipment(data)`
+> **Note**: Dual-pool strategy (asyncpg direct pool) has been removed for personal use. Database is used primarily for MCP tool context storage.
 
 ### MCP Tools Architecture
 
@@ -204,7 +199,7 @@ MCP (Model Context Protocol) tools are designed for AI agents to interact with t
 
 - **Backend**:
   - `pyproject.toml`: Ruff, Black, mypy configuration
-  - `pytest.ini`: Test configuration with 16 parallel workers
+  - `pytest.ini`: Test configuration with auto-detected parallel workers
   - `requirements.in`: Production dependencies (compile with `pip-compile`)
   - `.env`: Environment variables (EASYPOST_API_KEY, DATABASE_URL)
 
@@ -218,14 +213,14 @@ MCP (Model Context Protocol) tools are designed for AI agents to interact with t
   - `docker-compose.prod.yml`: Production deployment with PostgreSQL
   - `.cursor/rules/`: Comprehensive coding standards (see 00-INDEX.mdc)
 
-## M3 Max Optimizations
+## Optimizations
 
-This project is optimized for Apple Silicon M3 Max (16 cores):
+This project uses simple, effective optimizations:
 
-- **Backend**: 16 pytest workers, uvloop for async I/O, 82 DB connections
-- **Frontend**: SWC transpiler, 20 parallel file operations, esbuild minification
-- **PostgreSQL**: Tuned for 16GB RAM, 4 CPU cores allocated
-- **Uvicorn**: 16 worker processes in production
+- **Backend**: Auto-detected pytest workers, async I/O, reasonable connection pooling
+- **Frontend**: Code splitting, lazy loading, esbuild minification
+- **Database**: Connection pooling appropriate for personal use
+- **Testing**: Parallel execution with auto-detected workers
 
 ## Common Workflows
 

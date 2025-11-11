@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { Package, DollarSign, TrendingUp, Percent } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import MetricCard from '@/components/analytics/MetricCard';
 
 // PERFORMANCE: Lazy load chart components (341KB recharts bundle)
@@ -60,7 +61,7 @@ const topDestinations = [
   { city: 'Phoenix, AZ', shipments: 198, percentage: 8 },
 ];
 
-export default function AnalyticsPage() {
+function AnalyticsPageContent() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -164,5 +165,13 @@ export default function AnalyticsPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function AnalyticsPage() {
+  return (
+    <ErrorBoundary>
+      <AnalyticsPageContent />
+    </ErrorBoundary>
   );
 }

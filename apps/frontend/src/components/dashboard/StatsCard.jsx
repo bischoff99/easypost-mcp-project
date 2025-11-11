@@ -1,6 +1,4 @@
-import { motion } from 'framer-motion'
 import { TrendingUp, TrendingDown } from 'lucide-react'
-import PropTypes from 'prop-types'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { cn } from '@/lib/utils'
 
@@ -20,11 +18,7 @@ export default function StatsCard({
   const showTrend = change && trend
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay }}
-    >
+    <div>
       <Card className="hover:shadow-lg transition-shadow">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">{displayTitle}</CardTitle>
@@ -53,17 +47,6 @@ export default function StatsCard({
           ) : null}
         </CardContent>
       </Card>
-    </motion.div>
+    </div>
   )
-}
-
-StatsCard.propTypes = {
-  title: PropTypes.string, // Optional, falls back to name
-  name: PropTypes.string, // Alternative to title
-  value: PropTypes.string.isRequired,
-  note: PropTypes.string, // Optional note instead of trend
-  change: PropTypes.string, // Optional change percentage
-  trend: PropTypes.oneOf(['up', 'down']), // Optional trend
-  icon: PropTypes.elementType.isRequired,
-  delay: PropTypes.number,
 }

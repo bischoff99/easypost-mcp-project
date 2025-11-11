@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Skeleton, SkeletonCard, SkeletonStats, SkeletonText } from '@/components/ui/Skeleton';
+import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import { formatRelativeTime } from '@/lib/utils';
 import { logger } from '@/lib/logger';
 import { shipmentAPI } from '@/services/api';
@@ -52,7 +53,7 @@ const statusColors = {
  * It displays key statistics, quick actions, recent activity, and carrier performance.
  * Uses React Query for efficient data fetching, caching, and automatic refetching.
  */
-export default function DashboardPage() {
+function DashboardPageContent() {
   const navigate = useNavigate();
   const [_isPending, startTransition] = useTransition();
 
@@ -165,7 +166,12 @@ export default function DashboardPage() {
   const hasError = statsError || recentError || carrierError;
 
   if (hasError) {
-    logger.error('Dashboard: Failed to load data', { statsError, recentError, carrierError });
+    const errorMessages = [
+      statsError?.message,
+      recentError?.message,
+      carrierError?.message,
+    ].filter(Boolean);
+    logger.error(`Dashboard: Failed to load data - ${errorMessages.join(', ')}`);
     if (!statsData) {
       toast.error('Failed to Load Dashboard', {
         description: statsError?.message || 'Unable to fetch dashboard data',
@@ -342,5 +348,13 @@ export default function DashboardPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <ErrorBoundary>
+      <DashboardPageContent />
+    </ErrorBoundary>
   );
 }

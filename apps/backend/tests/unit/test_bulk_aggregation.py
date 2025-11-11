@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from src.mcp_server.tools.bulk_aggregation import aggregate_results, setup_database_tracking
+from src.mcp_server.tools.bulk_aggregation import aggregate_results
 
 
 @pytest.fixture
@@ -95,52 +95,3 @@ class TestAggregateResults:
         aggregated = aggregate_results([], start_time, end_time)
 
         assert aggregated["duration"] == 5.0
-
-
-class TestSetupDatabaseTracking:
-    """Tests for setup_database_tracking()."""
-
-    @pytest.mark.asyncio
-    async def test_creates_batch_operation(self):
-        """Test creates batch operation when db_service available."""
-        mock_db_service = MagicMock()
-        mock_batch = MagicMock()
-        mock_batch.batch_id = "bulk_123"
-        mock_db_service.create_batch_operation = AsyncMock(return_value=mock_batch)
-
-        mock_ctx = AsyncMock()
-        mock_ctx.info = AsyncMock()
-
-        start_time = datetime.now(UTC)
-
-        batch_op, batch_id = await setup_database_tracking(mock_db_service, start_time, mock_ctx)
-
-        assert batch_op == mock_batch
-        assert batch_id == "bulk_123"
-        mock_db_service.create_batch_operation.assert_called_once()
-
-    @pytest.mark.asyncio
-    async def test_returns_none_when_no_db_service(self):
-        """Test returns None when db_service is None."""
-        start_time = datetime.now(UTC)
-
-        batch_op, batch_id = await setup_database_tracking(None, start_time, None)
-
-        assert batch_op is None
-        assert batch_id is None
-
-    @pytest.mark.asyncio
-    async def test_handles_db_error_gracefully(self):
-        """Test handles database errors gracefully."""
-        mock_db_service = MagicMock()
-        mock_db_service.create_batch_operation = AsyncMock(side_effect=Exception("DB Error"))
-
-        mock_ctx = AsyncMock()
-        mock_ctx.info = AsyncMock()
-
-        start_time = datetime.now(UTC)
-
-        batch_op, batch_id = await setup_database_tracking(mock_db_service, start_time, mock_ctx)
-
-        assert batch_op is None
-        assert batch_id is None

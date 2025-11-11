@@ -1,5 +1,3 @@
-import { motion } from 'framer-motion'
-import PropTypes from 'prop-types'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { cn } from '@/lib/utils'
 
@@ -18,13 +16,7 @@ export default function QuickActionCard({
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.3, delay }}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-    >
+    <div>
       <Card
         className={cn('cursor-pointer transition-all hover:shadow-xl', colorClasses[color])}
         onClick={onClick}
@@ -39,15 +31,6 @@ export default function QuickActionCard({
           </div>
         </CardHeader>
       </Card>
-    </motion.div>
+    </div>
   )
-}
-
-QuickActionCard.propTypes = {
-  title: PropTypes.string.isRequired,
-  description: PropTypes.string.isRequired,
-  icon: PropTypes.elementType.isRequired,
-  onClick: PropTypes.func.isRequired,
-  delay: PropTypes.number,
-  color: PropTypes.oneOf(['primary', 'secondary', 'accent']),
 }

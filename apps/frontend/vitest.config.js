@@ -15,15 +15,14 @@ export default defineConfig({
     setupFiles: './src/tests/setup.js',
 
 
-    // M3 Max parallel testing optimization
+    // Parallel testing with auto-detected workers
     pool: 'threads',
     poolOptions: {
       threads: {
-        maxThreads: 16, // Match M3 Max cores
-        minThreads: 8,
+        singleThread: false,
       },
     },
-    isolate: true, // Prevent test pollution
+    isolate: true,
 
     // Coverage configuration
     coverage: {

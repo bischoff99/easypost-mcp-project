@@ -1,6 +1,6 @@
 ---
 description: "Comprehensive FastAPI and Python best practices for backend development"
-globs: ["apps/backend/**/*.py", "**/*.py"]
+globs: ["apps/backend/**/*.py"]
 alwaysApply: false
 ---
 

@@ -200,13 +200,6 @@ class TestDatabaseBackedEndpoints:
                 }
             )
 
-            mock_db_service.get_carrier_performance = AsyncMock(
-                return_value=[
-                    {"carrier": "USPS", "total_shipments": 100, "on_time_rate": 0.95},
-                    {"carrier": "FedEx", "total_shipments": 50, "on_time_rate": 0.88},
-                ]
-            )
-
             mock_db_service.get_shipment_trends = AsyncMock(
                 return_value=[
                     {"date": "2025-10-25", "count": 10, "cost": 85.50},
@@ -232,90 +225,8 @@ class TestDatabaseBackedEndpoints:
             data = response.json()
             assert data["status"] == "success"
             assert data["data"]["summary"]["total_shipments"] == 150
-            assert len(data["data"]["carrier_performance"]) == 2
             assert len(data["data"]["shipment_trends"]) == 2
             assert len(data["data"]["top_routes"]) == 2
-
-    def test_get_batch_operations_db(self, client: TestClient):
-        """Test getting batch operations from database."""
-        with (
-            patch("src.server.get_db") as mock_get_db,
-            patch("src.server.DatabaseService") as mock_db_service_class,
-        ):
-            # Mock database - async generator pattern
-            mock_session = MagicMock()
-
-            async def mock_db_generator():
-                yield mock_session
-
-            mock_get_db.return_value = mock_db_generator()
-
-            mock_db_service = MagicMock()
-            mock_db_service_class.return_value = mock_db_service
-
-            mock_batch = MagicMock()
-            mock_batch.to_dict.return_value = {
-                "id": 1,
-                "batch_id": "batch_123",
-                "operation_type": "create_bulk_shipments",
-                "total_items": 50,
-                "processed_items": 45,
-                "status": "completed",
-                "created_at": "2025-11-01T10:00:00Z",
-            }
-
-            mock_db_service.get_batch_operations = AsyncMock(return_value=[mock_batch])
-            mock_db_service.get_batch_operations_count = AsyncMock(return_value=1)
-
-            response = client.get("/db/batch-operations?status=completed&limit=10")
-
-            assert response.status_code == 200
-            data = response.json()
-            assert data["status"] == "success"
-            assert len(data["data"]["batch_operations"]) == 1
-            assert data["data"]["batch_operations"][0]["status"] == "completed"
-            assert data["data"]["batch_operations"][0]["total_items"] == 50
-
-    def test_get_user_activity_db(self, client: TestClient):
-        """Test getting user activity logs from database."""
-        with (
-            patch("src.server.get_db") as mock_get_db,
-            patch("src.server.DatabaseService") as mock_db_service_class,
-        ):
-            # Mock database - async generator pattern
-            mock_session = MagicMock()
-
-            async def mock_db_generator():
-                yield mock_session
-
-            mock_get_db.return_value = mock_db_generator()
-
-            mock_db_service = MagicMock()
-            mock_db_service_class.return_value = mock_db_service
-
-            mock_activity = MagicMock()
-            mock_activity.to_dict.return_value = {
-                "id": 1,
-                "action": "create_shipment",
-                "resource": "shipment",
-                "resource_id": 123,
-                "method": "POST",
-                "endpoint": "/mcp/create_shipment",
-                "status_code": 200,
-                "timestamp": "2025-11-01T10:30:00Z",
-            }
-
-            mock_db_service.get_user_activity = AsyncMock(return_value=[mock_activity])
-            mock_db_service.get_user_activity_count = AsyncMock(return_value=1)
-
-            response = client.get("/db/user-activity?action=create_shipment&hours=24")
-
-            assert response.status_code == 200
-            data = response.json()
-            assert data["status"] == "success"
-            assert len(data["data"]["activities"]) == 1
-            assert data["data"]["activities"][0]["action"] == "create_shipment"
-            assert data["data"]["activities"][0]["status_code"] == 200
 
     def test_database_error_handling(self, client: TestClient):
         """Test that database errors are handled gracefully."""

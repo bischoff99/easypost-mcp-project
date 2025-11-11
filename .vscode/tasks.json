@@ -27,9 +27,9 @@
         "${input:backendPort}"
       ],
       "options": {
-        "cwd": "${workspaceFolder}/backend",
+        "cwd": "${workspaceFolder}/apps/backend",
         "env": {
-          "PYTHONPATH": "${workspaceFolder}/backend",
+          "PYTHONPATH": "${workspaceFolder}/apps/backend",
           "ENVIRONMENT": "development"
         }
       },
@@ -67,7 +67,7 @@
         "dev"
       ],
       "options": {
-        "cwd": "${workspaceFolder}/frontend"
+        "cwd": "${workspaceFolder}/apps/frontend"
       },
       "isBackground": true,
       "problemMatcher": {
@@ -108,9 +108,9 @@
         "8000"
       ],
       "options": {
-        "cwd": "${workspaceFolder}/backend",
+        "cwd": "${workspaceFolder}/apps/backend",
         "env": {
-          "PYTHONPATH": "${workspaceFolder}/backend",
+          "PYTHONPATH": "${workspaceFolder}/apps/backend",
           "ENVIRONMENT": "production"
         }
       },
@@ -131,9 +131,9 @@
         "-v"
       ],
       "options": {
-        "cwd": "${workspaceFolder}/backend",
+        "cwd": "${workspaceFolder}/apps/backend",
         "env": {
-          "PYTHONPATH": "${workspaceFolder}/backend"
+          "PYTHONPATH": "${workspaceFolder}/apps/backend"
         }
       },
       "problemMatcher": "$python",
@@ -154,7 +154,7 @@
         "test"
       ],
       "options": {
-        "cwd": "${workspaceFolder}/frontend"
+        "cwd": "${workspaceFolder}/apps/frontend"
       },
       "problemMatcher": [
         "$eslint-stylish"
@@ -181,9 +181,9 @@
         "-f"
       ],
       "options": {
-        "cwd": "${workspaceFolder}/backend",
+        "cwd": "${workspaceFolder}/apps/backend",
         "env": {
-          "PYTHONPATH": "${workspaceFolder}/backend"
+          "PYTHONPATH": "${workspaceFolder}/apps/backend"
         }
       },
       "isBackground": true,
@@ -219,7 +219,7 @@
         "tests/"
       ],
       "options": {
-        "cwd": "${workspaceFolder}/backend"
+        "cwd": "${workspaceFolder}/apps/backend"
       },
       "problemMatcher": {
         "owner": "ruff",
@@ -247,7 +247,7 @@
         "lint"
       ],
       "options": {
-        "cwd": "${workspaceFolder}/frontend"
+        "cwd": "${workspaceFolder}/apps/frontend"
       },
       "problemMatcher": [
         "$eslint-stylish"
@@ -269,7 +269,7 @@
         "tests/"
       ],
       "options": {
-        "cwd": "${workspaceFolder}/backend"
+        "cwd": "${workspaceFolder}/apps/backend"
       },
       "problemMatcher": [],
       "presentation": {
@@ -286,7 +286,7 @@
         "format"
       ],
       "options": {
-        "cwd": "${workspaceFolder}/frontend"
+        "cwd": "${workspaceFolder}/apps/frontend"
       },
       "problemMatcher": [],
       "presentation": {
@@ -306,7 +306,7 @@
         "requirements.txt"
       ],
       "options": {
-        "cwd": "${workspaceFolder}/backend"
+        "cwd": "${workspaceFolder}/apps/backend"
       },
       "problemMatcher": [],
       "presentation": {
@@ -322,7 +322,7 @@
         "install"
       ],
       "options": {
-        "cwd": "${workspaceFolder}/frontend"
+        "cwd": "${workspaceFolder}/apps/frontend"
       },
       "problemMatcher": [],
       "presentation": {
@@ -348,7 +348,7 @@
         "build"
       ],
       "options": {
-        "cwd": "${workspaceFolder}/frontend"
+        "cwd": "${workspaceFolder}/apps/frontend"
       },
       "problemMatcher": [
         "$eslint-stylish"
@@ -434,7 +434,7 @@
       "command": "${command:python.interpreterPath}",
       "args": ["-m", "bandit", "-r", "src/", "-f", "screen"],
       "options": {
-        "cwd": "${workspaceFolder}/backend"
+        "cwd": "${workspaceFolder}/apps/backend"
       },
       "problemMatcher": [],
       "presentation": {
@@ -448,7 +448,7 @@
       "command": "npm",
       "args": ["audit", "--production"],
       "options": {
-        "cwd": "${workspaceFolder}/frontend"
+        "cwd": "${workspaceFolder}/apps/frontend"
       },
       "problemMatcher": [],
       "presentation": {
@@ -462,7 +462,7 @@
       "command": "${command:python.interpreterPath}",
       "args": ["-m", "mypy", "src/", "--config-file", "pyproject.toml"],
       "options": {
-        "cwd": "${workspaceFolder}/backend"
+        "cwd": "${workspaceFolder}/apps/backend"
       },
       "problemMatcher": {
         "owner": "mypy",
@@ -487,7 +487,7 @@
       "command": "${command:python.interpreterPath}",
       "args": ["-m", "alembic", "revision", "--autogenerate", "-m", "${input:migrationMessage}"],
       "options": {
-        "cwd": "${workspaceFolder}/backend"
+        "cwd": "${workspaceFolder}/apps/backend"
       },
       "problemMatcher": [],
       "presentation": {
@@ -501,7 +501,7 @@
       "command": "${command:python.interpreterPath}",
       "args": ["-m", "alembic", "upgrade", "head"],
       "options": {
-        "cwd": "${workspaceFolder}/backend"
+        "cwd": "${workspaceFolder}/apps/backend"
       },
       "problemMatcher": [],
       "presentation": {
@@ -515,7 +515,7 @@
       "command": "${command:python.interpreterPath}",
       "args": ["-m", "alembic", "downgrade", "-1"],
       "options": {
-        "cwd": "${workspaceFolder}/backend"
+        "cwd": "${workspaceFolder}/apps/backend"
       },
       "problemMatcher": [],
       "presentation": {
@@ -549,7 +549,7 @@
         "--cov-fail-under=80"
       ],
       "options": {
-        "cwd": "${workspaceFolder}/backend"
+        "cwd": "${workspaceFolder}/apps/backend"
       },
       "problemMatcher": "$python",
       "presentation": {
@@ -563,7 +563,7 @@
       "command": "npm",
       "args": ["run", "test:coverage"],
       "options": {
-        "cwd": "${workspaceFolder}/frontend"
+        "cwd": "${workspaceFolder}/apps/frontend"
       },
       "problemMatcher": [],
       "presentation": {
@@ -577,7 +577,7 @@
       "command": "${command:python.interpreterPath}",
       "args": ["-m", "pytest", "tests/integration/test_bulk_performance.py", "-v", "--durations=10"],
       "options": {
-        "cwd": "${workspaceFolder}/backend"
+        "cwd": "${workspaceFolder}/apps/backend"
       },
       "problemMatcher": [],
       "presentation": {

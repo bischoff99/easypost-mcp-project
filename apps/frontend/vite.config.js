@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react-swc'; // SWC for 5-20x faster transpilation on Apple Silicon
+import react from '@vitejs/plugin-react';
 import path from 'path';
 
 // https://vitejs.dev/config/
@@ -10,17 +10,13 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
-  // M3 Max optimizations
   build: {
-    // Leverage M3 Max cores for builds
     rollupOptions: {
-      maxParallelFileOps: 20, // Default is 20, M3 Max can handle more
       output: {
         manualChunks: {
           // Vendor chunks for better caching
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
           'vendor-charts': ['recharts'],
-          'vendor-animation': ['framer-motion'],
           'vendor-ui': [
             '@radix-ui/react-dialog',
             '@radix-ui/react-dropdown-menu',
@@ -30,8 +26,7 @@ export default defineConfig({
             '@radix-ui/react-slot',
             '@radix-ui/react-tabs',
           ],
-          'vendor-forms': ['react-hook-form', 'zod'],
-          'vendor-data': ['@tanstack/react-query', '@tanstack/react-table', 'zustand', 'immer'],
+          'vendor-data': ['@tanstack/react-query', 'zustand'],
         },
         // Optimize chunk file names for better caching
         chunkFileNames: 'assets/[name]-[hash].js',
@@ -39,18 +34,23 @@ export default defineConfig({
         assetFileNames: 'assets/[name]-[hash].[ext]',
       },
     },
-    target: 'esnext', // Modern JS for M3 Safari
-    minify: 'esbuild', // Faster than Terser, uses Go (parallelized)
-    sourcemap: false, // Faster builds in dev
-    chunkSizeWarningLimit: 300, // Alert if any chunk > 300KB
+    target: 'esnext',
+    minify: 'esbuild',
+    sourcemap: process.env.BUILD_SOURCEMAP === 'true' ? 'hidden' : false,
+    chunkSizeWarningLimit: 500,
     // Enable CSS code splitting
     cssCodeSplit: true,
     // Optimize asset inlining
     assetsInlineLimit: 4096, // 4KB - inline smaller assets
+    // Generate manifest for asset tracking
+    manifest: true,
+    // Report compressed sizes
+    reportCompressedSize: true,
+    // Empty output directory before build
+    emptyOutDir: true,
   },
-  // Faster dev server for M3 Max
   server: {
-    host: '0.0.0.0', // Bind to all interfaces (IPv4 + IPv6)
+    host: '0.0.0.0',
     port: 5173,
     // Pre-transform frequently accessed files for faster HMR
     warmup: {
@@ -68,8 +68,8 @@ export default defineConfig({
       protocol: 'ws',
     },
     watch: {
-      usePolling: false, // macOS native file watching
-      interval: 100, // Faster detection
+      usePolling: false,
+      interval: 100,
     },
     proxy: {
       '/api': {

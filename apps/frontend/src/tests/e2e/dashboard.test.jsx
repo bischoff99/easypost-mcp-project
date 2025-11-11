@@ -8,8 +8,6 @@ import DashboardPage from '../../pages/DashboardPage';
 import ShipmentsPage from '../../pages/ShipmentsPage';
 import TrackingPage from '../../pages/TrackingPage';
 import AnalyticsPage from '../../pages/AnalyticsPage';
-import AddressBookPage from '../../pages/AddressBookPage';
-import SettingsPage from '../../pages/SettingsPage';
 
 /**
  * E2E Dashboard Tests
@@ -150,67 +148,6 @@ describe.skip('Dashboard E2E Tests', () => {
     });
   });
 
-  describe('AddressBookPage', () => {
-    it('renders address book page', () => {
-      renderWithRouter(AddressBookPage);
-
-      expect(screen.getByText('Address Book')).toBeInTheDocument();
-      expect(screen.getByText('Manage your saved shipping addresses')).toBeInTheDocument();
-      expect(screen.getByText('Add Address')).toBeInTheDocument();
-    });
-
-    it('displays address statistics', () => {
-      renderWithRouter(AddressBookPage);
-
-      expect(screen.getByText('Total Addresses')).toBeInTheDocument();
-      expect(screen.getByText('Business Addresses')).toBeInTheDocument();
-      expect(screen.getByText('Default Address')).toBeInTheDocument();
-    });
-
-    it('displays saved addresses', () => {
-      renderWithRouter(AddressBookPage);
-
-      // Check for sample addresses
-      expect(screen.getByText('John Doe')).toBeInTheDocument();
-      expect(screen.getByText('Jane Smith')).toBeInTheDocument();
-      expect(screen.getByText('Bob Johnson')).toBeInTheDocument();
-    });
-  });
-
-  describe('SettingsPage', () => {
-    it('renders settings page', () => {
-      renderWithRouter(SettingsPage);
-
-      expect(screen.getByText('Settings')).toBeInTheDocument();
-      expect(screen.getByText('Manage your account settings and preferences')).toBeInTheDocument();
-    });
-
-    it('displays all settings sections', () => {
-      renderWithRouter(SettingsPage);
-
-      expect(screen.getByText('Account Information')).toBeInTheDocument();
-      expect(screen.getByText('API Configuration')).toBeInTheDocument();
-      expect(screen.getByText('Notifications')).toBeInTheDocument();
-      expect(screen.getByText('Preferences')).toBeInTheDocument();
-    });
-
-    it('displays notification toggles', () => {
-      renderWithRouter(SettingsPage);
-
-      expect(screen.getByText('Shipment Created')).toBeInTheDocument();
-      expect(screen.getByText('Delivery Completed')).toBeInTheDocument();
-      expect(screen.getByText('Shipping Exceptions')).toBeInTheDocument();
-    });
-
-    it('displays preference options', () => {
-      renderWithRouter(SettingsPage);
-
-      expect(screen.getByText('Theme')).toBeInTheDocument();
-      expect(screen.getByText('Language')).toBeInTheDocument();
-      expect(screen.getByText('Timezone')).toBeInTheDocument();
-    });
-  });
-
   describe('Navigation', () => {
     it('all pages are accessible without errors', () => {
       const pages = [
@@ -218,8 +155,6 @@ describe.skip('Dashboard E2E Tests', () => {
         ShipmentsPage,
         TrackingPage,
         AnalyticsPage,
-        AddressBookPage,
-        SettingsPage,
       ];
 
       pages.forEach((Page) => {

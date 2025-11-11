@@ -6,8 +6,6 @@
  * 2. Shipments page navigation and filtering
  * 3. Tracking functionality
  * 4. Analytics page rendering
- * 5. Address Book CRUD operations
- * 6. Settings page functionality
  *
  * This test suite uses Puppeteer MCP tools for browser automation.
  */
@@ -197,68 +195,6 @@ async function testAnalyticsPage() {
 }
 
 /**
- * Test Suite: Address Book Page
- */
-async function testAddressBookPage() {
-  console.log('\n📇 Testing Address Book Page...');
-
-  // Navigate to address book
-  await mcp_puppeteer_puppeteer_navigate({ url: `${FRONTEND_URL}/addresses` });
-  await mcp_puppeteer_puppeteer_wait_for({ time: 3 });
-
-  await mcp_puppeteer_puppeteer_screenshot({ name: '06-address-book-page' });
-
-  // Check for address book content
-  const addressBookContent = await mcp_puppeteer_puppeteer_evaluate({
-    script: `
-      return {
-        pageLoaded: document.body.textContent.includes('Address') ||
-                    document.body.textContent.includes('Book'),
-        hasAddButton: Array.from(document.querySelectorAll('button')).some(btn =>
-          btn.textContent.includes('Add') || btn.textContent.includes('New')
-        ),
-        hasSearch: document.querySelector('input[type="search"], input[placeholder*="Search"]') !== null,
-        hasAddressList: document.querySelectorAll('[class*="Card"], [class*="card"]').length > 0
-      };
-    `
-  });
-
-  console.log('✅ Address Book page loaded:', addressBookContent);
-  return addressBookContent;
-}
-
-/**
- * Test Suite: Settings Page
- */
-async function testSettingsPage() {
-  console.log('\n⚙️  Testing Settings Page...');
-
-  // Navigate to settings
-  await mcp_puppeteer_puppeteer_navigate({ url: `${FRONTEND_URL}/settings` });
-  await mcp_puppeteer_puppeteer_wait_for({ time: 3 });
-
-  await mcp_puppeteer_puppeteer_screenshot({ name: '07-settings-page' });
-
-  // Check for settings content
-  const settingsContent = await mcp_puppeteer_puppeteer_evaluate({
-    script: `
-      return {
-        pageLoaded: document.body.textContent.includes('Settings') ||
-                    document.body.textContent.includes('Preferences'),
-        hasFormFields: document.querySelectorAll('input, select').length > 0,
-        hasSaveButton: Array.from(document.querySelectorAll('button')).some(btn =>
-          btn.textContent.includes('Save')
-        ),
-        hasSections: document.querySelectorAll('[class*="Card"], [class*="card"]').length > 0
-      };
-    `
-  });
-
-  console.log('✅ Settings page loaded:', settingsContent);
-  return settingsContent;
-}
-
-/**
  * Test Suite: Navigation and Sidebar
  */
 async function testNavigation() {
@@ -272,7 +208,7 @@ async function testNavigation() {
     script: `
       const links = Array.from(document.querySelectorAll('a[href]'));
       const navLinks = links.filter(link =>
-        ['/shipments', '/tracking', '/analytics', '/addresses', '/settings'].some(path =>
+        return ['/shipments', '/tracking', '/analytics'].some(path =>
           link.getAttribute('href') === path
         )
       );
@@ -327,8 +263,6 @@ async function runAllTests() {
     shipments: null,
     tracking: null,
     analytics: null,
-    addressBook: null,
-    settings: null,
     navigation: null,
     apiConnectivity: null,
   };
@@ -352,12 +286,6 @@ async function runAllTests() {
     // Test Analytics Page
     results.analytics = await testAnalyticsPage();
 
-    // Test Address Book Page
-    results.addressBook = await testAddressBookPage();
-
-    // Test Settings Page
-    results.settings = await testSettingsPage();
-
     // Print summary
     console.log('\n' + '='.repeat(60));
     console.log('📊 TEST SUMMARY');
@@ -366,8 +294,6 @@ async function runAllTests() {
     console.log(`✅ Shipments: ${results.shipments?.pageLoaded ? 'PASS' : 'FAIL'}`);
     console.log(`✅ Tracking: ${results.tracking?.hasInput ? 'PASS' : 'FAIL'}`);
     console.log(`✅ Analytics: ${results.analytics?.pageLoaded ? 'PASS' : 'FAIL'}`);
-    console.log(`✅ Address Book: ${results.addressBook?.pageLoaded ? 'PASS' : 'FAIL'}`);
-    console.log(`✅ Settings: ${results.settings?.pageLoaded ? 'PASS' : 'FAIL'}`);
     console.log(`✅ Navigation: ${results.navigation?.hasNavLinks ? 'PASS' : 'FAIL'}`);
     console.log(`✅ API Connectivity: ${results.apiConnectivity?.pageLoaded ? 'PASS' : 'FAIL'}`);
     console.log('='.repeat(60));

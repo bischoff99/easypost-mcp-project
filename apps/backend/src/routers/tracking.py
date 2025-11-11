@@ -1,11 +1,13 @@
 """Tracking endpoints."""
 
 import logging
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
 from starlette import status
 
 from src.dependencies import EasyPostDep
+from src.models.responses import TrackingResponse
 from src.utils.monitoring import metrics
 
 logger = logging.getLogger(__name__)
@@ -15,8 +17,10 @@ MAX_REQUEST_LOG_SIZE = 1000
 router = APIRouter(tags=["tracking"])  # Prefix added when including in app
 
 
-@router.get("/{tracking_number}")
-async def track_shipment(request: Request, tracking_number: str, service: EasyPostDep):
+@router.get("/{tracking_number}", response_model=TrackingResponse)
+async def track_shipment(
+    request: Request, tracking_number: str, service: EasyPostDep
+) -> dict[str, Any]:
     """Track a shipment by tracking number."""
     request_id = getattr(request.state, "request_id", "unknown")
 

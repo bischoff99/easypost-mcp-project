@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Check, ChevronDown, Globe } from 'lucide-react'
 import * as Select from '@radix-ui/react-select'
-import { COUNTRIES, REGIONS } from '@/data/countries'
+import { COUNTRIES, REGIONS } from '@/lib/constants/countries'
 import { Button } from '@/components/ui/Button'
 
 /**

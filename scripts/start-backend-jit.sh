@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 
-# M3 Max Optimized Backend Startup with JIT Compilation
+# Optimized Backend Startup with JIT Compilation
 # For Python 3.13+ - enables JIT compilation for maximum performance
 
-set -e
+set -euo pipefail
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -44,10 +44,10 @@ fi
 # Export Python path
 export PYTHONPATH="${PYTHONPATH}:$(pwd)"
 
-# Calculate workers: (2 x CPU cores) + 1 for M3 Max optimization
-# M3 Max 16-core: 33 workers
+# Calculate workers: (2 x CPU cores) + 1
 WORKERS=$(python -c "import multiprocessing; print((2 * multiprocessing.cpu_count()) + 1)")
-echo -e "${BLUE}Detected $(python -c "import multiprocessing; print(multiprocessing.cpu_count())") CPU cores (M3 Max), using ${WORKERS} workers${NC}"
+CPU_COUNT=$(python -c "import multiprocessing; print(multiprocessing.cpu_count())")
+echo -e "${BLUE}Detected ${CPU_COUNT} CPU cores, using ${WORKERS} workers${NC}"
 
 # Run server with multi-worker setup, uvloop, and JIT
 echo -e "${GREEN}MCP Server running at http://localhost:8000${NC}"

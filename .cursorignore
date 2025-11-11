@@ -15,4 +15,15 @@ reviews/**
 **/htmlcov/**
 **/coverage/**
 **/.git/**
-**/.vscode/**
+
+# Block specific .vscode files first (before exceptions)
+.vscode/thunder-client-settings.json
+.vscode/*.local.json
+
+# Allow workspace settings for Cursor AI context (aligned with .gitignore)
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/snippets.code-snippets
+!.vscode/keybindings.json

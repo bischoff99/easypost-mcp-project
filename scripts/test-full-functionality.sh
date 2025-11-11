@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 
 # EasyPost MCP - Full Functionality Test Suite
 # Tests all components, endpoints, and integrations
 
-set -e
+set -euo pipefail
 
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
@@ -43,13 +43,13 @@ test_endpoint() {
 }
 
 echo "═══════════════════════════════════════════════════════════"
-echo "PHASE 1: Backend Unit Tests (16 workers)"
+echo "PHASE 1: Backend Unit Tests (auto-detected workers)"
 echo "═══════════════════════════════════════════════════════════"
 echo ""
 
 cd apps/backend
 source venv/bin/activate
-if pytest tests/unit -v -n 16 --tb=short -q 2>&1 | tail -5; then
+if pytest tests/unit -v -n auto --tb=short -q 2>&1 | tail -5; then
     echo -e "${GREEN}✓ Backend unit tests PASSED${NC}"
     ((TESTS_PASSED++))
 else
@@ -75,7 +75,7 @@ echo ""
 cd ..
 
 echo "═══════════════════════════════════════════════════════════"
-echo "PHASE 3: Frontend Tests (20 workers)"
+echo "PHASE 3: Frontend Tests (auto-detected workers)"
 echo "═══════════════════════════════════════════════════════════"
 echo ""
 
@@ -224,4 +224,3 @@ else
     echo -e "${RED}╚═══════════════════════════════════════════════════════════╝${NC}"
     exit 1
 fi
-

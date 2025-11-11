@@ -84,7 +84,7 @@ describe('SkeletonLoader', () => {
     expect(skeleton).toBeInTheDocument();
   });
 
-  it('has animation with framer-motion', () => {
+  it('has animation with CSS', () => {
     const { container } = render(<SkeletonLoader />);
     const wrapper = container.querySelector('.space-y-3');
     const skeleton = wrapper?.firstChild;

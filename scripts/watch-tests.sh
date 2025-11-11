@@ -1,5 +1,16 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 # Watch tests - automatically rerun on file changes
+
+set -euo pipefail
+
+# Cleanup handler
+cleanup() {
+    echo ""
+    echo "Stopping test watcher..."
+    exit 0
+}
+
+trap cleanup EXIT INT TERM
 
 cd "$(dirname "$0")"
 source venv/bin/activate

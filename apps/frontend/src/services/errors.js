@@ -15,7 +15,7 @@ export function handleApiError(error) {
   const status = error.response?.status;
   const url = error.config?.url || 'unknown endpoint';
 
-  logger.error(`API Error: ${url}`, { status, message, code: error.code });
+  logger.error(`API Error: ${url} - Status: ${status || 'unknown'} - ${message}`);
 
   // Handle connection errors (backend not running)
   if (error.code === 'ERR_NETWORK' || error.code === 'ECONNREFUSED') {
@@ -36,7 +36,8 @@ export function handleApiError(error) {
   }
 
   if (import.meta.env.DEV) {
-    logger.warn('API Error details:', error.response?.data || error.message);
+    const errorData = error.response?.data ? JSON.stringify(error.response.data) : error.message;
+    logger.warn(`API Error details: ${errorData}`);
   }
 
   return new ApiError(message, status, error.response?.data);

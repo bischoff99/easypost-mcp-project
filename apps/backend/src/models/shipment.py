@@ -155,7 +155,6 @@ class Address(Base):
             "email": self.email,
             "is_residential": self.is_residential,
             "created_at": self.created_at.isoformat() if self.created_at else None,
-            "usage_count": getattr(self, "usage_count", 0),
         }
 
     def __repr__(self):

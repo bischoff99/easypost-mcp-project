@@ -302,9 +302,9 @@ class EasyPostService:
         self.logger.info(f"Initializing EasyPost client with key: {api_key[:10]}...")
         self.client = easypost.EasyPostClient(api_key)
 
-        # Scale ThreadPoolExecutor with CPU cores (M3 Max: 16 cores, 128GB RAM)
-        cpu_count = multiprocessing.cpu_count()  # 16 cores
-        max_workers = min(40, cpu_count * 2)  # 32-40 workers for I/O-bound tasks
+        # Simplified for personal use: 8-16 workers (still plenty for API concurrency)
+        cpu_count = multiprocessing.cpu_count()
+        max_workers = min(16, cpu_count)  # 8-16 workers for I/O-bound tasks
         self.executor = ThreadPoolExecutor(max_workers=max_workers)
         self.logger.info(
             f"ThreadPoolExecutor initialized: {max_workers} workers on {cpu_count} cores"

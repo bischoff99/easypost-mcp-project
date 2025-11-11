@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -21,7 +20,6 @@ import { Loader2 } from 'lucide-react'
  * - Price breakdown with taxes
  */
 export default function InternationalShippingForm() {
-  const { t } = useTranslation()
   const { getRates, rates, isLoading, error: _error } = useShippingRates()
 
   const [selectedCountry, setSelectedCountry] = useState('GB')
@@ -103,12 +101,12 @@ export default function InternationalShippingForm() {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>{t('shipping.selectDestination')}</CardTitle>
+                <CardTitle>Select Destination</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Country Selector */}
                 <div>
-                  <label className="text-sm font-medium mb-2 block">{t('address.country')}</label>
+                  <label className="text-sm font-medium mb-2 block">Country</label>
                   <CountrySelector
                     value={selectedCountry}
                     onChange={handleCountryChange}
@@ -118,7 +116,7 @@ export default function InternationalShippingForm() {
 
                 {/* Name */}
                 <div>
-                  <label className="text-sm font-medium mb-2 block">{t('address.name')}</label>
+                  <label className="text-sm font-medium mb-2 block">Name</label>
                   <Input
                     name="name"
                     value={formData.name}
@@ -129,7 +127,7 @@ export default function InternationalShippingForm() {
 
                 {/* Street Address */}
                 <div>
-                  <label className="text-sm font-medium mb-2 block">{t('address.street1')} *</label>
+                  <label className="text-sm font-medium mb-2 block">Street Address *</label>
                   <Input
                     name="street1"
                     value={formData.street1}
@@ -141,7 +139,7 @@ export default function InternationalShippingForm() {
 
                 {/* Street 2 */}
                 <div>
-                  <label className="text-sm font-medium mb-2 block">{t('address.street2')}</label>
+                  <label className="text-sm font-medium mb-2 block">Street Address 2</label>
                   <Input
                     name="street2"
                     value={formData.street2}
@@ -152,7 +150,7 @@ export default function InternationalShippingForm() {
 
                 {/* City */}
                 <div>
-                  <label className="text-sm font-medium mb-2 block">{t('address.city')} *</label>
+                  <label className="text-sm font-medium mb-2 block">City *</label>
                   <Input
                     name="city"
                     value={formData.city}
@@ -164,7 +162,7 @@ export default function InternationalShippingForm() {
 
                 {/* State/Province */}
                 <div>
-                  <label className="text-sm font-medium mb-2 block">{t('address.state')}</label>
+                  <label className="text-sm font-medium mb-2 block">State/Province</label>
                   <Input
                     name="state"
                     value={formData.state}
@@ -175,7 +173,7 @@ export default function InternationalShippingForm() {
 
                 {/* Postal Code */}
                 <div>
-                  <label className="text-sm font-medium mb-2 block">{t('address.zip')} *</label>
+                  <label className="text-sm font-medium mb-2 block">Postal Code *</label>
                   <Input
                     name="zip"
                     value={formData.zip}
@@ -187,7 +185,7 @@ export default function InternationalShippingForm() {
 
                 {/* Phone */}
                 <div>
-                  <label className="text-sm font-medium mb-2 block">{t('address.phone')}</label>
+                  <label className="text-sm font-medium mb-2 block">Phone</label>
                   <Input
                     name="phone"
                     value={formData.phone}

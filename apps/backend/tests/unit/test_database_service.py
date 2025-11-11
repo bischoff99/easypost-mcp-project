@@ -7,7 +7,7 @@ from uuid import uuid4
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models import Address, AnalyticsSummary, BatchOperation, Shipment
+from src.models import Address, AnalyticsSummary, Shipment
 from src.services.database_service import DatabaseService
 
 
@@ -313,57 +313,6 @@ class TestAnalyticsOperations:
         assert isinstance(result, dict)
         assert result["total_shipments"] == 100
         assert result["total_cost"] == 5000.00
-
-
-class TestBatchOperations:
-    """Test batch operation database methods."""
-
-    @pytest.mark.asyncio
-    async def test_create_batch_operation(self, db_service, mock_session):
-        """Test creating batch operation."""
-        batch_data = {
-            "operation_type": "bulk_shipment_creation",
-            "status": "pending",
-            "total_items": 100,
-        }
-
-        # Mock
-        mock_session.commit.return_value = None
-        mock_session.refresh.return_value = None
-
-        # Execute
-        result = await db_service.create_batch_operation(batch_data)
-
-        # Verify
-        assert isinstance(result, BatchOperation)
-        assert result.operation_type == "bulk_shipment_creation"
-        assert result.total_items == 100
-
-    @pytest.mark.asyncio
-    async def test_update_batch_operation(self, db_service, mock_session):
-        """Test updating batch operation."""
-        batch_id = uuid4()
-        update_data = {"status": "completed", "successful_items": 95}
-
-        # Mock
-        mock_batch = BatchOperation(
-            id=batch_id,
-            operation_type="bulk_shipment_creation",
-            status="completed",
-            successful_items=95,
-        )
-
-        mock_result = Mock()
-        mock_result.scalar_one_or_none.return_value = mock_batch
-        mock_session.execute.return_value = mock_result
-
-        # Execute
-        result = await db_service.update_batch_operation(batch_id, update_data)
-
-        # Verify
-        assert result == mock_batch
-        assert result.status == "completed"
-        assert result.successful_items == 95
 
 
 class TestServiceInitialization:

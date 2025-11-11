@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Toaster } from 'sonner'
-import { initializeTheme } from './stores/useThemeStore'
+import { initializeTheme } from './stores/useUIStore'
 import AppShell from './components/layout/AppShell'
 import DashboardPage from './pages/DashboardPage'
 import ErrorBoundary from './components/ui/ErrorBoundary'
@@ -11,8 +11,6 @@ import NavigationLoader from './components/ui/SuspenseBoundary'
 const ShipmentsPage = lazy(() => import('./pages/ShipmentsPage'))
 const TrackingPage = lazy(() => import('./pages/TrackingPage'))
 const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'))
-const AddressBookPage = lazy(() => import('./pages/AddressBookPage'))
-const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 const CreateShipmentPage = lazy(() => import('./pages/CreateShipmentPage'))
 const InternationalShippingPage = lazy(() => import('./pages/InternationalShippingPage'))
 
@@ -48,8 +46,6 @@ function App() {
               <Route path="shipments/international" element={<InternationalShippingPage />} />
               <Route path="tracking" element={<TrackingPage />} />
               <Route path="analytics" element={<AnalyticsPage />} />
-              <Route path="addresses" element={<AddressBookPage />} />
-              <Route path="settings" element={<SettingsPage />} />
             </Route>
           </Routes>
         </Suspense>

@@ -66,8 +66,6 @@ async function runTests() {
       shipments: await testPage(page, 'Shipments', `${FRONTEND_URL}/shipments`, 'Shipments'),
       tracking: await testPage(page, 'Tracking', `${FRONTEND_URL}/tracking`, 'Tracking'),
       analytics: await testPage(page, 'Analytics', `${FRONTEND_URL}/analytics`, 'Analytics'),
-      addresses: await testPage(page, 'Addresses', `${FRONTEND_URL}/addresses`, 'Address'),
-      settings: await testPage(page, 'Settings', `${FRONTEND_URL}/settings`, 'Settings'),
     };
 
     console.log('\n' + '='.repeat(60));

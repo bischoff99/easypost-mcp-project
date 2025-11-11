@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Plus, Package, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -7,125 +7,66 @@ import { Badge } from '@/components/ui/Badge';
 import DataTable from '@/components/ui/DataTable';
 import EmptyState from '@/components/ui/EmptyState';
 import ShipmentFilters from '@/components/shipments/ShipmentFilters';
+import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import { shipmentAPI } from '@/services/api';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { Skeleton, SkeletonCard } from '@/components/ui/Skeleton';
 
-export default function ShipmentsPage() {
+function ShipmentsPageContent() {
   const navigate = useNavigate();
   const [filters, setFilters] = useState({});
-  const [shipments, setShipments] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch real shipments data
-  useEffect(() => {
-    const fetchShipments = async () => {
-      try {
-        setIsLoading(true);
-
-        // Fetch recent shipments from API
-        const response = await shipmentAPI.getRecentShipments(50); // Get up to 50 shipments
-
-        if (response.status === 'success' && response.data) {
-          // Transform API data to match component expectations
-          const transformedShipments = response.data.map((shipment, index) => ({
-            id: shipment.id || `shipment-${index + 1}`,
-            tracking_number: shipment.tracking_number || '',
-            status: shipment.status || 'pending',
-            carrier: shipment.carrier || 'Unknown',
-            service: shipment.service || 'Standard',
-            from: shipment.from || 'Unknown',
-            to: shipment.to || 'Unknown',
-            cost: parseFloat(shipment.rate || '0'),
-            created_at: shipment.created_at || new Date().toISOString(),
-          }));
-
-          setShipments(transformedShipments);
-        } else {
-          // Fallback to mock data if API fails
-          toast.info('Using Demo Data', {
-            description: 'Showing sample shipments for demonstration',
-          });
-          setShipments([
-            {
-              id: '1',
-              tracking_number: 'EZ1234567890',
-              status: 'in_transit',
-              carrier: 'USPS',
-              service: 'Priority Mail',
-              from: 'San Francisco, CA',
-              to: 'New York, NY',
-              cost: 12.5,
-              created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-            },
-            {
-              id: '2',
-              tracking_number: 'EZ9876543210',
-              status: 'delivered',
-              carrier: 'UPS',
-              service: 'Ground',
-              from: 'Austin, TX',
-              to: 'Seattle, WA',
-              cost: 18.75,
-              created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-            },
-            {
-              id: '3',
-              tracking_number: 'EZ5555555555',
-              status: 'pending',
-              carrier: 'FedEx',
-              service: 'Express',
-              from: 'Miami, FL',
-              to: 'Boston, MA',
-              cost: 25.0,
-              created_at: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
-            },
-          ]);
-        }
-      } catch {
-        toast.error('Failed to Load Shipments', { description: 'Using demo data instead' });
-        // Fallback to mock data
-        setShipments([
-          {
-            id: '1',
-            tracking_number: 'EZ1234567890',
-            status: 'in_transit',
-            carrier: 'USPS',
-            service: 'Priority Mail',
-            from: 'San Francisco, CA',
-            to: 'New York, NY',
-            cost: 12.5,
-            created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-          },
-          {
-            id: '2',
-            tracking_number: 'EZ9876543210',
-            status: 'delivered',
-            carrier: 'UPS',
-            service: 'Ground',
-            from: 'Austin, TX',
-            to: 'Seattle, WA',
-            cost: 18.75,
-            created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-          },
-          {
-            id: '3',
-            tracking_number: 'EZ5555555555',
-            status: 'pending',
-            carrier: 'FedEx',
-            service: 'Express',
-            from: 'Miami, FL',
-            to: 'Boston, MA',
-            cost: 25.0,
-            created_at: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
-          },
-        ]);
-      } finally {
-        setIsLoading(false);
+  // Fetch shipments using React Query
+  const {
+    data: shipments = [],
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ['shipments', 'recent', filters],
+    queryFn: async () => {
+      const response = await shipmentAPI.getRecentShipments(50);
+      if (response.status === 'success' && response.data) {
+        return response.data.map((shipment, index) => ({
+          id: shipment.id || `shipment-${index + 1}`,
+          tracking_number: shipment.tracking_number || '',
+          status: shipment.status || 'pending',
+          carrier: shipment.carrier || 'Unknown',
+          service: shipment.service || 'Standard',
+          from: shipment.from || 'Unknown',
+          to: shipment.to || 'Unknown',
+          cost: parseFloat(shipment.rate || '0'),
+          created_at: shipment.created_at || new Date().toISOString(),
+        }));
       }
-    };
+      throw new Error(response.message || 'Failed to fetch shipments');
+    },
+    staleTime: 30000, // 30 seconds
+  });
 
-    fetchShipments();
-  }, []);
+  // Show loading skeleton
+  if (isLoading) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div>
+          <Skeleton className="h-9 w-48 mb-2" />
+          <Skeleton className="h-5 w-96" />
+        </div>
+        <div className="grid gap-4">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Handle error
+  if (error) {
+    toast.error('Failed to load shipments', {
+      description: error.message || 'Unable to fetch shipments data',
+    });
+  }
 
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
@@ -143,7 +84,7 @@ export default function ShipmentsPage() {
           <h2 className="text-3xl font-bold tracking-tight">Shipments</h2>
           <p className="text-muted-foreground">View and manage all your shipments</p>
         </div>
-        <Button className="gap-2" onClick={() => navigate('/shipments/new')}>
+        <Button className="gap-2" onClick={() => navigate('/shipments/new')} aria-label="Create new shipment">
           <Plus className="h-4 w-4" />
           New Shipment
         </Button>
@@ -272,5 +213,13 @@ export default function ShipmentsPage() {
         </Card>
       )}
     </div>
+  );
+}
+
+export default function ShipmentsPage() {
+  return (
+    <ErrorBoundary>
+      <ShipmentsPageContent />
+    </ErrorBoundary>
   );
 }

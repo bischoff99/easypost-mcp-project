@@ -244,31 +244,61 @@ make clean && make check && make benchmark && make build
 
 ## 💡 Pro Patterns
 
-### Parallel Testing
+### Command Chaining
+
+**Sequential execution** (stop on error):
 ```bash
-# Run multiple make targets simultaneously
-make test & make lint
-# Time: 15s (vs 19s sequential)
+make test && make build
+# Runs build only if tests pass
+```
+
+**Sequential execution** (always continue):
+```bash
+make test ; make build
+# Runs build regardless of test result
+```
+
+**Conditional execution** (run second if first fails):
+```bash
+make test || echo "Tests failed, continuing anyway"
+```
+
+### Parallel Execution
+
+**Background jobs** (run multiple commands simultaneously):
+```bash
+make test & make lint & wait
+# Runs test and lint in parallel, waits for both
+# Time: ~15s (vs 19s sequential)
 # Savings: 21%
 ```
 
-### Conditional Execution
-```bash
-# Test, if passes → build
-make test && make build
+**In scripts** (proper cleanup):
+```zsh
+#!/usr/bin/env zsh
+set -euo pipefail
 
-# Format, if fails → show errors
-make format || cat backend/src/formatting-errors.txt
+cleanup() {
+    kill 0 2>/dev/null || true
+}
+
+trap cleanup EXIT INT TERM
+
+cmd1 & cmd2 & wait
 ```
 
-### Always Execute
-```bash
-# Test; show coverage regardless of result
-make test-cov ; open backend/htmlcov/index.html
+### Makefile Parallel Execution
 
-# Benchmark; display results even if error
-make benchmark ; cat backend/benchmark-results.json
+**Use `make -jN` for parallel targets:**
+```bash
+make -j4 test-fast lint format
+# Runs 4 targets in parallel
 ```
+
+**Built-in parallel targets** (already optimized):
+- `make test-fast` - Backend and frontend run in parallel
+- `make lint` - Backend and frontend run in parallel
+- `make format` - Backend and frontend run in parallel
 
 ### Git Shortcuts
 ```bash
@@ -348,19 +378,72 @@ curl http://localhost:8000/health | jq '.'
 
 ---
 
-## 🚀 M3 Max Optimizations
+## 🔧 Best Practices
 
-All commands are optimized for M3 Max hardware:
+### zsh Script Structure
 
-- **Tests:** 16 parallel workers via pytest-xdist
-- **Linting:** Parallel file processing
-- **Build:** Multi-core compilation
-- **Benchmark:** Utilizes all 16 cores
+**Standard template:**
+```zsh
+#!/usr/bin/env zsh
 
-Expected performance:
-- Test suite: 4-6s (with 16 workers)
-- Lint check: 2-3s (parallel)
-- Production build: 25-30s (optimized)
+# Exit on error, undefined vars, pipe failures
+set -euo pipefail
+
+# Cleanup handler
+cleanup() {
+    echo "Cleaning up..."
+    kill 0 2>/dev/null || true
+}
+
+trap cleanup EXIT INT TERM
+
+# Your script logic here
+```
+
+### Error Handling
+
+**Always use `set -euo pipefail`:**
+- `-e`: Exit immediately if command fails
+- `-u`: Exit on undefined variables
+- `-o pipefail`: Exit if any command in pipeline fails
+
+**Check exit codes:**
+```zsh
+if command; then
+    echo "Success"
+else
+    echo "Failed" >&2
+    exit 1
+fi
+```
+
+**Intentional failures:**
+```zsh
+rm -f file.txt || true  # Don't fail if file doesn't exist
+```
+
+### Parallel Execution Patterns
+
+**Background jobs with cleanup:**
+```zsh
+#!/usr/bin/env zsh
+set -euo pipefail
+
+cleanup() {
+    kill $PID1 $PID2 2>/dev/null || true
+}
+
+trap cleanup EXIT INT TERM
+
+cmd1 & PID1=$!
+cmd2 & PID2=$!
+wait
+```
+
+**Makefile parallel:**
+- Use `&` + `wait` for background processes
+- Use `make -jN` for parallel targets
+- Always use `trap` for cleanup
 
 ---
 
@@ -374,4 +457,3 @@ Expected performance:
 ---
 
 **All commands tested and working as of 2025-11-04** ✅
-

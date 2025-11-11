@@ -1,29 +1,15 @@
 import axios from 'axios';
-import axiosRetry from 'axios-retry';
 import { handleApiError, ApiError } from './errors';
 import { logger } from '@/lib/logger';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: `${API_URL}/api`,
   headers: {
     'Content-Type': 'application/json',
   },
   timeout: 30000,
-});
-
-// Retry failed requests with 429 handling
-axiosRetry(api, {
-  retries: 3,
-  retryDelay: axiosRetry.exponentialDelay,
-  retryCondition: (error) => {
-    // Retry on network errors or specific HTTP status codes
-    if (error.code === 'ERR_NETWORK') return true;
-    if (!error.response) return false;
-    // Retry on 429 (rate limit), 502, 503, 504
-    return [429, 502, 503, 504].includes(error.response.status);
-  },
 });
 
 // Error interceptor with toast notifications
@@ -55,22 +41,12 @@ export const shipmentAPI = {
   },
 
   getRecentShipments: async (limit = 10) => {
-    const response = await api.get(`/shipments?page_size=${limit}`);
+    const response = await api.get(`/db/shipments?limit=${limit}`);
     return response.data;
   },
 
   getAnalytics: async () => {
     const response = await api.get('/analytics');
-    return response.data;
-  },
-
-  getStats: async () => {
-    const response = await api.get('/stats');
-    return response.data;
-  },
-
-  getCarrierPerformance: async () => {
-    const response = await api.get('/carrier-performance');
     return response.data;
   },
 
