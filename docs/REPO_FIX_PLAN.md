@@ -92,7 +92,8 @@ This plan addresses Cursor IDE integration for the EasyPost MCP server, ensuring
 - [x] Test backend MCP server import
 - [x] Test server.py entry point
 - [x] Commit changes
-- [ ] Push branch and create PR
+- [x] Push branch and create PR
+- [x] **PR Created**: https://github.com/bischoff99/easypost-mcp-project/pull/31
 
 ---
 
