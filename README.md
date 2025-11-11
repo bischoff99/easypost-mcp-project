@@ -33,6 +33,23 @@ make dev
 - Backend: http://localhost:8000
 - Health: http://localhost:8000/health
 
+## Project Structure
+
+```
+easypost-mcp-project/
+├── backend/          # FastAPI/Python backend service
+│   ├── src/         # Source code
+│   ├── tests/       # Test suite (unit + integration)
+│   └── alembic/     # Database migrations
+├── frontend/         # React/Vite frontend service
+│   ├── src/         # Source code
+│   └── e2e/         # End-to-end tests
+├── docker/           # Docker Compose configurations
+├── docs/             # Project documentation
+├── scripts/          # Utility scripts
+└── data/             # Generated data (gitignored)
+```
+
 ## Features
 ✅ CORS configured
 ✅ Error handling

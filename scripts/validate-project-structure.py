@@ -29,7 +29,7 @@ REQUIRED_FILES = [
     "README.md",
     "CLAUDE.md",
     "Makefile",
-    "docker-compose.yml",
+    "docker/docker-compose.yml",
     "backend/requirements.txt",
     "backend/pytest.ini",
     "frontend/package.json",

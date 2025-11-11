@@ -1,33 +1,34 @@
 # Cursor IDE Prompts
 
-This directory contains Cursor-specific prompts for enhanced IDE interactions.
+This directory is reserved for Cursor-specific prompts to enhance IDE interactions.
 
-## Structure
+## Status
 
-```
-.cursor/prompts/
-├── README.md                  # This file
-├── code-generation/           # Prompts for generating code
-├── refactoring/              # Prompts for refactoring tasks
-├── documentation/            # Prompts for generating docs
-└── debugging/                # Prompts for debugging assistance
-```
+**Currently**: Placeholder directory (prompts defined in rules and commands instead)
 
-## Usage
+## Purpose
 
-These prompts are separate from MCP prompts (located in `backend/src/mcp/prompts/`):
-- **Cursor Prompts**: IDE-specific, enhance Cursor AI behavior
-- **MCP Prompts**: Server-side, used by MCP tools/clients
+Cursor-specific prompts are distinct from MCP prompts:
+- **Cursor Prompts** (this directory): IDE behavior enhancement (future use)
+- **MCP Prompts**: Server-side AI agent prompts in `backend/src/mcp_server/prompts/`
 
-## Adding New Prompts
+## Current Approach
 
-1. Create a new `.md` file in the appropriate subdirectory
-2. Use clear, descriptive names
-3. Include context and examples
-4. Test with Cursor AI before committing
+Project uses:
+1. **Cursor Rules** (`.cursor/rules/`) - Comprehensive coding standards
+2. **Cursor Commands** (`.cursor/commands/`) - Slash command templates
+3. **MCP Prompts** (`backend/src/mcp_server/prompts/`) - AI agent workflows
+
+## Future
+
+This directory can be populated with:
+- Custom code generation prompts
+- Refactoring workflow prompts  
+- Documentation generation templates
+- Debugging assistance prompts
 
 ## Related
 
-- MCP Prompts: `backend/src/mcp/prompts/`
-- Cursor Rules: `.cursor/rules/`
-- Cursor Commands: `.cursor/commands/`
+- **MCP Prompts**: `backend/src/mcp_server/prompts/` (shipping, optimization, tracking)
+- **Cursor Rules**: `.cursor/rules/` (auto-applied coding standards)
+- **Cursor Commands**: `.cursor/commands/` (slash command templates)

@@ -16,14 +16,13 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+# Import all models to register them with Base.metadata
+import src.models  # noqa: F401
 from alembic import context
 
 # Import our models and database configuration
 from src.database import Base
 from src.utils.config import settings
-
-# Import all models to register them with Base.metadata
-import src.models  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

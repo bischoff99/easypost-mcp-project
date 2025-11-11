@@ -1,5 +1,7 @@
 # REST Client Extension Setup (FREE)
 
+🚨 **SECURITY NOTICE**: See [REST_CLIENT_SECURITY_SETUP.md](./REST_CLIENT_SECURITY_SETUP.md) for secure configuration
+
 ## REST Client by Huachao Mao
 **Extension ID:** `humao.rest-client`
 **Status:** ✅ FREE (Open Source)

@@ -1,45 +1,40 @@
-# Node
+# Dependencies
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# Testing
-coverage/
-.nyc_output/
-
 # Build outputs
 dist/
-build/
+coverage/
+*.log
 
-# IDEs
-.idea/
+# IDE
 .vscode/
+.idea/
 *.swp
-*.swo
-*~
 
-# OS
-.DS_Store
-Thumbs.db
-
-# Git
-.git/
-.gitignore
-.gitattributes
-
-# Docs
-*.md
-README.md
-docs/
-
-# CI/CD
-.github/
-
-# Environment
-.env*
-!.env.production.example
+# Tests
+e2e/
+src/tests/
+*.test.js
+*.test.jsx
+*.spec.js
+*.spec.jsx
 
 # Development
-src/tests/
+.env
+.env.local
+.env.*.local
+*.md
+!README.md
+
+# Cache
+.cache/
+.vite/
+.turbo/
+
+# Temporary files
+*.tmp
+*.bak

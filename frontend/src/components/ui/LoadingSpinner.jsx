@@ -93,3 +93,24 @@ SkeletonLoader.propTypes = {
   className: PropTypes.string,
   rows: PropTypes.number,
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

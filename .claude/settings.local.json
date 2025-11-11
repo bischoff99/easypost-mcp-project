@@ -29,7 +29,14 @@
       "Bash(python3:*)",
       "Bash(timeout 5 python:*)",
       "Bash(lsof:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(ruff check:*)",
+      "Bash(make lint:*)",
+      "Bash(pre-commit run:*)",
+      "Bash(zsh -c \"echo ''Shell initialized successfully''\")",
+      "Bash(echo:*)",
+      "Bash(bash:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []
