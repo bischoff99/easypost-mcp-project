@@ -128,3 +128,4 @@ docs/*.tar.gz
 
 # MCP setup guide (contains credentials)
 .env.mcp-setup-guide.txt
+/node_modules
