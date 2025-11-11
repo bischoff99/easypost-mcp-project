@@ -8,13 +8,12 @@ M3 MAX OPTIMIZATION (16 cores, 128GB RAM):
 - Performance: ~3-4 shipments/second (100 shipments in 30-40s)
 """
 
-from typing import Any
-
 import asyncio
 import logging
 import multiprocessing
 from datetime import UTC, datetime
 from time import time
+from typing import Any
 
 from fastmcp import Context
 
@@ -103,9 +102,7 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
             # Setup batch tracking
             from src.mcp_server.tools.bulk_aggregation import setup_database_tracking
 
-            batch_operation, batch_id = await setup_database_tracking(
-                db_service, start_time, ctx
-            )
+            batch_operation, batch_id = await setup_database_tracking(db_service, start_time, ctx)
 
             # Parse lines
             lines = [l.strip() for l in spreadsheet_data.split("\n") if l.strip()]
@@ -140,11 +137,13 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                     validation_result = validate_shipment_data(shipment_data, idx + 1)
                     validation_results.append(validation_result.model_dump())
                 except Exception as e:
-                    validation_results.append({
-                        "line": idx + 1,
-                        "valid": False,
-                        "errors": [f"Parse error: {str(e)}"],
-                    })
+                    validation_results.append(
+                        {
+                            "line": idx + 1,
+                            "valid": False,
+                            "errors": [f"Parse error: {str(e)}"],
+                        }
+                    )
 
             valid_shipments = [v for v in validation_results if v["valid"]]
             invalid_shipments = [v for v in validation_results if not v["valid"]]
@@ -231,9 +230,7 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
 
                     # Build addresses and parcel using helpers
                     to_address = build_to_address(shipment_data)
-                    parcel = build_parcel(
-                        ValidationResultDTO(**validation_result)
-                    )
+                    parcel = build_parcel(ValidationResultDTO(**validation_result))
 
                     # Check if international
                     is_intl = is_international_shipment(to_address, from_address)
@@ -311,9 +308,7 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                     )
 
                     preferred_carrier = (shipment_data.carrier_preference or "").upper()
-                    marked_rates = mark_preferred_rates(
-                        shipment_result.rates, preferred_carrier
-                    )
+                    marked_rates = mark_preferred_rates(shipment_result.rates, preferred_carrier)
                     selected_rate = select_best_rate(
                         marked_rates, purchase_labels, preferred_carrier
                     )
@@ -460,9 +455,7 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                                 # Create addresses if they don't exist
                                 # Get from_address from easypost_shipment object
                                 from_address_data = {
-                                    "name": getattr(
-                                        easypost_shipment.from_address, "name", ""
-                                    ),
+                                    "name": getattr(easypost_shipment.from_address, "name", ""),
                                     "company": getattr(
                                         easypost_shipment.from_address, "company", ""
                                     ),

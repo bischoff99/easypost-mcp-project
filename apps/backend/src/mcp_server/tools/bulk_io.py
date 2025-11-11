@@ -57,16 +57,14 @@ async def verify_address_if_needed(
     for key in ["street1", "street2", "country", "name"]:
         if address_dict.get(key) is None:
             address_dict[key] = ""
-    
+
     preprocessed = preprocess_address_for_fedex(address_dict)
 
     if ctx:
         name = preprocessed.get("name", "recipient")
         await ctx.info(f"🔍 Verifying FedEx-preprocessed address for {name}...")
 
-    verify_result = await easypost_service.verify_address(
-        preprocessed, carrier="fedex"
-    )
+    verify_result = await easypost_service.verify_address(preprocessed, carrier="fedex")
 
     # Extract verification data
     data = verify_result.get("data", {})
@@ -167,9 +165,7 @@ async def create_shipment_with_rates(
         from_dict = request.from_address.model_dump(exclude_none=True)
         parcel_dict = request.parcel.model_dump()
         customs_dict = (
-            request.customs_info.model_dump(exclude_none=True)
-            if request.customs_info
-            else None
+            request.customs_info.model_dump(exclude_none=True) if request.customs_info else None
         )
 
         # Create shipment
@@ -204,9 +200,7 @@ async def create_shipment_with_rates(
             else:
                 # Use cheapest rate
                 selected_rate = (
-                    min(rates, key=lambda r: r.get("rate", float("inf")))
-                    if rates
-                    else None
+                    min(rates, key=lambda r: r.get("rate", float("inf"))) if rates else None
                 )
 
             if selected_rate:

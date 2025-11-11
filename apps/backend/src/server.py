@@ -22,8 +22,8 @@ from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from slowapi.util import get_remote_address
 from slowapi.middleware import SlowAPIMiddleware
+from slowapi.util import get_remote_address
 from starlette import status
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.cors import CORSMiddleware
@@ -231,6 +231,7 @@ async def health_check():
 async def readiness_check(service: EasyPostDep):
     """Readiness check - verifies DB and EasyPost connectivity."""
     from sqlalchemy import text
+
     from src.database import async_session
 
     # DB check
