@@ -8,6 +8,7 @@ jobs:
   pre-commit:
     name: Run pre-commit hooks
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Checkout code
@@ -16,12 +17,19 @@ jobs:
       - name: Set up Python 3.12
         uses: actions/setup-python@v6
         with:
-          python-version: '3.13'
+          python-version: '3.12'
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.0.0
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
           node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: apps/frontend/pnpm-lock.yaml
 
       - name: Install backend dependencies
         run: |
@@ -32,7 +40,7 @@ jobs:
       - name: Install frontend dependencies
         run: |
           cd apps/frontend
-          npm ci
+          pnpm install --frozen-lockfile
 
       - name: Run pre-commit
         run: pre-commit run --all-files
