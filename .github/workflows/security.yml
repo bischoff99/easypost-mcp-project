@@ -29,7 +29,7 @@ jobs:
 
       - name: Audit Python dependencies
         run: |
-          cd backend
+          cd apps/backend
           pip-audit --requirement requirements.txt --format json --output audit-python.json || true
 
       - name: Set up Node.js
@@ -39,7 +39,7 @@ jobs:
 
       - name: Audit npm dependencies
         run: |
-          cd frontend
+          cd apps/frontend
           npm audit --json > audit-npm.json || true
 
       - name: Upload audit results
@@ -47,8 +47,8 @@ jobs:
         with:
           name: security-audits
           path: |
-            backend/audit-python.json
-            frontend/audit-npm.json
+            apps/backend/audit-python.json
+            apps/frontend/audit-npm.json
 
   secret-scanning:
     name: Secret Detection

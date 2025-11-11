@@ -3,13 +3,12 @@
   "lastModified": "2025-11-11",
   "description": "MCP server configuration for EasyPost shipping integration",
   "mcpServers": {
-    "easypost-shipping": {
-      "command": "${workspaceFolder}/backend/venv/bin/python",
-      "args": ["${workspaceFolder}/backend/run_mcp.py"],
+    "easypost-mcp": {
+      "command": "python3",
+      "args": ["-m", "mcp_server.server"],
+      "cwd": "apps/backend",
       "env": {
-        "EASYPOST_API_KEY": "${env:EASYPOST_API_KEY}",
-        "DATABASE_URL": "${env:DATABASE_URL}",
-        "PYTHONPATH": "${workspaceFolder}/backend"
+        "EASYPOST_API_KEY": "${env:EASYPOST_API_KEY}"
       }
     }
   }

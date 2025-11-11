@@ -45,18 +45,18 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('apps/backend/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
 
       - name: Install dependencies
-        working-directory: ./backend
+        working-directory: ./apps/backend
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
       - name: Set up test environment
-        working-directory: ./backend
+        working-directory: ./apps/backend
         env:
           EASYPOST_API_KEY: ${{ secrets.EASYPOST_API_KEY_TEST }}
           DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/easypost_mcp_test # pragma: allowlist secret
@@ -65,19 +65,19 @@ jobs:
           echo "DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/easypost_mcp_test" >> $GITHUB_ENV
 
       - name: Run database migrations
-        working-directory: ./backend
+        working-directory: ./apps/backend
         run: |
           alembic upgrade head
 
       - name: Run tests with pytest
-        working-directory: ./backend
+        working-directory: ./apps/backend
         run: |
           pytest tests/ -v --cov=src --cov-report=xml --cov-report=term-missing
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
-          file: ./backend/coverage.xml
+          file: ./apps/backend/coverage.xml
           flags: backend
           name: backend-coverage
 
@@ -94,23 +94,23 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install linting dependencies
-        working-directory: ./backend
+        working-directory: ./apps/backend
         run: |
           python -m pip install --upgrade pip
           pip install ruff black mypy
 
       - name: Run Ruff
-        working-directory: ./backend
+        working-directory: ./apps/backend
         run: |
           ruff check src/ tests/
 
       - name: Check Black formatting
-        working-directory: ./backend
+        working-directory: ./apps/backend
         run: |
           black --check src/ tests/
 
       - name: Run mypy
-        working-directory: ./backend
+        working-directory: ./apps/backend
         run: |
           mypy src/ --ignore-missing-imports || true
 
@@ -126,24 +126,24 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: apps/frontend/package-lock.json
 
       - name: Install dependencies
-        working-directory: ./frontend
+        working-directory: ./apps/frontend
         run: npm ci
 
       - name: Run tests
-        working-directory: ./frontend
+        working-directory: ./apps/frontend
         run: npm test -- --run
 
       - name: Run tests with coverage
-        working-directory: ./frontend
+        working-directory: ./apps/frontend
         run: npm run test:coverage
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
-          file: ./frontend/coverage/coverage-final.json
+          file: ./apps/frontend/coverage/coverage-final.json
           flags: frontend
           name: frontend-coverage
 
@@ -159,18 +159,18 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: apps/frontend/package-lock.json
 
       - name: Install dependencies
-        working-directory: ./frontend
+        working-directory: ./apps/frontend
         run: npm ci
 
       - name: Run ESLint
-        working-directory: ./frontend
+        working-directory: ./apps/frontend
         run: npm run lint
 
       - name: Check Prettier formatting
-        working-directory: ./frontend
+        working-directory: ./apps/frontend
         run: npm run format:check
 
   security-audit:
@@ -191,14 +191,14 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Run npm audit
-        working-directory: ./frontend
+        working-directory: ./apps/frontend
         run: npm audit --audit-level=moderate || true
 
       - name: Install pip-audit
         run: pip install pip-audit
 
       - name: Run pip-audit
-        working-directory: ./backend
+        working-directory: ./apps/backend
         run: pip-audit --requirement requirements.txt || true
 
   build:
@@ -220,13 +220,13 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Build frontend
-        working-directory: ./frontend
+        working-directory: ./apps/frontend
         run: |
           npm ci
           npm run build
 
       - name: Verify backend imports
-        working-directory: ./backend
+        working-directory: ./apps/backend
         run: |
           pip install -r requirements.txt
           python -c "import src.server; print('Backend imports OK')"

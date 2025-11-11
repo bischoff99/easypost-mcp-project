@@ -27,7 +27,7 @@ error() { echo -e "${RED}✗${NC} $1"; }
 # Check if virtual environment exists
 if [ ! -f "${BACKEND_DIR}/venv/bin/python" ]; then
     error "Backend virtual environment not found!"
-    error "Run: cd backend && python -m venv venv && source venv/bin/activate && pip install -r requirements.txt"
+    error "Run: cd apps/backend && python -m venv venv && source venv/bin/activate && pip install -r requirements.txt"
     exit 1
 fi
 

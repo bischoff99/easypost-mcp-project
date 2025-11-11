@@ -4,12 +4,12 @@ on:
   push:
     branches: [ master, main, develop ]
     paths:
-      - 'backend/**'
+      - 'apps/backend/**'
       - '.github/workflows/backend-ci.yml'
   pull_request:
     branches: [ master, main, develop ]
     paths:
-      - 'backend/**'
+      - 'apps/backend/**'
 
 jobs:
   test:
@@ -29,23 +29,23 @@ jobs:
 
     - name: Install dependencies
       run: |
-        cd backend
+        cd apps/backend
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
     - name: Lint with ruff
       run: |
-        cd backend
+        cd apps/backend
         ruff check .
 
     - name: Format check with black
       run: |
-        cd backend
+        cd apps/backend
         black --check .
 
     - name: Type check with mypy
       run: |
-        cd backend
+        cd apps/backend
         mypy src/ --ignore-missing-imports
       continue-on-error: true
 
@@ -53,13 +53,13 @@ jobs:
       env:
         EASYPOST_API_KEY: ${{ secrets.EASYPOST_API_KEY || 'test_key' }}
       run: |
-        cd backend
+        cd apps/backend
         pytest tests/ -v --cov=src --cov-report=xml --cov-report=term
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v5
       with:
-        file: ./backend/coverage.xml
+        file: ./apps/backend/coverage.xml
         flags: backend
         name: backend-coverage
       continue-on-error: true

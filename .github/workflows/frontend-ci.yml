@@ -4,12 +4,12 @@ on:
   push:
     branches: [ master, main, develop ]
     paths:
-      - 'frontend/**'
+      - 'apps/frontend/**'
       - '.github/workflows/frontend-ci.yml'
   pull_request:
     branches: [ master, main, develop ]
     paths:
-      - 'frontend/**'
+      - 'apps/frontend/**'
 
 jobs:
   test:
@@ -26,39 +26,39 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-        cache-dependency-path: frontend/package-lock.json
+        cache-dependency-path: apps/frontend/package-lock.json
 
     - name: Install dependencies
       run: |
-        cd frontend
+        cd apps/frontend
         npm ci
 
     - name: Lint with ESLint
       run: |
-        cd frontend
+        cd apps/frontend
         npx eslint . --ext .js,.jsx --max-warnings 0
       continue-on-error: true
 
     - name: Format check with Prettier
       run: |
-        cd frontend
+        cd apps/frontend
         npx prettier --check "src/**/*.{js,jsx,css}"
       continue-on-error: true
 
     - name: Run tests
       run: |
-        cd frontend
+        cd apps/frontend
         npm test -- --run --coverage
 
     - name: Build
       run: |
-        cd frontend
+        cd apps/frontend
         npm run build
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v5
       with:
-        file: ./frontend/coverage/coverage-final.json
+        file: ./apps/frontend/coverage/coverage-final.json
         flags: frontend
         name: frontend-coverage
       continue-on-error: true

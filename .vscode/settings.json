@@ -1,5 +1,5 @@
 {
-  "python.defaultInterpreterPath": "${workspaceFolder}/backend/venv/bin/python",
+  "python.defaultInterpreterPath": "${workspaceFolder}/apps/backend/venv/bin/python",
   "python.languageServer": "Pylance",
   "python.analysis.typeCheckingMode": "basic",
   "python.analysis.autoImportCompletions": true,
@@ -9,7 +9,7 @@
     "reportMissingTypeStubs": "none",
     "reportGeneralTypeIssues": "information"
   },
-  "python.analysis.extraPaths": ["${workspaceFolder}/backend/src"],
+  "python.analysis.extraPaths": ["${workspaceFolder}/apps/backend/src"],
   "python.analysis.indexing": true,
   "[python]": {
     "editor.defaultFormatter": "charliermarsh.ruff",
@@ -21,7 +21,7 @@
   },
   "python.testing.pytestEnabled": true,
   "python.testing.unittestEnabled": false,
-  "python.testing.pytestArgs": ["backend/tests", "-v", "--no-cov"],
+  "python.testing.pytestArgs": ["apps/backend/tests", "-v", "--no-cov"],
   "files.exclude": {
     "**/__pycache__": true,
     "**/*.pyc": true,
@@ -74,8 +74,8 @@
     "strings": true
   },
   "path-intellisense.mappings": {
-    "@": "${workspaceRoot}/frontend/src",
-    "@backend": "${workspaceRoot}/backend/src"
+    "@": "${workspaceRoot}/apps/frontend/src",
+    "@backend": "${workspaceRoot}/apps/backend/src"
   },
   "editor.rulers": [100],
   "editor.bracketPairColorization.enabled": true,
@@ -88,6 +88,6 @@
     "reportMissingTypeStubs": "none",
     "reportGeneralTypeIssues": "information"
   },
-  "cursorpyright.analysis.extraPaths": ["${workspaceFolder}/backend/src"],
+  "cursorpyright.analysis.extraPaths": ["${workspaceFolder}/apps/backend/src"],
   "cursorpyright.analysis.typeCheckingMode": "basic"
 }

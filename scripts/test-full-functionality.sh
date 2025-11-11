@@ -47,7 +47,7 @@ echo "PHASE 1: Backend Unit Tests (16 workers)"
 echo "═══════════════════════════════════════════════════════════"
 echo ""
 
-cd backend
+cd apps/backend
 source venv/bin/activate
 if pytest tests/unit -v -n 16 --tb=short -q 2>&1 | tail -5; then
     echo -e "${GREEN}✓ Backend unit tests PASSED${NC}"
@@ -79,7 +79,7 @@ echo "PHASE 3: Frontend Tests (20 workers)"
 echo "═══════════════════════════════════════════════════════════"
 echo ""
 
-cd frontend
+cd apps/frontend
 if npm test 2>&1 | tail -8; then
     echo -e "${GREEN}✓ Frontend tests PASSED${NC}"
     ((TESTS_PASSED++))
@@ -122,7 +122,7 @@ echo "PHASE 5: Code Quality Checks"
 echo "═══════════════════════════════════════════════════════════"
 echo ""
 
-cd backend
+cd apps/backend
 echo -e "${BLUE}Testing: Backend Linting${NC}"
 if ruff check src/ --exit-zero > /dev/null 2>&1; then
     echo -e "${GREEN}✓ PASSED - No linting errors${NC}"
@@ -152,7 +152,7 @@ echo "════════════════════════�
 echo ""
 
 # Check configuration files
-for file in backend/.env backend/pytest.ini frontend/vite.config.js; do
+for file in apps/backend/.env apps/backend/pytest.ini apps/frontend/vite.config.js; do
     if [ -f "$file" ]; then
         echo -e "${GREEN}✓ PASSED - $file exists${NC}"
         ((TESTS_PASSED++))
