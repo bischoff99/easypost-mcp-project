@@ -72,6 +72,7 @@ build/
 !.vscode/launch.json
 !.vscode/extensions.json
 !.vscode/snippets.code-snippets
+!.vscode/keybindings.json
 *.code-workspace
 .idea/
 
