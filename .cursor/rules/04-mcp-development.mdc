@@ -1,7 +1,9 @@
 ---
-description: "MCP (Model Context Protocol) development patterns and best practices"
-globs: ["**/mcp_server/**/*.py", "**/mcp/**/*.py"]
+description: 'MCP (Model Context Protocol) development patterns and best practices'
+globs: ['**/mcp_server/**/*.py', '**/mcp/**/*.py']
 alwaysApply: false
+version: '1.0.0'
+lastUpdated: '2025-11-18'
 ---
 
 # MCP (Model Context Protocol) Development Best Practices
@@ -354,6 +356,7 @@ All MCP tools should return consistent response format:
 ## Performance Optimization
 
 ### Parallel Execution
+
 ```python
 # Good: Process items in parallel
 results = await asyncio.gather(*[
@@ -368,6 +371,7 @@ for item in items:
 ```
 
 ### Caching
+
 ```python
 from functools import lru_cache
 
@@ -378,6 +382,7 @@ async def get_carrier_accounts():
 ```
 
 ### Rate Limiting
+
 ```python
 from asyncio import Semaphore
 
@@ -395,6 +400,7 @@ async def rate_limited_operation(items, max_concurrent=10):
 ## Documentation Standards
 
 Every tool must have:
+
 1. Clear docstring explaining purpose
 2. Typed parameters with descriptions
 3. Return type specification

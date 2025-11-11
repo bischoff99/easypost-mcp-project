@@ -1,21 +1,25 @@
 ---
-description: "Quick reference for naming conventions, code patterns, and common standards"
+description: 'Quick reference for naming conventions, code patterns, and common standards'
 globs: []
 alwaysApply: true
+version: '1.0.0'
+lastUpdated: '2025-11-18'
 ---
 
 # Quick Reference
 
 ## Naming
-| Element | Convention | Example |
-|---------|-----------|---------|
-| Python Functions | snake_case | `create_shipment()` |
-| Python Classes | PascalCase | `EasyPostService` |
-| Python Constants | UPPER_SNAKE_CASE | `MAX_SIZE` |
-| React Components | PascalCase.jsx | `Dashboard.jsx` |
-| React Functions | camelCase | `handleClick()` |
+
+| Element          | Convention       | Example             |
+| ---------------- | ---------------- | ------------------- |
+| Python Functions | snake_case       | `create_shipment()` |
+| Python Classes   | PascalCase       | `EasyPostService`   |
+| Python Constants | UPPER_SNAKE_CASE | `MAX_SIZE`          |
+| React Components | PascalCase.jsx   | `Dashboard.jsx`     |
+| React Functions  | camelCase        | `handleClick()`     |
 
 ## Essential Rules
+
 - **Error Handling:** Try-catch all async
 - **Logging:** Log errors with context
 - **Security:** Env vars, no hardcoded secrets
@@ -27,6 +31,7 @@ alwaysApply: true
 ## Templates
 
 **Python:**
+
 ```python
 async def func(param: dict, ctx: Context = None) -> dict:
     """Brief description."""
@@ -38,6 +43,7 @@ async def func(param: dict, ctx: Context = None) -> dict:
 ```
 
 **React:**
+
 ```javascript
 export default function Component() {
   const [data, setData] = useState(null);
@@ -61,6 +67,7 @@ export default function Component() {
 ```
 
 ## Commands
+
 ```bash
 # Backend
 pytest tests/ -v
@@ -75,6 +82,7 @@ git commit -m "feat: description"
 ```
 
 ## API Response
+
 ```json
 {
   "status": "success",

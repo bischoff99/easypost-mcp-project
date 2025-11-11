@@ -29,9 +29,6 @@ export const ENDPOINTS = {
   DB_SHIPMENT_BY_ID: (id) => `/db/shipments/${id}`,
   DB_ADDRESSES: '/db/addresses',
   DB_ANALYTICS: '/db/analytics/dashboard',
-
-  // Webhooks
-  WEBHOOKS_EASYPOST: '/webhooks/easypost',
 };
 
 export const buildUrl = (endpoint) => {

@@ -175,7 +175,37 @@ fi
 echo ""
 
 echo "═══════════════════════════════════════════════════════════"
-echo "PHASE 7: Performance Checks"
+echo "PHASE 7: MCP Tools Verification"
+echo "═══════════════════════════════════════════════════════════"
+echo ""
+
+cd apps/backend
+source venv/bin/activate
+
+echo -e "${BLUE}Testing: MCP Tool Availability${NC}"
+if python ../../scripts/mcp_tool.py get_tracking TEST 2>/dev/null | grep -q "status"; then
+    echo -e "${GREEN}✓ PASSED - MCP tools accessible${NC}"
+    ((TESTS_PASSED++))
+else
+    echo -e "${RED}✗ FAILED - MCP tools not accessible${NC}"
+    ((TESTS_FAILED++))
+fi
+
+echo -e "${BLUE}Testing: MCP Tool Response Format${NC}"
+mcp_response=$(python ../../scripts/mcp_tool.py get_tracking TEST 2>/dev/null)
+if echo "$mcp_response" | grep -q '"status"'; then
+    echo -e "${GREEN}✓ PASSED - MCP tool returns valid JSON format${NC}"
+    ((TESTS_PASSED++))
+else
+    echo -e "${RED}✗ FAILED - Invalid MCP tool response format${NC}"
+    ((TESTS_FAILED++))
+fi
+echo ""
+
+cd ../..
+
+echo "═══════════════════════════════════════════════════════════"
+echo "PHASE 8: Performance Checks"
 echo "═══════════════════════════════════════════════════════════"
 echo ""
 
@@ -200,6 +230,16 @@ else
     echo -e "${RED}✗ FAILED - Proxy slow: ${proxy_time}s${NC}"
     ((TESTS_FAILED++))
 fi
+
+# Test MCP tool call time
+cd apps/backend
+source venv/bin/activate
+mcp_time=$(time (python ../../scripts/mcp_tool.py get_tracking TEST > /dev/null 2>&1) 2>&1 | grep real | awk '{print $2}' | sed 's/[ms]//g')
+if [ -n "$mcp_time" ]; then
+    echo -e "${GREEN}✓ MCP tool call time: ${mcp_time}${NC}"
+    ((TESTS_PASSED++))
+fi
+cd ../..
 echo ""
 
 # Summary

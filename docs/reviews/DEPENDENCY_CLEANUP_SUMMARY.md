@@ -233,3 +233,10 @@ The frontend is now cleaner, more maintainable, and follows best practices with 
 
 
 
+
+
+
+
+
+
+

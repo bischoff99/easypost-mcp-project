@@ -1,7 +1,15 @@
 ---
-description: "Complete React, Vite, and TailwindCSS frontend development guide"
-globs: ["apps/frontend/**/*.jsx", "apps/frontend/**/*.js", "apps/frontend/**/*.ts", "apps/frontend/**/*.tsx"]
+description: 'Complete React, Vite, and TailwindCSS frontend development guide'
+globs:
+  [
+    'apps/frontend/**/*.js',
+    'apps/frontend/**/*.jsx',
+    'apps/frontend/**/*.ts',
+    'apps/frontend/**/*.tsx',
+  ]
 alwaysApply: false
+version: '1.0.0'
+lastUpdated: '2025-11-18'
 ---
 
 # React + Vite Frontend Best Practices
@@ -20,6 +28,7 @@ You are an expert in React, JavaScript, Vite, TailwindCSS, and modern frontend d
 ## JavaScript/React Standards
 
 ### Function Components
+
 - Use arrow functions for components
 - Use named exports (not default exports)
 - Use hooks for state management
@@ -27,6 +36,7 @@ You are an expert in React, JavaScript, Vite, TailwindCSS, and modern frontend d
 - Extract complex logic into custom hooks
 
 ### File Structure
+
 ```
 components/
   ├── ComponentName.jsx          # Component implementation
@@ -40,6 +50,7 @@ stores/
 ```
 
 ### Naming Conventions
+
 - Components: `PascalCase.jsx`
 - Functions/Hooks: `camelCase`
 - Constants: `UPPER_SNAKE_CASE`
@@ -85,6 +96,7 @@ export const ShipmentForm = () => {
 ## State Management
 
 ### Local State (useState)
+
 Use for component-specific state:
 
 ```javascript
@@ -93,6 +105,7 @@ const [formData, setFormData] = useState({});
 ```
 
 ### Global State (Zustand)
+
 Use for app-wide state:
 
 ```javascript
@@ -100,13 +113,13 @@ import { create } from 'zustand';
 
 export const useShipmentStore = create((set) => ({
   shipments: [],
-  addShipment: (shipment) =>
-    set((state) => ({ shipments: [...state.shipments, shipment] })),
+  addShipment: (shipment) => set((state) => ({ shipments: [...state.shipments, shipment] })),
   clearShipments: () => set({ shipments: [] }),
 }));
 ```
 
 ### Server State (Custom Hook + API)
+
 Use for data fetching:
 
 ```javascript
@@ -137,6 +150,7 @@ export const useShipments = () => {
 ## API Integration
 
 ### Centralized API Service
+
 ```javascript
 // services/api.js
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -152,11 +166,7 @@ class ApiError extends Error {
 const handleResponse = async (response) => {
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
-    throw new ApiError(
-      error.message || 'Request failed',
-      response.status,
-      error
-    );
+    throw new ApiError(error.message || 'Request failed', response.status, error);
   }
   return response.json();
 };
@@ -178,9 +188,7 @@ export const api = {
   },
 
   async trackShipment(trackingNumber) {
-    const response = await fetch(
-      `${API_BASE_URL}/api/v1/tracking/${trackingNumber}`
-    );
+    const response = await fetch(`${API_BASE_URL}/api/v1/tracking/${trackingNumber}`);
     return handleResponse(response);
   },
 };
@@ -189,6 +197,7 @@ export const api = {
 ## Performance Optimization
 
 ### Code Splitting
+
 ```javascript
 import { lazy, Suspense } from 'react';
 
@@ -208,15 +217,14 @@ export const App = () => (
 ```
 
 ### Memoization
+
 ```javascript
 import { useMemo, useCallback } from 'react';
 
 export const ShipmentList = ({ shipments }) => {
   // Memoize expensive computations
   const sortedShipments = useMemo(() => {
-    return [...shipments].sort((a, b) =>
-      new Date(b.created_at) - new Date(a.created_at)
-    );
+    return [...shipments].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   }, [shipments]);
 
   // Memoize callbacks
@@ -227,11 +235,7 @@ export const ShipmentList = ({ shipments }) => {
   return (
     <div>
       {sortedShipments.map((shipment) => (
-        <ShipmentCard
-          key={shipment.id}
-          shipment={shipment}
-          onDelete={handleDelete}
-        />
+        <ShipmentCard key={shipment.id} shipment={shipment} onDelete={handleDelete} />
       ))}
     </div>
   );
@@ -239,6 +243,7 @@ export const ShipmentList = ({ shipments }) => {
 ```
 
 ### Debouncing & Throttling
+
 ```javascript
 import { useState, useEffect } from 'react';
 
@@ -275,6 +280,7 @@ const SearchBar = () => {
 ## TailwindCSS Best Practices
 
 ### Component Styling
+
 ```javascript
 export const Button = ({ variant = 'primary', children, ...props }) => {
   const baseClasses = 'px-4 py-2 rounded-lg font-medium transition-colors';
@@ -285,10 +291,7 @@ export const Button = ({ variant = 'primary', children, ...props }) => {
   };
 
   return (
-    <button
-      className={`${baseClasses} ${variants[variant]}`}
-      {...props}
-    >
+    <button className={`${baseClasses} ${variants[variant]}`} {...props}>
       {children}
     </button>
   );
@@ -296,15 +299,18 @@ export const Button = ({ variant = 'primary', children, ...props }) => {
 ```
 
 ### Responsive Design
+
 ```javascript
-<div className="
+<div
+  className="
   grid
   grid-cols-1
   md:grid-cols-2
   lg:grid-cols-3
   gap-4
   p-4
-">
+"
+>
   {/* Cards */}
 </div>
 ```
@@ -445,7 +451,7 @@ export const Modal = ({ isOpen, onClose, title, children }) => {
 
 ## Key Conventions
 
-1. **Component Organization**: One component per file
+1. **Component Organisation**: One component per file
 2. **Props Validation**: Use PropTypes or TypeScript
 3. **Error Boundaries**: Wrap app sections in error boundaries
 4. **Loading States**: Always show loading indicators

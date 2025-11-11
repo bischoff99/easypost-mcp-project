@@ -1,7 +1,19 @@
 ---
-description: "Comprehensive testing strategy for pytest and vitest"
-globs: ["**/test_*.py", "**/tests/**/*.py", "**/*.test.js", "**/*.test.jsx", "**/*.test.ts", "**/*.test.tsx", "**/*.spec.js", "**/*.spec.jsx"]
+description: 'Comprehensive testing strategy for pytest and vitest'
+globs:
+  [
+    '**/test_*.py',
+    '**/tests/**/*.py',
+    '**/*.spec.js',
+    '**/*.spec.jsx',
+    '**/*.test.js',
+    '**/*.test.jsx',
+    '**/*.test.ts',
+    '**/*.test.tsx',
+  ]
 alwaysApply: false
+version: '1.0.0'
+lastUpdated: '2025-11-18'
 ---
 
 # Testing Best Practices
@@ -216,14 +228,14 @@ describe('ShipmentForm', () => {
   it('handles form submission', async () => {
     const mockCreate = vi.spyOn(api, 'createShipment').mockResolvedValue({
       status: 'success',
-      data: { id: 'shp_123', tracking_code: 'EZ123' }
+      data: { id: 'shp_123', tracking_code: 'EZ123' },
     });
 
     render(<ShipmentForm />);
 
     // Fill form
     fireEvent.change(screen.getByLabelText(/to address/i), {
-      target: { value: '123 Main St' }
+      target: { value: '123 Main St' },
     });
 
     // Submit
@@ -239,9 +251,7 @@ describe('ShipmentForm', () => {
   });
 
   it('displays error message on failure', async () => {
-    vi.spyOn(api, 'createShipment').mockRejectedValue(
-      new Error('Invalid address')
-    );
+    vi.spyOn(api, 'createShipment').mockRejectedValue(new Error('Invalid address'));
 
     render(<ShipmentForm />);
 
@@ -264,12 +274,12 @@ describe('useShipments', () => {
   it('fetches shipments on mount', async () => {
     const mockShipments = [
       { id: 1, tracking_code: 'EZ123' },
-      { id: 2, tracking_code: 'EZ456' }
+      { id: 2, tracking_code: 'EZ456' },
     ];
 
     vi.spyOn(api, 'getShipments').mockResolvedValue({
       status: 'success',
-      data: mockShipments
+      data: mockShipments,
     });
 
     const { result } = renderHook(() => useShipments());
@@ -300,7 +310,7 @@ const server = setupServer(
     return res(
       ctx.json({
         status: 'success',
-        data: [{ id: 1, tracking_code: 'EZ123' }]
+        data: [{ id: 1, tracking_code: 'EZ123' }],
       })
     );
   })
@@ -335,17 +345,17 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],
-      exclude: ['node_modules/', 'src/tests/']
+      exclude: ['node_modules/', 'src/tests/'],
     },
     pool: 'threads',
     poolOptions: {
       threads: {
         singleThread: false,
         minThreads: 1,
-        maxThreads: 20  // M3 Max optimization
-      }
-    }
-  }
+        maxThreads: 20, // M3 Max optimization
+      },
+    },
+  },
 });
 ```
 
@@ -402,16 +412,19 @@ async def test_bulk_shipment_creation_performance(client, mock_easypost):
 ## Test Coverage Goals
 
 ### Current Enforced Thresholds
+
 - **Backend**: 36% overall (pytest.ini --cov-fail-under=36)
 - **Frontend**: 70% overall (vitest.config.js coverage thresholds)
 - **MCP tools**: 100% coverage (strictly enforced)
 
 ### Progressive Improvement Plan
+
 - **Phase 1 (Current)**: 36% backend, 70% frontend
 - **Phase 2 (Next milestone)**: 50% backend, 75% frontend
 - **Phase 3 (Target)**: 80% backend, 85% frontend
 
 ### Critical Path Requirements (Always 95%+)
+
 - Shipment creation/buying workflows
 - Tracking and status updates
 - Rate retrieval and comparison
@@ -419,6 +432,7 @@ async def test_bulk_shipment_creation_performance(client, mock_easypost):
 - Authentication and authorisation (when implemented)
 
 ### Notes
+
 - MCP tools require 100% coverage due to AI agent reliability requirements
 - Integration tests validate external API contracts
 - Unit tests focus on business logic and edge cases
@@ -427,6 +441,7 @@ async def test_bulk_shipment_creation_performance(client, mock_easypost):
 ## Common Patterns
 
 ### Testing Async Functions
+
 ```python
 @pytest.mark.asyncio
 async def test_async_function():
@@ -435,6 +450,7 @@ async def test_async_function():
 ```
 
 ### Testing Error Cases
+
 ```python
 @pytest.mark.asyncio
 async def test_error_handling(client):
@@ -444,6 +460,7 @@ async def test_error_handling(client):
 ```
 
 ### Table-Driven Tests
+
 ```python
 @pytest.mark.parametrize("input,expected", [
     ({"valid": "data"}, 200),

@@ -786,43 +786,87 @@ def parse_dimensions(dim_str: str) -> tuple:
 
 def parse_weight(weight_str: str) -> float:
     """
-    Parse weight string like '1.8 lbs', '5LB 2oz', '2 lbs 3 oz' into ounces.
+    Parse weight string with intelligent unit detection and conversion.
 
     Handles formats:
-    - Single unit: "1.8 lbs", "16 oz", "2 pounds"
-    - Combined: "5LB 2oz", "2 lbs 3 oz", "1 pound 8 ounces"
+    - With units: "1.8 lbs", "16 oz", "5LB 2oz", "2 lbs 3 oz", "1 pound 8 ounces"
+    - Numeric only: "5.26" (assumes lbs if > 1, oz if <= 1), "84" (assumes oz)
+    - Decimal: "5.26" (assumes lbs), "0.5" (assumes lbs), "16" (ambiguous - assumes oz)
+    - Common abbreviations: "lb", "lbs", "oz", "ounces", "pounds"
 
     Args:
-        weight_str: Weight string with unit(s)
+        weight_str: Weight string with or without unit(s)
 
     Returns:
-        Weight in ounces
+        Weight in ounces (never returns 0 - raises ValueError if truly unparseable)
     """
+    if not weight_str or not weight_str.strip():
+        raise ValueError("Weight string is empty")
+
     weight_str = weight_str.strip()
     total_oz = 0.0
 
     # Pattern to match: number + unit (handles both combined and single formats)
     # Matches: "5LB", "2oz", "1.5 lbs", "3 ounces", etc.
-    pattern = r"([\d.]+)\s*(lbs?|oz|ounces?|pounds?|LB|OZ)"
+    pattern = r"([\d.]+)\s*(lbs?|oz|ounces?|pounds?|LB|OZ|kg|kilograms?|g|grams?)"
 
     # Find all matches (handles combined formats like "5LB 2oz")
-    matches = re.finditer(pattern, weight_str.lower())
+    matches = list(re.finditer(pattern, weight_str.lower()))
 
-    for match in matches:
-        value = float(match.group(1))
-        unit = match.group(2).lower()
+    if matches:
+        # Has explicit units - parse them
+        for match in matches:
+            value = float(match.group(1))
+            unit = match.group(2).lower()
 
-        # Convert to ounces
-        if "lb" in unit or "pound" in unit:
-            total_oz += value * 16.0  # 1 lb = 16 oz
-        else:
-            total_oz += value  # Already in oz
+            # Convert to ounces
+            if "lb" in unit or "pound" in unit:
+                total_oz += value * 16.0  # 1 lb = 16 oz
+            elif "kg" in unit or "kilogram" in unit:
+                total_oz += value * 35.274  # 1 kg = 35.274 oz
+            elif "g" in unit or "gram" in unit:
+                total_oz += value / 28.35  # 1 oz = 28.35 g
+            else:
+                total_oz += value  # Already in oz
 
-    # If no matches found, return default 1 lb (16 oz)
-    if total_oz == 0.0:
-        return 16.0
+        if total_oz > 0:
+            return total_oz
+    else:
+        # No explicit units - try to infer from numeric value
+        # Extract all numbers from the string
+        numbers = re.findall(r"[\d.]+", weight_str)
+        if numbers:
+            value = float(numbers[0])
 
-    return total_oz
+            # Heuristic: if value > 1 and has decimal, likely lbs
+            # If value <= 1, could be lbs or oz - check context
+            # If value > 16 and no decimal, likely oz (common for packages)
+            # If value < 16 and no decimal, ambiguous - assume lbs for typical packages
+
+            if value > 100:
+                # Very large number - likely oz (packages rarely > 100 lbs)
+                total_oz = value
+            elif value > 16:
+                # Between 16-100 - check if it looks like oz or lbs
+                # If it's a round number like 20, 30, 50, likely lbs
+                # If it's a decimal like 84.16, likely oz
+                total_oz = value if "." in weight_str else value * 16.0
+            elif value > 1:
+                # Between 1-16 - likely lbs (common package weights)
+                total_oz = value * 16.0
+            else:
+                # <= 1 - could be 0.5 lbs or 0.5 oz
+                # For packages, < 1 oz is rare, so assume lbs
+                total_oz = value * 16.0
+
+            if total_oz > 0:
+                return total_oz
+
+    # If we get here, couldn't parse - raise error instead of silent default
+    raise ValueError(
+        f"Could not parse weight from '{weight_str}'. "
+        "Please specify units (e.g., '5.26 lbs', '84 oz', '2.5 kg')"
+    )
 
 
 def detect_product_category(contents: str) -> str:
@@ -888,11 +932,244 @@ def get_warehouse_address(state: str, category: str) -> dict:
     return state_warehouses.get("default", state_warehouses[list(state_warehouses.keys())[0]])
 
 
+def detect_field_type(value: str) -> str | None:
+    """
+    Detect field type from value content.
+
+    Args:
+        value: Field value to analyze
+
+    Returns:
+        Field type name or None if unknown
+    """
+    if not value or not value.strip():
+        return None
+
+    value = value.strip()
+    value_lower = value.lower()
+
+    # Email detection
+    if re.match(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", value):
+        return "email"
+
+    # Phone detection (various formats)
+    phone_patterns = [
+        r"^\+?[\d\s\-\(\)]{10,}$",  # International format
+        r"^\d{10,}$",  # Simple digits
+        r"^\d{3}[\s\-]?\d{3}[\s\-]?\d{4}$",  # US format
+    ]
+    for pattern in phone_patterns:
+        cleaned_value = value.replace(" ", "").replace("-", "").replace("(", "").replace(")", "")
+        if re.match(pattern, cleaned_value):
+            return "phone"
+
+    # Country code detection (2-letter ISO codes)
+    if re.match(r"^[A-Z]{2}$", value.upper()) and len(value) == 2:
+        country_upper = value.upper()
+        if country_upper in COUNTRY_CODE_MAP.values() or any(
+            country_upper in v for v in COUNTRY_CODE_MAP.values()
+        ):
+            return "country_code"
+
+    # Country name detection
+    country_upper = value.upper()
+    if country_upper in COUNTRY_CODE_MAP or any(
+        country_upper in k.upper() for k in COUNTRY_CODE_MAP
+    ):
+        return "country_name"
+
+    # Postal/ZIP code detection
+    if re.match(r"^\d{5,}(?:-\d{4})?$", value) or re.match(r"^[A-Z0-9\s]{3,10}$", value.upper()):
+        return "postal_code"
+
+    # State code detection (US states)
+    us_states = [
+        "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
+        "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
+        "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
+        "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
+        "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY",
+    ]
+    if value.upper() in us_states:
+        return "state_code"
+
+    # Weight detection (contains weight keywords or patterns)
+    weight_keywords = ["lb", "lbs", "oz", "ounce", "pound", "kg", "kilogram", "g", "gram"]
+    if any(keyword in value_lower for keyword in weight_keywords):
+        return "weight"
+    # Numeric weight pattern (decimal number that could be weight)
+    if re.match(r"^[\d.]+$", value) and "." in value:
+        try:
+            num = float(value)
+            if 0.1 <= num <= 200:  # Reasonable weight range
+                return "weight"
+        except ValueError:
+            pass
+
+    # Dimensions detection (contains x or dimension keywords)
+    has_dimension_keywords = "x" in value_lower or "×" in value or any(
+        keyword in value_lower for keyword in ["inch", "in", "cm", "dimension"]
+    )
+    if has_dimension_keywords and re.search(r"[\d.]+[\sx×]+[\d.]+[\sx×]+[\d.]+", value):
+        return "dimensions"
+
+    # Name detection (contains common name patterns)
+    # Multiple words, capitalized, not all caps (unless short)
+    words = value.split()
+    has_capitalized_words = len(words) >= 2 and any(
+        word[0].isupper() if word else False for word in words
+    )
+    is_not_address = not any(
+        keyword in value_lower
+        for keyword in ["street", "st", "avenue", "ave", "road", "rd", "suite", "apt"]
+    )
+    if has_capitalized_words and is_not_address:
+        return "name"
+
+    # Street address detection
+    street_keywords = [
+        "street", "st", "avenue", "ave", "road", "rd",
+        "boulevard", "blvd", "drive", "dr", "lane", "ln",
+    ]
+    if any(keyword in value_lower for keyword in street_keywords):
+        return "street"
+    # Also detect addresses with numbers (e.g., "123 Main St", "720 East St Suite 2")
+    if re.match(r"^\d+", value) and len(words) >= 1:
+        return "street"
+
+    # City detection (single word, capitalized, not a state code)
+    if len(words) == 1 and value[0].isupper() and value.upper() not in us_states:
+        return "city"
+
+    return None
+
+
+def map_fields_by_detection(parts: list[str]) -> dict[str, Any]:
+    """
+    Map spreadsheet columns to fields using intelligent detection.
+
+    Args:
+        parts: List of column values
+
+    Returns:
+        Dictionary mapping field names to values
+    """
+    field_map: dict[str, list[tuple[int, str]]] = {}  # field_name -> [(index, value)]
+
+    # First pass: detect field types
+    for idx, part in enumerate(parts):
+        if not part or not part.strip():
+            continue
+
+        field_type = detect_field_type(part.strip())
+        if field_type:
+            if field_type not in field_map:
+                field_map[field_type] = []
+            field_map[field_type].append((idx, part.strip()))
+
+    # Map detected fields to standard field names
+    result: dict[str, Any] = {
+        "origin_state": "",
+        "carrier_preference": "",
+        "recipient_name": "",
+        "recipient_last_name": "",
+        "recipient_phone": "",
+        "recipient_email": "",
+        "street1": "",
+        "street2": "",
+        "city": "",
+        "state": "",
+        "zip": "",
+        "country": "",
+        "dimensions": "",
+        "weight": "",
+        "contents": "",
+    }
+
+    # Map emails (first is recipient, second is sender)
+    emails = [val for _, val in field_map.get("email", [])]
+    if emails:
+        result["recipient_email"] = emails[0]
+        if len(emails) > 1:
+            result["sender_email"] = emails[1]
+
+    # Map phones (first is recipient, second is sender)
+    phones = [val for _, val in field_map.get("phone", [])]
+    if phones:
+        result["recipient_phone"] = phones[0]
+        if len(phones) > 1:
+            result["sender_phone"] = phones[1]
+
+    # Map country codes/names
+    countries = [val for _, val in field_map.get("country_code", [])]
+    countries.extend([val for _, val in field_map.get("country_name", [])])
+    if countries:
+        result["country"] = normalize_country_code(countries[0])
+        if len(countries) > 1:
+            result["sender_country"] = normalize_country_code(countries[1])
+
+    # Map postal codes (first is recipient, second is sender)
+    postal_codes = [val for _, val in field_map.get("postal_code", [])]
+    if postal_codes:
+        result["zip"] = postal_codes[0]
+        if len(postal_codes) > 1:
+            result["sender_zip"] = postal_codes[1]
+
+    # Map state codes
+    states = [val for _, val in field_map.get("state_code", [])]
+    if states:
+        result["state"] = states[0]
+        if len(states) > 1:
+            result["origin_state"] = states[0]  # First state is origin
+            result["sender_state"] = states[1] if len(states) > 1 else states[0]
+
+    # Map dimensions
+    dimensions = [val for _, val in field_map.get("dimensions", [])]
+    if dimensions:
+        result["dimensions"] = dimensions[0]
+
+    # Map weight
+    weights = [val for _, val in field_map.get("weight", [])]
+    if weights:
+        result["weight"] = weights[0]
+
+    # Map names (try to identify recipient vs sender by position)
+    names = [val for _, val in field_map.get("name", [])]
+    if names:
+        # First name is likely recipient
+        name_parts = names[0].split(maxsplit=1)
+        if len(name_parts) >= 2:
+            result["recipient_name"] = name_parts[0]
+            result["recipient_last_name"] = name_parts[1]
+        else:
+            result["recipient_name"] = names[0]
+
+    # Map streets
+    streets = [val for _, val in field_map.get("street", [])]
+    if streets:
+        result["street1"] = streets[0]
+        if len(streets) > 1:
+            result["street2"] = streets[1]
+
+    # Map cities
+    cities = [val for _, val in field_map.get("city", [])]
+    if cities:
+        result["city"] = cities[0]
+        if len(cities) > 1:
+            result["sender_city"] = cities[1]
+
+    return result
+
+
 def parse_spreadsheet_line(line: str) -> dict[str, Any]:
     """
-    Parse a tab-separated line from spreadsheet.
+    Parse a tab-separated line from spreadsheet with flexible field detection.
 
-    Format (16+ columns):
+    Supports two modes:
+    1. Standard format (16+ columns): Positional parsing for backward compatibility
+    2. Flexible format (< 16 columns or validation fails): Intelligent field detection
+
+    Standard Format (16+ columns):
     0. origin_state (or sender_name if sender address provided)
     1. carrier_preference (or sender_street1 if sender address provided)
     2. recipient_name
@@ -912,54 +1189,178 @@ def parse_spreadsheet_line(line: str) -> dict[str, Any]:
     16+. sender fields (optional): sender_name, sender_street1, sender_city,
         sender_state, sender_zip, sender_country, sender_phone, sender_email
 
-    If sender fields are provided (columns 16+), use those instead of warehouse lookup.
+    Flexible Format: Automatically detects field types and maps them regardless of position.
 
     Args:
         line: Tab-separated data line
 
     Returns:
         Parsed shipment dictionary with optional sender_address
+
+    Raises:
+        ValueError: If required fields are missing or unparseable
     """
-    # Split by tabs
-    parts = line.split("\t")
+    # Split by tabs and strip whitespace
+    parts = [p.strip() for p in line.split("\t")]
 
-    if len(parts) < 16:
-        raise ValueError(f"Invalid line format: expected at least 16 columns, got {len(parts)}")
+    # Try standard positional parsing first (backward compatibility)
+    if len(parts) >= 16:
+        try:
+            result: dict[str, Any] = {
+                "origin_state": parts[0],
+                "carrier_preference": parts[1],
+                "recipient_name": parts[2],
+                "recipient_last_name": parts[3],
+                "recipient_phone": parts[4],
+                "recipient_email": parts[5],
+                "street1": parts[6],
+                "street2": parts[7],
+                "city": parts[8],
+                "state": parts[9],
+                "zip": parts[10],
+                "country": parts[11],
+                "dimensions": parts[13] if len(parts) > 13 else "",
+                "weight": parts[14] if len(parts) > 14 else "",
+                "contents": parts[15] if len(parts) > 15 else "",
+            }
 
+            # Check if sender address is provided (columns 16+)
+            if len(parts) >= 25 and parts[16]:
+                sender_country_raw = parts[22] if len(parts) > 22 else "US"
+                result["sender_address"] = {
+                    "name": parts[16],
+                    "street1": parts[17] if len(parts) > 17 else "",
+                    "street2": parts[18] if len(parts) > 18 else "",
+                    "city": parts[19] if len(parts) > 19 else "",
+                    "state": parts[20] if len(parts) > 20 else "",
+                    "zip": parts[21] if len(parts) > 21 else "",
+                    "country": normalize_country_code(sender_country_raw),
+                    "phone": parts[23] if len(parts) > 23 else "",
+                    "email": parts[24] if len(parts) > 24 else "",
+                }
+
+            # Validate required fields for standard format
+            has_required_fields = (
+                result["recipient_name"]
+                and result["street1"]
+                and result["country"]
+            )
+            weight_valid = True
+            if result["weight"]:
+                try:
+                    parse_weight(result["weight"])
+                except ValueError as e:
+                    weight_valid = False
+                    logger.warning(
+                        f"Standard format weight validation failed: {e}, "
+                        "trying field detection"
+                    )
+
+            if has_required_fields and weight_valid:
+                # Standard format is valid
+                return result
+
+        except (IndexError, ValueError) as e:
+            # Standard format parsing failed, fall through to field detection
+            logger.debug(f"Standard format parsing failed: {e}, trying field detection")
+
+    # Use intelligent field detection (flexible format or fallback)
+    detected = map_fields_by_detection(parts)
+
+    # Find contents field if not detected
+    if not detected.get("contents"):
+        # Look for contents keywords or use last unclassified text field
+        contents_keywords = ["description", "item", "product", "contents", "goods"]
+        for part in parts:
+            if not part:
+                continue
+            part_lower = part.lower()
+            # Check if column header or value contains contents keywords
+            if any(keyword in part_lower for keyword in contents_keywords):
+                detected["contents"] = part
+                break
+
+        # If still not found, use last non-empty field that's not already mapped
+        if not detected.get("contents"):
+            # Find which fields were already detected/mapped
+            mapped_values = set()
+            mapped_values.update([detected.get("recipient_email", "")])
+            mapped_values.update([detected.get("recipient_phone", "")])
+            mapped_values.update([detected.get("country", "")])
+            mapped_values.update([detected.get("zip", "")])
+            mapped_values.update([detected.get("state", "")])
+            mapped_values.update([detected.get("dimensions", "")])
+            mapped_values.update([detected.get("weight", "")])
+            mapped_values.update([detected.get("recipient_name", "")])
+            mapped_values.update([detected.get("street1", "")])
+            mapped_values.update([detected.get("city", "")])
+
+            # Use last unclassified field as contents
+            for idx in range(len(parts) - 1, -1, -1):
+                if parts[idx] and parts[idx] not in mapped_values:
+                    field_type = detect_field_type(parts[idx])
+                    if not field_type:  # Not a recognized field type
+                        detected["contents"] = parts[idx]
+                        break
+
+    # Merge with defaults for missing fields
     result = {
-        "origin_state": parts[0].strip(),
-        "carrier_preference": parts[1].strip(),
-        "recipient_name": parts[2].strip(),
-        "recipient_last_name": parts[3].strip(),
-        "recipient_phone": parts[4].strip(),
-        "recipient_email": parts[5].strip(),
-        "street1": parts[6].strip(),
-        "street2": parts[7].strip(),
-        "city": parts[8].strip(),
-        "state": parts[9].strip(),
-        "zip": parts[10].strip(),
-        "country": parts[11].strip(),
-        "dimensions": parts[13].strip(),
-        "weight": parts[14].strip(),
-        "contents": parts[15].strip(),
+        "origin_state": detected.get("origin_state", ""),
+        "carrier_preference": detected.get("carrier_preference", ""),
+        "recipient_name": detected.get("recipient_name", ""),
+        "recipient_last_name": detected.get("recipient_last_name", ""),
+        "recipient_phone": detected.get("recipient_phone", ""),
+        "recipient_email": detected.get("recipient_email", ""),
+        "street1": detected.get("street1", ""),
+        "street2": detected.get("street2", ""),
+        "city": detected.get("city", ""),
+        "state": detected.get("state", ""),
+        "zip": detected.get("zip", ""),
+        "country": detected.get("country", ""),
+        "dimensions": detected.get("dimensions", "12x12x4"),
+        "weight": detected.get("weight", ""),
+        "contents": detected.get("contents", ""),
     }
 
-    # Check if sender address is provided (columns 16+)
-    # Format: sender_name, sender_street1, sender_street2, sender_city,
-    # sender_state, sender_zip, sender_country, sender_phone, sender_email
-    if len(parts) >= 25 and parts[16].strip():
-        sender_country_raw = parts[22].strip() if len(parts) > 22 else "US"
+    # Add sender address if detected
+    if any(
+        detected.get(key)
+        for key in ["sender_email", "sender_phone", "sender_country", "sender_zip", "sender_city"]
+    ):
         result["sender_address"] = {
-            "name": parts[16].strip(),
-            "street1": parts[17].strip() if len(parts) > 17 else "",
-            "street2": parts[18].strip() if len(parts) > 18 else "",
-            "city": parts[19].strip() if len(parts) > 19 else "",
-            "state": parts[20].strip() if len(parts) > 20 else "",
-            "zip": parts[21].strip() if len(parts) > 21 else "",
-            "country": normalize_country_code(sender_country_raw),
-            "phone": parts[23].strip() if len(parts) > 23 else "",
-            "email": parts[24].strip() if len(parts) > 24 else "",
+            "name": detected.get("sender_name", ""),
+            "street1": detected.get("sender_street1", ""),
+            "street2": detected.get("sender_street2", ""),
+            "city": detected.get("sender_city", ""),
+            "state": detected.get("sender_state", ""),
+            "zip": detected.get("sender_zip", ""),
+            "country": normalize_country_code(detected.get("sender_country", "US")),
+            "phone": detected.get("sender_phone", ""),
+            "email": detected.get("sender_email", ""),
         }
+
+    # Validate required fields
+    missing_fields = []
+    if not result["recipient_name"]:
+        missing_fields.append("recipient_name")
+    if not result["street1"]:
+        missing_fields.append("street1 (recipient address)")
+    if not result["country"]:
+        missing_fields.append("country")
+    if not result["weight"]:
+        missing_fields.append("weight")
+
+    if missing_fields:
+        raise ValueError(
+            f"Missing required fields: {', '.join(missing_fields)}. "
+            f"Detected fields: {[k for k, v in result.items() if v and k != 'sender_address']}"
+        )
+
+    # Validate weight is parseable
+    try:
+        parse_weight(result["weight"])
+    except ValueError as e:
+        raise ValueError(f"Invalid weight format: {e}") from e
 
     return result
 
@@ -968,114 +1369,449 @@ def parse_human_readable_shipment(text: str) -> dict | None:
     """
     Parse human-readable shipment data into standard format.
 
-    Handles formats like:
+    Handles multiple formats:
+    1. Simple address block (single sender/recipient)
+    2. Sender + Recipient format (separated by blank lines)
+    3. With customs information
+
+    Example:
     ```
-    Company Name Inc.
+    Company Name
     John Smith
-    123 Main St
+    123 Main St Suite 2
     City, State ZIP
     Country
 
-    Email: email@example.com
-    Phone: +1234567890
+    Phone 555-123-4567
+    Email john@example.com
 
-    Dimensions: 13x13x7
-    Weight: 4lb 5oz
+    RECIPIENT NAME
+    456 Main St
+    City
+    State ZIP
+    Country
+
+    Phone 555-987-6543
+    Email recipient@example.com
+
+    Dimensions 12x12x2
+    Weight 5.26lb
+
+    Customs item: Anime Toy Set
+    Price: $35
+    Quantity: 1
     ```
 
     Returns:
-        Standardized shipment dict or None
+        Standardized shipment dict with sender/recipient or None
     """
-    lines = [l.strip() for l in text.strip().split("\n") if l.strip()]
+    lines = [
+        line.strip()
+        for line in text.strip().split("\n")
+        if line.strip()
+    ]
 
     if len(lines) < 5:
         return None
 
-    result = {}
-    email = None
-    phone = None
-    dimensions = None
-    weight = None
+    # Try to detect if this is sender+recipient format (has two address blocks)
+    # Look for double blank line or keywords like "Ship to:", "Recipient:", etc.
+    raw_text = text.strip()
+    sections = re.split(r"\n\s*\n", raw_text)  # Split by blank lines
 
-    # Extract email
-    for line in lines:
-        email_match = re.search(r"([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})", line)
-        if email_match:
-            email = email_match.group(1)
+    result: dict[str, Any] = {
+        "sender": None,
+        "recipient": None,
+        "dimensions": None,
+        "weight": None,
+        "contents": None,
+        "customs_price": None,
+        "customs_quantity": None,
+    }
 
-        # Extract phone
-        phone_match = re.search(r"(\+?\d[\d\s\-()]{7,20})", line)
-        if phone_match:
-            phone = (
-                phone_match.group(1)
-                .replace(" ", "")
-                .replace("-", "")
-                .replace("(", "")
-                .replace(")", "")
+    # Extract metadata (phone, email, dimensions, weight, customs) from all sections
+    all_phones = []
+    all_emails = []
+
+    for section in sections:
+        section_lines = [
+            line.strip()
+            for line in section.split("\n")
+            if line.strip()
+        ]
+
+        for line in section_lines:
+            # Extract email
+            email_match = re.search(
+                r"(?:email[:\s]+)?([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})",
+                line,
+                re.IGNORECASE,
             )
+            if email_match:
+                all_emails.append(email_match.group(1))
 
-        # Extract dimensions
-        if "dimension" in line.lower() or "x" in line:
-            dim_match = re.search(r"(\d+)\s*x\s*(\d+)\s*x\s*(\d+)", line, re.IGNORECASE)
-            if dim_match:
-                dimensions = f"{dim_match.group(1)} x {dim_match.group(2)} x {dim_match.group(3)}"
+            # Extract phone (flexible format)
+            phone_match = re.search(r"(?:phone[:\s]+)?(\+?[\d\s\-()]{7,20})", line, re.IGNORECASE)
+            if phone_match and not email_match:  # Don't capture numbers in emails
+                phone_clean = (
+                    phone_match.group(1)
+                    .replace(" ", "")
+                    .replace("-", "")
+                    .replace("(", "")
+                    .replace(")", "")
+                )
+                if len(phone_clean) >= 7:
+                    all_phones.append(phone_clean)
 
-        # Extract weight
-        if "weight" in line.lower() or "lb" in line.lower():
-            weight_match = re.search(
-                r"(\d+(?:\.\d+)?)\s*lb(?:s)?(?:\s*(\d+(?:\.\d+)?)\s*oz)?", line, re.IGNORECASE
-            )
-            if weight_match:
-                lbs = float(weight_match.group(1))
-                oz = float(weight_match.group(2)) if weight_match.group(2) else 0
-                weight = f"{lbs + oz / 16} lbs"
+            # Extract dimensions (flexible: "Dimensions 12x12x2" or "12x12x2")
+            if result["dimensions"] is None:
+                dim_match = re.search(
+                    r"(?:dimensions?[:\s]+)?(\d+)\s*x\s*(\d+)\s*x\s*(\d+)",
+                    line,
+                    re.IGNORECASE,
+                )
+                if dim_match:
+                    result["dimensions"] = (
+                        f"{dim_match.group(1)} x {dim_match.group(2)} x {dim_match.group(3)}"
+                    )
 
-    # Parse address lines (first non-metadata lines)
-    address_lines = []
-    for line in lines:
-        if not any(
-            kw in line.lower() for kw in ["email", "phone", "dimension", "weight", "@"]
-        ) and not re.search(
-            r"\+?\d{10,}", line
-        ):  # Skip phone-only lines
+            # Extract weight (flexible: "Weight 5.26lb" or "5.26lb")
+            if result["weight"] is None:
+                weight_match = re.search(
+                    r"(?:weight[:\s]+)?(\d+(?:\.\d+)?)\s*lb(?:s)?", line, re.IGNORECASE
+                )
+                if weight_match:
+                    result["weight"] = f"{weight_match.group(1)} lbs"
+
+            # Extract customs item description
+            if result["contents"] is None:
+                customs_match = re.search(
+                    r"(?:customs item|item|contents|description)[:\s]+(.+)",
+                    line,
+                    re.IGNORECASE,
+                )
+                if customs_match:
+                    result["contents"] = customs_match.group(1).strip()
+
+            # Extract customs price
+            if result["customs_price"] is None:
+                price_match = re.search(
+                    r"(?:price|value)[:\s]+\$?(\d+(?:\.\d+)?)", line, re.IGNORECASE
+                )
+                if price_match:
+                    result["customs_price"] = float(price_match.group(1))
+
+            # Extract customs quantity
+            if result["customs_quantity"] is None:
+                qty_match = re.search(r"(?:quantity|qty)[:\s]+(\d+)", line, re.IGNORECASE)
+                if qty_match:
+                    result["customs_quantity"] = int(qty_match.group(1))
+
+    # Parse address sections (filter out metadata lines)
+    address_sections = []
+    for section in sections:
+        section_lines = [
+            line.strip()
+            for line in section.split("\n")
+            if line.strip()
+        ]
+        # Filter out metadata lines
+        address_lines = []
+        for line in section_lines:
+            # Skip lines with keywords
+            if any(
+                kw in line.lower()
+                for kw in [
+                    "email",
+                    "phone",
+                    "dimension",
+                    "weight",
+                    "customs",
+                    "price",
+                    "quantity",
+                    "item:",
+                ]
+            ):
+                continue
+            # Skip lines that are only phone/email
+            if "@" in line or re.match(r"^\+?[\d\s\-()]+$", line):
+                continue
             address_lines.append(line)
 
-    if len(address_lines) >= 4:
-        # Detect company (first line with business indicators)
-        company_indicators = ["inc", "llc", "ltd", "corporation", "corp", "co.", "company"]
-        has_company = any(indicator in address_lines[0].lower() for indicator in company_indicators)
+        if len(address_lines) >= 3:  # Minimum for a valid address
+            address_sections.append(address_lines)
 
-        result["company"] = address_lines[0] if has_company else ""
-        result["name"] = address_lines[1] if has_company else address_lines[0]
-        result["street1"] = address_lines[2] if has_company else address_lines[1]
+    # Parse addresses
+    def parse_address_block(lines: list[str], phone: str = "", email: str = "") -> dict:
+        """Parse single address block."""
+        addr = {
+            "company": "",
+            "name": "",
+            "street1": "",
+            "street2": "",
+            "city": "",
+            "state": "",
+            "zip": "",
+            "country": "US",
+            "phone": phone,
+            "email": email,
+        }
 
-        # Parse city, state, zip
-        location_line = address_lines[3] if has_company else address_lines[2]
-        city_state_match = re.match(r"([^,]+),\s*([A-Z]{2})\s+(\d{5}(?:-\d{4})?)", location_line)
-        if city_state_match:
-            result["city"] = city_state_match.group(1).strip()
-            result["state"] = city_state_match.group(2)
-            result["zip"] = city_state_match.group(3)
+        if not lines:
+            return addr
 
-        # Country (normalize common variations)
-        country_line = (
-            address_lines[4]
-            if has_company and len(address_lines) > 4
-            else address_lines[3] if len(address_lines) > 3 else "US"
-        )
-        if country_line.lower() in ["usa", "united states", "us"]:
-            result["country"] = "US"
-        elif country_line.lower() in ["canada", "ca"]:
-            result["country"] = "CA"
+        # Common country names for detection
+        common_countries = [
+            "usa",
+            "us",
+            "united states",
+            "france",
+            "canada",
+            "uk",
+            "united kingdom",
+            "germany",
+            "spain",
+            "italy",
+        ]
+
+        idx = 0
+
+        # First line: company or name
+        company_indicators = [
+            "inc",
+            "llc",
+            "ltd",
+            "corporation",
+            "corp",
+            "co.",
+            "company",
+            "&",
+            "games",
+            "shop",
+            "store",
+        ]
+        has_company = any(indicator in lines[0].lower() for indicator in company_indicators)
+
+        if has_company and len(lines) > 1:
+            addr["company"] = lines[0]
+            addr["name"] = lines[1]
+            idx = 2
         else:
-            result["country"] = country_line
+            addr["name"] = lines[0]
+            idx = 1
 
-    result["email"] = email or ""
-    result["phone"] = phone or ""
-    result["dimensions"] = dimensions or "12 x 12 x 4"
-    result["weight"] = weight or "1 lbs"
+        # Next line(s): street address
+        if idx < len(lines):
+            addr["street1"] = lines[idx]
+            idx += 1
 
-    return result if result.get("name") else None
+        # Look ahead to identify structure
+        # Scan remaining lines to find postal code and country
+        postal_idx = None
+        country_idx = None
+        for i in range(idx, len(lines)):
+            line_lower = lines[i].lower().strip()
+            # Check if it's a postal code (5+ digits)
+            if re.match(r"^\d{5,}(?:-\d{4})?$", lines[i]) or re.match(r"^\d{5,}$", lines[i]):
+                postal_idx = i
+            # Check if it's a country name
+            elif line_lower in common_countries:
+                country_idx = i
+
+        # If we found postal code and country, we know the structure
+        if postal_idx is not None and country_idx is not None:
+            # Everything between street1 and postal is city/state
+            # Everything between postal and country is nothing (or state)
+            # Country is at country_idx
+
+            # Street2 is everything between street1 and postal (if any)
+            if postal_idx > idx:
+                # Could be street2, city, or state
+                remaining_before_postal = lines[idx:postal_idx]
+                if len(remaining_before_postal) == 1:
+                    # Single line - likely city (or street2 if it looks like address)
+                    if any(c.isdigit() for c in remaining_before_postal[0]):
+                        addr["street2"] = remaining_before_postal[0]
+                    else:
+                        addr["city"] = remaining_before_postal[0]
+                elif len(remaining_before_postal) == 2:
+                    # Two lines - likely street2 and city
+                    addr["street2"] = remaining_before_postal[0]
+                    addr["city"] = remaining_before_postal[1]
+                else:
+                    # Multiple lines - take first as street2, second as city
+                    addr["street2"] = (
+                        remaining_before_postal[0] if remaining_before_postal else ""
+                    )
+                    addr["city"] = (
+                        remaining_before_postal[1]
+                        if len(remaining_before_postal) > 1
+                        else ""
+                    )
+
+            addr["zip"] = lines[postal_idx]
+            addr["country"] = normalize_country_code(lines[country_idx])
+        else:
+            # Fallback: try to parse sequentially
+            # Next line could be street2, city, or postal
+            if idx < len(lines):
+                next_line = lines[idx]
+                # If it's a postal code, we're missing city
+                if re.match(r"^\d{5,}(?:-\d{4})?$", next_line) or re.match(r"^\d{5,}$", next_line):
+                    addr["zip"] = next_line
+                    idx += 1
+                # If it's a country, we're missing city and postal
+                elif next_line.lower() in common_countries:
+                    addr["country"] = normalize_country_code(next_line)
+                    idx += 1
+                # Otherwise, treat as street2 or city
+                else:
+                    # Check if next line after this is postal or country
+                    if idx + 1 < len(lines):
+                        next_next = lines[idx + 1]
+                        if re.match(r"^\d{5,}(?:-\d{4})?$", next_next) or re.match(
+                            r"^\d{5,}$", next_next
+                        ):
+                            # This is city, next is postal
+                            addr["city"] = next_line
+                            addr["zip"] = next_next
+                            idx += 2
+                        elif next_next.lower() in common_countries:
+                            # This is city, next is country
+                            addr["city"] = next_line
+                            addr["country"] = normalize_country_code(next_next)
+                            idx += 2
+                        else:
+                            # This is street2
+                            addr["street2"] = next_line
+                            idx += 1
+                    else:
+                        # Last line - could be city or country
+                        if next_line.lower() in common_countries:
+                            addr["country"] = normalize_country_code(next_line)
+                        else:
+                            addr["city"] = next_line
+                        idx += 1
+
+            # Try to get postal code if not set
+            if not addr["zip"] and idx < len(lines):
+                zip_line = lines[idx]
+                if re.match(r"^\d{5,}(?:-\d{4})?$", zip_line) or re.match(r"^\d{5,}$", zip_line):
+                    addr["zip"] = zip_line
+                    idx += 1
+
+            # Try to get country if not set
+            if idx < len(lines):
+                country_line = lines[idx]
+                if country_line.lower() in common_countries:
+                    addr["country"] = normalize_country_code(country_line)
+
+        return addr
+
+    # Assign addresses based on count
+    if len(address_sections) >= 2:
+        # Two address blocks: sender + recipient
+        sender_phone = all_phones[0] if all_phones else ""
+        sender_email = all_emails[0] if all_emails else ""
+        result["sender"] = parse_address_block(address_sections[0], sender_phone, sender_email)
+        recipient_phone = (
+            all_phones[1] if len(all_phones) > 1 else all_phones[0] if all_phones else ""
+        )
+        recipient_email = (
+            all_emails[1] if len(all_emails) > 1 else all_emails[0] if all_emails else ""
+        )
+        result["recipient"] = parse_address_block(
+            address_sections[1], recipient_phone, recipient_email
+        )
+    elif len(address_sections) == 1:
+        # Single address block: recipient only
+        recipient_phone = all_phones[0] if all_phones else ""
+        recipient_email = all_emails[0] if all_emails else ""
+        result["recipient"] = parse_address_block(
+            address_sections[0], recipient_phone, recipient_email
+        )
+    else:
+        return None
+
+    # Defaults
+    result["dimensions"] = result["dimensions"] or "12 x 12 x 4"
+    result["weight"] = result["weight"] or "1 lbs"
+
+    return result if result.get("recipient") and result["recipient"].get("name") else None
+
+
+def convert_natural_to_spreadsheet(text: str) -> str | None:
+    """
+    Convert natural text format to tab-separated spreadsheet format.
+
+    Args:
+        text: Natural text with sender, recipient, customs info
+
+    Returns:
+        Tab-separated line ready for parse_spreadsheet_line() or None if parsing fails
+    """
+    parsed = parse_human_readable_shipment(text)
+    if not parsed:
+        return None
+
+    sender = parsed.get("sender")
+    recipient = parsed["recipient"]
+
+    # Build tab-separated line
+    # Format: origin_state, carrier, recipient_name, recipient_last, phone, email,
+    #         street1, street2, city, state, zip, country, unused, dimensions, weight, contents,
+    #         sender_name, sender_street1, sender_street2, sender_city, sender_state, sender_zip,
+    #         sender_country, sender_phone, sender_email
+    parts = []
+
+    if sender:
+        # Use sender's state as origin
+        parts.append(sender.get("state") or "NV")  # Default to Nevada
+        parts.append("")  # Carrier preference (empty)
+    else:
+        # No sender - will auto-detect warehouse
+        parts.append("Nevada")  # Default origin
+        parts.append("")  # Carrier preference
+
+    # Recipient info (split name)
+    recipient_full_name = recipient.get("name", "").strip()
+    name_parts = recipient_full_name.split(None, 1)  # Split on first space
+    parts.append(name_parts[0] if name_parts else "")  # First name
+    parts.append(name_parts[1] if len(name_parts) > 1 else "")  # Last name
+    parts.append(recipient.get("phone", ""))
+    parts.append(recipient.get("email", ""))
+    parts.append(recipient.get("street1", ""))
+    parts.append(recipient.get("street2", ""))
+    parts.append(recipient.get("city", ""))
+    parts.append(recipient.get("state", ""))
+    parts.append(recipient.get("zip", ""))
+    parts.append(recipient.get("country", "US"))
+    parts.append("")  # Unused column
+
+    # Dimensions and weight
+    parts.append(parsed.get("dimensions", "12 x 12 x 4"))
+    parts.append(parsed.get("weight", "1 lbs"))
+
+    # Contents (with customs price/quantity if available)
+    contents = parsed.get("contents", "Package")
+    if parsed.get("customs_price") and parsed.get("customs_quantity"):
+        # Embed customs info in contents for smart_customs to parse
+        contents = f"{contents} (${parsed['customs_price']} x{parsed['customs_quantity']})"
+    parts.append(contents)
+
+    # Sender address fields (if provided)
+    if sender:
+        parts.append(sender.get("name", ""))
+        parts.append(sender.get("street1", ""))
+        parts.append(sender.get("street2", ""))
+        parts.append(sender.get("city", ""))
+        parts.append(sender.get("state", ""))
+        parts.append(sender.get("zip", ""))
+        parts.append(sender.get("country", "US"))
+        parts.append(sender.get("phone", ""))
+        parts.append(sender.get("email", ""))
+
+    return "\t".join(parts)
 
 
 def _generate_rate_table(shipments: list[dict]) -> str:
@@ -1250,13 +1986,13 @@ def _generate_rate_table(shipments: list[dict]) -> str:
     return "\n".join(lines)
 
 
-def register_bulk_tools(mcp, easypost_service=None):
-    """Register bulk shipment tools with MCP server."""
+def register_shipment_tools(mcp, easypost_service=None):
+    """Register shipment tools with MCP server."""
 
-    @mcp.tool(tags=["bulk", "rates", "shipping", "m3-optimized"])
-    async def parse_and_get_bulk_rates(
+    @mcp.tool(tags=["shipment", "rates", "shipping", "m3-optimized"])
+    async def get_shipment_rates(
         spreadsheet_data: str,
-        ctx: Context = None,
+        ctx: Context | None = None,
     ) -> dict:
         """
         Get shipping rates for single or multiple shipments - M3 Max Optimized.
@@ -1322,8 +2058,40 @@ def register_bulk_tools(mcp, easypost_service=None):
             if ctx:
                 await ctx.info("🚀 M3 Max: Starting parallel rate calculation (16 workers)...")
 
-            # Split into lines and filter empty
-            lines = [l.strip() for l in spreadsheet_data.split("\n") if l.strip()]
+            # Auto-detect format: tab-separated spreadsheet or natural text
+            # If first line has no tabs, assume natural text format
+            first_line = spreadsheet_data.split("\n")[0] if spreadsheet_data else ""
+            is_natural_format = "\t" not in first_line
+
+            if is_natural_format:
+                if ctx:
+                    await ctx.info(
+                        "📝 Detected natural text format - converting to spreadsheet format..."
+                    )
+
+                # Convert natural text to tab-separated format
+                converted_line = convert_natural_to_spreadsheet(spreadsheet_data)
+                if not converted_line:
+                    return {
+                        "status": "error",
+                        "data": None,
+                        "message": (
+                            "Failed to parse natural text format. "
+                            "Ensure sender and recipient addresses are clearly separated "
+                            "by blank lines."
+                        ),
+                        "timestamp": datetime.now(UTC).isoformat(),
+                    }
+                lines = [converted_line]
+                if ctx:
+                    await ctx.info("✅ Successfully converted natural text to spreadsheet format")
+            else:
+                # Split into lines and filter empty (standard tab-separated format)
+                lines = [
+                    line.strip()
+                    for line in spreadsheet_data.split("\n")
+                    if line.strip()
+                ]
 
             if not lines:
                 return {
@@ -1567,7 +2335,7 @@ def register_bulk_tools(mcp, easypost_service=None):
             results = await asyncio.gather(*tasks, return_exceptions=True)
 
             # Convert exceptions to error results
-            processed_results = []
+            processed_results: list[dict[str, Any]] = []
             for idx, result in enumerate(results):
                 if isinstance(result, Exception):
                     logger.error(f"Task {idx + 1} raised exception: {result}")
@@ -1577,8 +2345,10 @@ def register_bulk_tools(mcp, easypost_service=None):
                             "error": f"Exception: {str(result)}",
                         }
                     )
-                else:
-                    processed_results.append(result)
+                elif isinstance(result, dict):
+                    # Type cast: result is dict after isinstance check
+                    dict_result: dict[str, Any] = result
+                    processed_results.append(dict_result)
 
             # Performance metrics
             duration = perf_counter() - start_time

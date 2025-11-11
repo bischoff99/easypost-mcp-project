@@ -1,7 +1,9 @@
 ---
-description: "Essential optimization patterns for personal use"
+description: 'Essential optimization patterns for personal use'
 globs: []
 alwaysApply: false
+version: '1.0.0'
+lastUpdated: '2025-11-18'
 ---
 
 # Essential Optimizations

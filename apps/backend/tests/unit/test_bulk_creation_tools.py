@@ -1,21 +1,21 @@
-"""Unit tests for bulk creation tools."""
+"""Unit tests for shipment creation tools."""
 
 from unittest.mock import AsyncMock, MagicMock
 
-from src.mcp_server.tools.bulk_creation_tools import register_bulk_creation_tools
+from src.mcp_server.tools.bulk_creation_tools import register_shipment_creation_tools
 
 
-class TestBulkCreationToolsRegistration:
-    """Test bulk creation tools registration."""
+class TestShipmentCreationToolsRegistration:
+    """Test shipment creation tools registration."""
 
-    def test_register_bulk_creation_tools(self):
+    def test_register_shipment_creation_tools(self):
         """Test that tools are registered with MCP."""
         mock_mcp = MagicMock()
         mock_easypost_service = MagicMock()
         mock_easypost_service.create_shipment = AsyncMock()
         mock_easypost_service.client = MagicMock()
 
-        register_bulk_creation_tools(mock_mcp, mock_easypost_service)
+        register_shipment_creation_tools(mock_mcp, mock_easypost_service)
 
         # Should register two tools
         assert mock_mcp.tool.call_count == 2

@@ -100,7 +100,7 @@ python -m src.mcp
 [Frontend] VITE v5.0.0  ready in 432 ms
 [Frontend] ➜  Local:   http://localhost:5173/
 [MCP] INFO:     MCP server started with 15 tools
-[Backend] INFO:     ThreadPoolExecutor: 32 workers on 16 cores
+[Backend] INFO:     ThreadPoolExecutor: auto-detected workers
 [Frontend] ➜  Network: http://192.168.1.100:5173/
 ```
 
@@ -127,7 +127,7 @@ python -m src.mcp
 ```python
 # backend/src/utils/config.py
 EASYPOST_API_KEY: from .env
-WORKERS: 32 (M3 Max)
+WORKERS: auto-detected (max 16)
 LOG_LEVEL: "info"
 ```
 
@@ -210,4 +210,3 @@ echo "EASYPOST_API_KEY=your_key_here" >> backend/.env
 ```
 
 **One command to rule them all - full dev environment in seconds!**
-

@@ -1,27 +1,46 @@
+---
+description: 'Rules index and quick reference guide for all coding standards'
+globs: []
+alwaysApply: false
+version: '1.0.0'
+lastUpdated: '2025-11-18'
+---
+
 # Rules Index
 
 Quick reference for all coding standards in this project.
+
+**Metadata:**
+
+- **Total Files**: 8 rule files (7 Essential + this index)
+- **Last Updated**: 2025-11-18
+- **Version**: 1.0.0
+- **Compliance**: November 2025 best practices
 
 ---
 
 ## 🚀 Essential Rules (Cursor.Directory Optimized)
 
-These comprehensive rules were curated from [cursor.directory](https://cursor.directory/) and optimized for this project's FastAPI + React + PostgreSQL stack.
+These comprehensive rules were curated from [cursor.directory](https://cursor.directory/) and optimised for this project's FastAPI + React + PostgreSQL stack.
 
 ### 01-fastapi-python.mdc ⭐
+
 **Comprehensive FastAPI & Python Best Practices**
+
 - Functional programming patterns
 - Type hints & Pydantic v2 validation
 - Error handling with early returns
 - Performance optimization (async, caching, lazy loading)
 - PostgreSQL + SQLAlchemy 2.0 patterns
 - Parallel processing with asyncio.gather
-- M3 Max optimizations (16+ workers)
+- M3 Max optimizations (max 16 workers)
 - API response standards
 - Comprehensive examples & patterns
 
 ### 02-react-vite-frontend.mdc ⭐
+
 **Complete React + Vite Frontend Guide**
+
 - Functional components with hooks
 - State management (useState, Zustand)
 - API integration patterns
@@ -33,7 +52,9 @@ These comprehensive rules were curated from [cursor.directory](https://cursor.di
 - Vite configuration for M3 Max
 
 ### 03-testing-best-practices.mdc ⭐
+
 **Comprehensive Testing Strategy**
+
 - Backend: pytest with 16 parallel workers
 - Frontend: vitest with 16 parallel workers
 - AAA pattern (Arrange, Act, Assert)
@@ -45,7 +66,9 @@ These comprehensive rules were curated from [cursor.directory](https://cursor.di
 - Coverage enforced: 36% backend, 70% frontend (progressive increase plan)
 
 ### 04-mcp-development.mdc ⭐
+
 **MCP (Model Context Protocol) Development**
+
 - FastMCP server patterns
 - Tool design for AI agents
 - Batch operations with parallel processing
@@ -58,10 +81,12 @@ These comprehensive rules were curated from [cursor.directory](https://cursor.di
 - 100% coverage requirement
 
 ### 05-m3-max-optimizations.mdc ⭐
+
 **Hardware-Specific Optimizations**
+
 - Leverage 16 CPU cores effectively
-- Parallel processing with asyncio (16+ workers)
-- PostgreSQL connection pooling (40+ connections)
+- Parallel processing with asyncio (max 16 workers)
+- PostgreSQL connection pooling (max 20 connections)
 - Uvicorn configuration for production
 - Batch operations with chunking
 - Frontend build optimizations
@@ -71,28 +96,45 @@ These comprehensive rules were curated from [cursor.directory](https://cursor.di
 - Common pitfalls to avoid
 
 ### 06-quick-reference.mdc ⭐
-**Quick Reference & Templates** *(Always Applied)*
+
+**Quick Reference & Templates** _(Always Applied)_
+
 - Naming conventions table (Python & React)
 - Essential rules checklist
 - Code templates (Python async, React components)
 - Common commands & workflows
 - API response format standards
 
+### 07-learned-memories.mdc ⭐
+
+**Project-Specific Knowledge & Preferences** _(Always Applied)_
+
+- Project-specific patterns and conventions
+- User preferences and coding style choices
+- Technical decisions and their rationale
+- Recurring issues and solutions
+- Domain-specific knowledge storage
+
 ---
 
 ## 📖 Usage Guide
 
 ### For New Developers
+
 **Start here (in order):**
+
 1. Read `06-quick-reference.mdc` - Quick patterns and conventions
-2. Read `01-fastapi-python.mdc` - Backend fundamentals
-3. Read `02-react-vite-frontend.mdc` - Frontend fundamentals
-4. Skim `03-testing-best-practices.mdc` - Testing overview
-5. Reference `04-mcp-development.mdc` when working with MCP tools
-6. Reference `05-m3-max-optimizations.mdc` for performance work
+2. Read `07-learned-memories.mdc` - Project-specific knowledge
+3. Read `01-fastapi-python.mdc` - Backend fundamentals
+4. Read `02-react-vite-frontend.mdc` - Frontend fundamentals
+5. Skim `03-testing-best-practices.mdc` - Testing overview
+6. Reference `04-mcp-development.mdc` when working with MCP tools
+7. Reference `05-m3-max-optimizations.mdc` for performance work
 
 ### For Specific Tasks
+
 - **Quick reference**: `06-quick-reference.mdc` (always applied)
+- **Project knowledge**: `07-learned-memories.mdc` (always applied)
 - **Backend API work**: `01-fastapi-python.mdc`
 - **Frontend UI work**: `02-react-vite-frontend.mdc`
 - **Writing tests**: `03-testing-best-practices.mdc`
@@ -100,34 +142,36 @@ These comprehensive rules were curated from [cursor.directory](https://cursor.di
 - **Performance optimization**: `05-m3-max-optimizations.mdc`
 
 ### Quick Patterns Reference
-All Essential Rules (01-06) include comprehensive, copy-paste-ready examples.
+
+All Essential Rules (01-07) include comprehensive, copy-paste-ready examples.
 
 ---
 
 ## 🎯 Rule Priority
 
-| Priority | Rules | When to Use |
-|----------|-------|-------------|
-| **Always Applied** | 06 | Quick reference (automatic) |
-| **Must Read** | 01, 02, 03 | All development work |
-| **MCP Work** | 04 | When building/testing MCP tools |
-| **Performance** | 05 | Optimisation, bulk operations |
+| Priority           | Rules      | When to Use                                     |
+| ------------------ | ---------- | ----------------------------------------------- |
+| **Always Applied** | 06, 07     | Quick reference & project knowledge (automatic) |
+| **Must Read**      | 01, 02, 03 | All development work                            |
+| **MCP Work**       | 04         | When building/testing MCP tools                 |
+| **Performance**    | 05         | Optimisation, bulk operations                   |
 
 ---
 
 ## 📊 Coverage Map
 
-| Topic | Primary Rule | Additional Context |
-|-------|--------------|-------------------|
-| **Quick Reference** | 06-quick-reference.mdc | Always applied |
-| **FastAPI** | 01-fastapi-python.mdc | Comprehensive backend patterns |
-| **React** | 02-react-vite-frontend.mdc | Complete frontend guide |
-| **Testing** | 03-testing-best-practices.mdc | Backend & frontend testing |
-| **MCP** | 04-mcp-development.mdc | AI agent tool development |
-| **Performance** | 05-m3-max-optimizations.mdc | M3 Max hardware tuning |
-| **Error Handling** | 01-fastapi-python.mdc | Early returns, guard clauses |
-| **Security** | 01, 02 | Env vars, input validation |
-| **Deployment** | 05-m3-max-optimizations.mdc | Production configuration |
+| Topic                 | Primary Rule                  | Additional Context             |
+| --------------------- | ----------------------------- | ------------------------------ |
+| **Quick Reference**   | 06-quick-reference.mdc        | Always applied                 |
+| **Project Knowledge** | 07-learned-memories.mdc       | Always applied                 |
+| **FastAPI**           | 01-fastapi-python.mdc         | Comprehensive backend patterns |
+| **React**             | 02-react-vite-frontend.mdc    | Complete frontend guide        |
+| **Testing**           | 03-testing-best-practices.mdc | Backend & frontend testing     |
+| **MCP**               | 04-mcp-development.mdc        | AI agent tool development      |
+| **Performance**       | 05-m3-max-optimizations.mdc   | M3 Max hardware tuning         |
+| **Error Handling**    | 01-fastapi-python.mdc         | Early returns, guard clauses   |
+| **Security**          | 01, 02                        | Env vars, input validation     |
+| **Deployment**        | 05-m3-max-optimizations.mdc   | Production configuration       |
 
 ---
 
@@ -141,8 +185,10 @@ All Essential Rules (01-06) include comprehensive, copy-paste-ready examples.
 
 ---
 
-**Total**: 7 rule files (6 Essential + this index)
-**Last updated**: 2025-11-11
+**Total**: 8 rule files (7 Essential + this index)
+**Last updated**: 2025-11-18
+**Version**: 1.0.0
 **Source**: Optimised from cursor.directory + project-specific patterns
+**Compliance**: November 2025 best practices
 
-*For comprehensive project documentation, see `CLAUDE.md` in project root.*
+_For comprehensive project documentation, see `CLAUDE.md` in project root._

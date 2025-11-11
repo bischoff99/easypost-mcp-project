@@ -235,23 +235,3 @@ Content-Type: application/json
     }
   ]
 }
-
-###############################################
-# WEBHOOKS
-###############################################
-
-### Process EasyPost Webhook
-POST {{apiUrl}}/webhooks/easypost
-Content-Type: application/json
-X-Easypost-Hmac-Signature: test-signature
-
-{
-  "description": "tracker.updated",
-  "mode": "test",
-  "created_at": "2025-11-08T20:00:00Z",
-  "result": {
-    "id": "trk_xxx",
-    "tracking_code": "9434600208303110744580",
-    "status": "in_transit"
-  }
-}

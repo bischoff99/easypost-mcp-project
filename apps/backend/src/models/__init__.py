@@ -32,7 +32,6 @@ from .responses import (
     ShipmentsDBResponse,
     ShipmentsListResponse,
     TrackingResponse,
-    WebhookResponse,
 )
 from .shipment import Address, CustomsInfo, Parcel, Shipment, ShipmentEvent
 
@@ -73,6 +72,5 @@ __all__ = [
     "AnalyticsDashboardDBResponse",
     "DashboardStatsResponse",
     "CarrierPerformanceResponse",
-    "WebhookResponse",
     "PaginationInfo",
 ]

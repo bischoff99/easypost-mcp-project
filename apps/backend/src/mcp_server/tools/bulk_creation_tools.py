@@ -34,11 +34,11 @@ MAX_CONCURRENT = 16  # API concurrency limit (prevents rate limiting)
 # Use get_or_create_customs from src.services.smart_customs for customs info
 
 
-def register_bulk_creation_tools(mcp, easypost_service=None):
-    """Register bulk shipment creation tools with MCP server."""
+def register_shipment_creation_tools(mcp, easypost_service=None):
+    """Register shipment creation tools with MCP server."""
 
-    @mcp.tool(tags=["bulk", "create", "shipping", "m3-optimized"])
-    async def create_bulk_shipments(
+    @mcp.tool(tags=["shipment", "create", "shipping", "m3-optimized"])
+    async def create_shipment(
         spreadsheet_data: str,
         _from_city: str | None = None,
         purchase_labels: bool = False,
@@ -53,12 +53,12 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
         Uses spreadsheet format: tab-separated columns (paste from spreadsheet).
 
         TWO-PHASE WORKFLOW (Recommended):
-        1. Get rates first: create_bulk_shipments(data, purchase_labels=False)
+        1. Get rates first: create_shipment(data, purchase_labels=False)
            - Creates shipments with customs info
            - Returns all available rates for each shipment
            - No charges yet
 
-        2. Buy approved: buy_bulk_shipments(shipment_ids, carrier="USPS")
+        2. Buy approved: buy_shipment_label(shipment_ids, carrier="USPS")
            - Purchase labels for approved shipments only
            - Charges applied
 
@@ -98,8 +98,42 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                         await db_session.close()
                     db_session = None
 
-            # Parse lines
-            lines = [l.strip() for l in spreadsheet_data.split("\n") if l.strip()]
+            # Auto-detect format: tab-separated spreadsheet or natural text
+            # If first line has no tabs, assume natural text format
+            from src.mcp_server.tools.bulk_tools import convert_natural_to_spreadsheet
+
+            first_line = spreadsheet_data.split("\n")[0] if spreadsheet_data else ""
+            is_natural_format = "\t" not in first_line
+
+            if is_natural_format:
+                if ctx:
+                    await ctx.info(
+                        "📝 Detected natural text format - converting to spreadsheet format..."
+                    )
+
+                # Convert natural text to tab-separated format
+                converted_line = convert_natural_to_spreadsheet(spreadsheet_data)
+                if not converted_line:
+                    return {
+                        "status": "error",
+                        "data": None,
+                        "message": (
+                            "Failed to parse natural text format. "
+                            "Ensure sender and recipient addresses are clearly separated "
+                            "by blank lines."
+                        ),
+                        "timestamp": datetime.now(UTC).isoformat(),
+                    }
+                lines = [converted_line]
+                if ctx:
+                    await ctx.info("✅ Successfully converted natural text to spreadsheet format")
+            else:
+                # Parse lines (standard tab-separated format)
+                lines = [
+                    line.strip()
+                    for line in spreadsheet_data.split("\n")
+                    if line.strip()
+                ]
 
             if not lines:
                 return {
@@ -395,7 +429,8 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
             carrier_stats = aggregated["carrier_stats"]
             duration = aggregated["duration"]
 
-            # Store successful shipments in database (temporarily disabled - requires database refactoring)
+            # Store successful shipments in database
+            # (temporarily disabled - requires database refactoring)
             # TODO: Fix indentation and refactor database storage logic
             pass
 
@@ -469,8 +504,8 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
                 except Exception as close_error:
                     logger.warning(f"Error closing database session: {close_error}")
 
-    @mcp.tool(tags=["bulk", "purchase", "shipping", "m3-optimized"])
-    async def buy_bulk_shipments(
+    @mcp.tool(tags=["shipment", "purchase", "shipping", "m3-optimized"])
+    async def buy_shipment_label(
         shipment_ids: list[str],
         rate_ids: list[str],
         _customs_data: list[dict[str, Any]] | None = None,
@@ -480,9 +515,9 @@ def register_bulk_creation_tools(mcp, easypost_service=None):
         Purchase labels for pre-created shipments using selected rates (Phase 2).
 
         WORKFLOW:
-        1. create_bulk_shipments(data, purchase_labels=False) → get rates
+        1. create_shipment(data, purchase_labels=False) → get rates
         2. Review and select rates for each shipment
-        3. buy_bulk_shipments(shipment_ids, rate_ids) → purchase with selected rates
+        3. buy_shipment_label(shipment_ids, rate_ids) → purchase with selected rates
 
         Args:
             shipment_ids: List of shipment IDs to purchase (must match rate_ids length)

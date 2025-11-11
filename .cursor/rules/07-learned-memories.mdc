@@ -1,0 +1,139 @@
+---
+description: 'Project-specific knowledge, user preferences, and technical decisions'
+globs: []
+alwaysApply: true
+version: '1.0.0'
+lastUpdated: '2025-11-18'
+---
+
+# Learned Memories
+
+This file stores project-specific knowledge, user preferences, and technical decisions that should be remembered across sessions.
+
+## Purpose
+
+Use this file to document:
+
+- Project-specific patterns and conventions
+- User preferences and coding style choices
+- Technical decisions and their rationale
+- Recurring issues and their solutions
+- Domain-specific knowledge
+
+## How to Use
+
+When the AI learns something new about the project or user preferences, it should be documented here. This helps maintain consistency and avoids repeating explanations.
+
+## Project-Specific Knowledge
+
+### Architecture Decisions
+
+- **Single Database Pool**: Uses SQLAlchemy ORM pool only (dual-pool strategy removed for personal use)
+- **Max Workers**: Limited to 16 workers maximum (not 32+) for personal use
+- **Max DB Connections**: Limited to 20 connections total (pool_size=10, max_overflow=10)
+- **Personal Use Focus**: Enterprise features removed (webhooks, multi-tenancy, audit logs)
+
+### Code Style Preferences
+
+- **British English**: Use British spelling (colour, organisation, optimise)
+- **No Emojis**: Avoid emojis in commits, code comments, or professional output
+- **Functional Over OOP**: Prefer functional programming; classes only for external connectors and data models
+- **Type Safety**: Strict typing everywhere; avoid `any`, `unknown`, `Any`
+- **Error Handling**: Always raise errors explicitly; never silently ignore failures
+
+### Development Patterns
+
+- **Testing**: Backend uses pytest with auto-detected workers; Frontend uses vitest
+- **API Responses**: Standard format `{"status": "success/error", "data": ..., "message": "..."}`
+- **MCP Tools**: Return structured responses for AI consumption
+- **Database**: SQLAlchemy 2.0 async style with connection pooling
+
+### Tool Preferences
+
+- **Python Formatter**: Ruff (not Black) - modern all-in-one tool
+- **VS Code Settings**: Python language server set to Pylance
+- **File Watchers**: Exclude `__pycache__`, `.venv`, `node_modules`, `dist`, `build`
+
+## User Preferences
+
+### Communication Style
+
+- Direct and terse responses
+- Show actual code/solutions immediately
+- Treat as expert; skip obvious explanations
+- Answer first, then detailed explanation if needed
+
+### Code Philosophy
+
+- Minimal, focused changes
+- DRY, KISS, YAGNI principles
+- Check for existing logic before writing new code
+- Expand existing code when possible instead of creating duplicates
+
+## Technical Decisions
+
+### Database Strategy
+
+- Single SQLAlchemy async pool
+- Connection pooling: pool_size=10, max_overflow=10 (max 20 total)
+- Use DatabaseService abstraction for business logic
+- Direct asyncpg pool removed for simplicity
+
+### Performance Optimizations
+
+- Auto-detect worker counts (adapts to machine)
+- Parallel processing when beneficial (not excessive)
+- Simple patterns preferred over complex optimizations
+- Measure first, optimize only when needed
+
+### Testing Strategy
+
+- Backend: pytest with parallel execution (auto-detected workers)
+- Frontend: vitest with React Testing Library
+- Coverage targets: 36% backend, 70% frontend (progressive increase)
+- MCP tools: 100% coverage requirement
+
+## Common Patterns
+
+### Python Function Template
+
+```python
+async def func(param: dict, ctx: Context = None) -> dict:
+    """Brief description."""
+    try:
+        return {"status": "success", "data": result}
+    except Exception as e:
+        logger.error(f"Error: {str(e)}")
+        return {"status": "error", "message": str(e)}
+```
+
+### React Component Template
+
+```javascript
+export default function Component() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleAction = async () => {
+    setLoading(true);
+    try {
+      const result = await api.call();
+      setData(result);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return <div>{/* JSX */}</div>;
+}
+```
+
+## Notes
+
+- This file should be updated when new patterns or preferences are discovered
+- Keep entries concise and focused
+- Remove outdated information when patterns change
+- Reference specific rule files for detailed guidelines

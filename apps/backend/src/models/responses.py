@@ -10,7 +10,7 @@ class BaseResponse(BaseModel):
     """Base response model with common fields."""
 
     model_config = ConfigDict(
-        ser_json_timedelta='float',
+        ser_json_timedelta="float",
     )
 
     status: Literal["success", "error"]
@@ -150,12 +150,3 @@ class CarrierPerformanceResponse(BaseResponse):
 
     status: Literal["success"] = "success"
     data: list[dict[str, Any]] | None = None
-
-
-# Webhook Response Models
-class WebhookResponse(BaseResponse):
-    """Response for webhook processing."""
-
-    status: Literal["success"] = "success"
-    event_type: str | None = None
-    result: dict[str, Any] | None = None

@@ -14,7 +14,8 @@ This directory contains configuration files and rules for Cursor IDE integration
 │   ├── 03-testing-best-practices.mdc # Testing strategy
 │   ├── 04-mcp-development.mdc   # MCP tool development patterns
 │   ├── 05-m3-max-optimizations.mdc # Hardware-specific optimizations
-│   └── 06-quick-reference.mdc   # Quick templates and patterns
+│   ├── 06-quick-reference.mdc   # Quick templates and patterns
+│   └── 07-learned-memories.mdc   # Project-specific knowledge and preferences
 ├── commands/             # Custom Cursor commands
 │   ├── project-specific/ # Project-specific workflows
 │   └── universal/       # Reusable commands
@@ -84,6 +85,13 @@ Hardware-specific optimizations:
 
 ### 06-quick-reference.mdc
 Quick templates and patterns (always applied).
+
+### 07-learned-memories.mdc
+Project-specific knowledge and preferences (always applied):
+- Project-specific patterns and conventions
+- User preferences and coding style choices
+- Technical decisions and their rationale
+- Recurring issues and solutions
 
 ## Commands
 

@@ -102,7 +102,7 @@ setup:
 	@echo "  Backend: $(VENV_BIN)/python"
 	@echo "  Frontend: pnpm (in apps/frontend)"
 
-# Start both servers in parallel
+# Start both servers in parallel (with MCP verification)
 dev:
 	@echo "🚀 Starting development servers..."
 	@echo "📦 Backend: http://localhost:8000"
@@ -114,6 +114,8 @@ dev:
 	@trap 'kill 0' EXIT; \
 	(cd apps/backend && $(VENV_BIN)/uvicorn src.server:app --host 0.0.0.0 --port 8000 --reload) & \
 	(cd apps/frontend && pnpm run dev) & \
+	sleep 3 && \
+	($(VENV_BIN)/python scripts/mcp_tool.py get_tracking TEST 2>/dev/null | grep -q "status" && echo "✅ MCP tools verified" || echo "⚠️  MCP tools not yet accessible") & \
 	wait
 
 # Start with mock mode (faster development)
@@ -325,11 +327,15 @@ clean:
 clean-deep:
 	@bash scripts/clean_project_parallel.sh --deep
 
-# Health check
+# Health check (with MCP verification)
 health:
 	@echo "🏥 Checking server health..."
 	@curl -s http://localhost:8000/health | python -m json.tool || echo "❌ Backend not running"
 	@curl -s http://localhost:5173 > /dev/null && echo "✅ Frontend: OK" || echo "❌ Frontend not running"
+	@if [ "$(VENV_BIN)" != "venv not found" ]; then \
+		echo "🔍 Verifying MCP tools..."; \
+		$(VENV_BIN)/python scripts/mcp_tool.py get_tracking TEST 2>/dev/null | grep -q "status" && echo "✅ MCP tools accessible" || echo "⚠️  MCP tools not accessible (server may not be running)"; \
+	fi
 
 # Database operations
 db-reset:
@@ -356,10 +362,15 @@ db-upgrade:
 	fi
 	@cd apps/backend && $(VENV_BIN)/alembic upgrade head
 
-# Performance benchmark
+# Performance benchmark (with MCP tool testing)
 benchmark:
 	@echo "⚡ Running benchmarks..."
 	@./scripts/benchmark.sh
+	@if [ "$(VENV_BIN)" != "venv not found" ]; then \
+		echo ""; \
+		echo "🧪 Testing MCP tool performance..."; \
+		time $(VENV_BIN)/python scripts/mcp_tool.py get_tracking TEST 2>/dev/null > /dev/null && echo "✅ MCP tool call: OK" || echo "⚠️  MCP tool test skipped"; \
+	fi
 
 # Security audit
 audit:

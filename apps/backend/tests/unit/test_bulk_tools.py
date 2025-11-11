@@ -54,6 +54,41 @@ class TestBulkToolsParsing:
         weight = parse_weight("1.5 lbs")
         assert weight == 24.0  # 1.5 * 16
 
+    def test_parse_weight_numeric_only_decimal(self):
+        """Test parsing numeric-only weight (should infer lbs for decimal)."""
+        weight = parse_weight("5.26")
+        assert weight == 84.16  # 5.26 * 16 (inferred as lbs)
+
+    def test_parse_weight_numeric_only_large(self):
+        """Test parsing large numeric-only weight (should infer oz)."""
+        weight = parse_weight("84.16")
+        assert weight == 84.16  # Large decimal inferred as oz
+
+    def test_parse_weight_numeric_only_small(self):
+        """Test parsing small numeric-only weight (should infer lbs)."""
+        weight = parse_weight("2")
+        assert weight == 32.0  # 2 * 16 (inferred as lbs)
+
+    def test_parse_weight_kg(self):
+        """Test parsing weight in kilograms."""
+        weight = parse_weight("1 kg")
+        assert abs(weight - 35.274) < 0.1  # 1 kg ≈ 35.274 oz
+
+    def test_parse_weight_grams(self):
+        """Test parsing weight in grams."""
+        weight = parse_weight("100 g")
+        assert abs(weight - 3.527) < 0.1  # 100g ≈ 3.527 oz
+
+    def test_parse_weight_invalid(self):
+        """Test parsing invalid weight raises error."""
+        with pytest.raises(ValueError, match="Could not parse weight"):
+            parse_weight("abc")
+
+    def test_parse_weight_empty(self):
+        """Test parsing empty weight raises error."""
+        with pytest.raises(ValueError, match="Weight string is empty"):
+            parse_weight("")
+
     def test_parse_spreadsheet_line_valid(self):
         """Test parsing valid spreadsheet line."""
         line = "California\tFEDEX- Priority\tBarra\tOdeamar\t+639612109875\tjustinenganga@gmail.com\tBlk 6 Lot 48 Camella Vera, Bignay\t\tValenzuela City\tMetro Manila\t1440\tPhilippines\tTRUE\t13 x 12 x 2\t1.8 lbs\t1.5 lbs Dead Sea Mineral Bath Salts"
@@ -80,7 +115,7 @@ class TestBulkToolsParsing:
         """Test parsing invalid line with too few columns."""
         line = "California\tFEDEX\tBarra"  # Only 3 columns
 
-        with pytest.raises(ValueError, match="Invalid line format"):
+        with pytest.raises(ValueError, match="Missing required fields"):
             parse_spreadsheet_line(line)
 
     def test_ca_store_addresses_exist(self):

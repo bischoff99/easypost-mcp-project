@@ -1,7 +1,9 @@
 ---
-description: "Comprehensive FastAPI and Python best practices for backend development"
-globs: ["apps/backend/**/*.py"]
+description: 'Comprehensive FastAPI and Python best practices for backend development'
+globs: ['apps/backend/**/*.py']
 alwaysApply: false
+version: '1.0.0'
+lastUpdated: '2025-11-18'
 ---
 
 # FastAPI Python Best Practices
@@ -191,8 +193,8 @@ async def get_shipments_with_addresses(
 # Use connection pooling for PostgreSQL
 engine = create_async_engine(
     DATABASE_URL,
-    pool_size=20,  # M3 Max can handle more connections
-    max_overflow=40,
+    pool_size=10,  # Base pool size
+    max_overflow=10,  # Max 20 connections total (personal use)
     pool_pre_ping=True,
     echo=False
 )
@@ -266,10 +268,10 @@ async def create_shipment(
 
 ## M3 Max Optimizations
 
-- Use 16-32 workers for parallel processing
+- Use max 16 workers for parallel processing
 - Leverage asyncio for I/O-bound operations
-- Use connection pooling with higher limits (20-40 connections)
-- Enable uvicorn workers: `uvicorn main:app --workers 4 --loop uvloop`
+- Use connection pooling with max 20 connections total
+- Enable uvicorn workers: `uvicorn src.server:app --workers 4 --loop uvloop`
 - Use uvloop for faster event loop performance
 
 ---

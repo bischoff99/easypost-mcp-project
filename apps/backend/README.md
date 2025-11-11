@@ -158,10 +158,10 @@ The MCP server exposes tools for Claude Desktop integration:
 **Tools:**
 
 - `create_shipment` - Create single shipment
-- `create_bulk_shipments` - Parallel bulk creation (16 workers)
+- `create_shipment` - Parallel shipment creation (16 workers, single or multiple)
 - `track_shipment` - Track by tracking number
 - `batch_track_shipments` - Track multiple packages
-- `get_rates` - Compare shipping rates
+- `get_shipment_rates` - Compare shipping rates
 
 **Resources:**
 

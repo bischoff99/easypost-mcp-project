@@ -13,6 +13,7 @@ from fastmcp import Context
 from src.models.bulk_dto import (
     AddressDTO,
     CustomsInfoDTO,
+    CustomsItemDTO,
     ShipmentRequestDTO,
     ShipmentResultDTO,
     VerifiedAddressDTO,
@@ -130,7 +131,7 @@ async def prepare_customs_if_international(
     customs_signer = get_customs_signer(from_address.model_dump())
 
     loop = asyncio.get_running_loop()
-    customs_dict = await loop.run_in_executor(
+    customs_obj = await loop.run_in_executor(
         None,
         get_or_create_customs,
         contents,
@@ -141,7 +142,74 @@ async def prepare_customs_if_international(
         incoterm,
     )
 
-    if customs_dict:
+    if customs_obj:
+        # Always extract attributes directly from CustomsInfo object
+        # (EasyPost objects may have to_dict() but it might return another object)
+        if isinstance(customs_obj, dict):
+            customs_dict = customs_obj.copy()
+        else:
+            customs_dict = {}
+
+        # Extract customs_items and convert to CustomsItemDTO
+        customs_items = []
+        if isinstance(customs_obj, dict):
+            items = customs_dict.get("customs_items", [])
+        else:
+            items = getattr(customs_obj, "customs_items", [])
+
+        for item in items:
+            if isinstance(item, dict):
+                customs_items.append(
+                    CustomsItemDTO(
+                        description=item.get("description", ""),
+                        quantity=int(item.get("quantity", 1)),
+                        value=float(item.get("value", 0.0)),
+                        weight=float(item.get("weight", weight_oz)),
+                        hs_tariff_number=item.get("hs_tariff_number"),
+                        origin_country=item.get("origin_country"),
+                    )
+                )
+            else:
+                # It's a CustomsItem object
+                customs_items.append(
+                    CustomsItemDTO(
+                        description=getattr(item, "description", ""),
+                        quantity=int(getattr(item, "quantity", 1)),
+                        value=float(getattr(item, "value", 0.0)),
+                        weight=float(getattr(item, "weight", weight_oz)),
+                        hs_tariff_number=getattr(item, "hs_tariff_number", None),
+                        origin_country=getattr(item, "origin_country", None),
+                    )
+                )
+
+        # Build customs_dict with all required fields
+        if isinstance(customs_obj, dict):
+            customs_dict.update(
+                {
+                    "contents_type": customs_dict.get("contents_type", "merchandise"),
+                    "contents_explanation": customs_dict.get("contents_explanation"),
+                    "restriction_type": customs_dict.get("restriction_type"),
+                    "restriction_comments": customs_dict.get("restriction_comments"),
+                    "customs_certify": customs_dict.get("customs_certify", True),
+                    "customs_signer": customs_dict.get("customs_signer", customs_signer),
+                    "eel_pfc": customs_dict.get("eel_pfc"),
+                    "customs_items": customs_items,
+                    "incoterm": customs_dict.get("incoterm", incoterm),
+                }
+            )
+        else:
+            customs_dict = {
+                "contents_type": getattr(customs_obj, "contents_type", "merchandise"),
+                "contents_explanation": getattr(customs_obj, "contents_explanation", None),
+                "restriction_type": getattr(customs_obj, "restriction_type", None),
+                "restriction_comments": getattr(customs_obj, "restriction_comments", None),
+                "customs_certify": getattr(customs_obj, "customs_certify", True),
+                "customs_signer": getattr(customs_obj, "customs_signer", customs_signer),
+                "eel_pfc": getattr(customs_obj, "eel_pfc", None),
+                "customs_items": customs_items,
+                "incoterm": incoterm,
+            }
+
         return CustomsInfoDTO(**customs_dict)
     return None
 
@@ -174,6 +242,7 @@ async def create_shipment_with_rates(
             from_address=from_dict,
             parcel=parcel_dict,
             customs_info=customs_dict,
+            buy_label=False,  # Always create first, then purchase separately if needed
         )
 
         if result.get("status") != "success":
@@ -184,9 +253,16 @@ async def create_shipment_with_rates(
                 line_number=0,
             )
 
-        shipment_data = result.get("data", {})
-        shipment_id = shipment_data.get("id", "")
-        rates = shipment_data.get("rates", [])
+        # Handle both response structures:
+        # 1. Direct: {"status": "success", "id": "...", "rates": [...]}
+        # 2. Wrapped: {"status": "success", "data": {"id": "...", "rates": [...]}}
+        if "data" in result:
+            shipment_data = result.get("data", {})
+            shipment_id = shipment_data.get("id", "")
+            rates = shipment_data.get("rates", [])
+        else:
+            shipment_id = result.get("id", "")
+            rates = result.get("rates", [])
 
         # Purchase label if requested
         selected_rate = None
@@ -195,8 +271,32 @@ async def create_shipment_with_rates(
 
         if purchase_labels:
             if carrier:
-                # Find rate for specific carrier
-                selected_rate = next((r for r in rates if r.get("carrier") == carrier), None)
+                # Find rate for specific carrier (flexible matching)
+                carrier_upper = carrier.upper()
+                # Map common carrier names to possible API names
+                carrier_variants = {
+                    "UPS": ["UPS", "UPSDAP"],
+                    "FEDEX": ["FedEx", "FEDEX", "FedExDefault"],
+                    "USPS": ["USPS"],
+                    "DHL": ["DHL", "DHLExpress"],
+                }
+                matching_carriers = carrier_variants.get(carrier_upper, [carrier_upper])
+                
+                # Find rate matching any variant
+                selected_rate = next(
+                    (r for r in rates if r.get("carrier") in matching_carriers), None
+                )
+                
+                # If still not found, try partial match
+                if not selected_rate:
+                    selected_rate = next(
+                        (
+                            r
+                            for r in rates
+                            if carrier_upper in r.get("carrier", "").upper()
+                        ),
+                        None,
+                    )
             else:
                 # Use cheapest rate
                 selected_rate = (
@@ -210,7 +310,7 @@ async def create_shipment_with_rates(
                 if buy_result.get("status") == "success":
                     buy_data = buy_result.get("data", {})
                     tracking_code = buy_data.get("tracking_code")
-                    label_url = buy_data.get("postage_label", {}).get("label_url")
+                    label_url = buy_data.get("postage_label_url")
 
         return ShipmentResultDTO(
             shipment_id=shipment_id,

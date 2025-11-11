@@ -32,18 +32,18 @@
 
 ---
 
-### 2. `parse_and_get_bulk_rates`
-**Purpose**: Parse spreadsheet data and get rates for single or multiple shipments
+### 2. `get_shipment_rates`
+**Purpose**: Get shipping rates for single or multiple shipments
 
 **Parameters**:
 - `spreadsheet_data` (str) - Tab-separated shipment data (1+ lines)
-- `from_city` (str, optional) - Override origin city
+- `ctx` (Context, optional) - MCP context for progress reporting
 
 **Returns**: Rates for all shipments with comparison table
 
 ---
 
-### 3. `create_bulk_shipments`
+### 3. `create_shipment`
 **Purpose**: Create single or multiple shipments in parallel (M3 Max optimized, 16 workers)
 
 **Parameters**:
@@ -56,7 +56,7 @@
 
 ---
 
-### 4. `buy_bulk_shipments`
+### 4. `buy_shipment_label`
 **Purpose**: Purchase labels for pre-created shipments using selected rates
 
 **Parameters**:
@@ -336,4 +336,4 @@ All tools:
 
 **Status**: All 11 MCP tools/resources/prompts are production-ready and fully documented!
 
-**Note**: Bulk tools (`parse_and_get_bulk_rates`, `create_bulk_shipments`, `buy_bulk_shipments`) handle both single and multiple shipments, making separate single-shipment tools unnecessary.
+**Note**: Shipment tools (`get_shipment_rates`, `create_shipment`, `buy_shipment_label`) handle both single and multiple shipments, making separate single-shipment tools unnecessary.
