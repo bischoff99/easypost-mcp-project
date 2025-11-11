@@ -83,17 +83,16 @@ This plan addresses Cursor IDE integration for the EasyPost MCP server, ensuring
 
 ## Implementation Checklist
 
-- [ ] Create branch `chore/repo-fix-cursor-mcp` from `main`/`master`
-- [ ] Update `.cursor/mcp.json`
-- [ ] Create `apps/backend/src/mcp_server/server.py` entry point
-- [ ] Update root `package.json` with `packageManager: "pnpm@9"`
-- [ ] Update Makefile with `setup` and `dev` targets
-- [ ] Remove tracked vendor files
-- [ ] Test backend setup
-- [ ] Test MCP server
-- [ ] Test frontend setup
-- [ ] Commit changes
-- [ ] Create PR
+- [x] Create branch `chore/repo-fix-cursor-mcp` from `master`
+- [x] Update `.cursor/mcp.json` with server configuration
+- [x] Create `apps/backend/src/mcp_server/server.py` entry point
+- [x] Update root `package.json` with `packageManager: "pnpm@9.0.0"`
+- [x] Update Makefile with `setup` and `dev` targets (using pnpm)
+- [x] Verify vendor files are untracked
+- [x] Test backend MCP server import
+- [x] Test server.py entry point
+- [x] Commit changes
+- [ ] Push branch and create PR
 
 ---
 
