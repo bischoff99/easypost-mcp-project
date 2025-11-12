@@ -151,6 +151,7 @@ def extract_customs_smart(
     1. Full format: "(qty) Description HTS Code: XXXX.XX.XXXX ($value each)"
     2. Partial: "Description with some info"
     3. Minimal: Just description → auto-generates HTS & value
+    4. MULTIPLE ITEMS: "(2) Item A ($22 each) (3) Item B ($24 each) HTS: XXXX"
 
     SMART VALUE EXTRACTION: Finds $ amounts anywhere in text
     SMART WEIGHT: Uses actual parcel weight provided
@@ -165,7 +166,88 @@ def extract_customs_smart(
     Returns:
         CustomsInfo object or None
     """
-    # Try multiple patterns in order of specificity
+    customs_items = []
+
+    # Pattern for multiple items: "(qty) Description ($value each)" or "($value/each)"
+    # Match: (2) Summit Series Technical Denim Jeans ($22 each)
+    # Match: (2) Original Prints ($22/each)
+    # Use [^\(]+ to match description without nested parens
+    multi_item_pattern = r"\((\d+)\)\s*([^\(]+?)\s*\(\$(\d+(?:\.\d+)?)\s*/?\s*each\)"
+    multi_matches = list(re.finditer(multi_item_pattern, contents, re.IGNORECASE))
+
+    # Extract HTS code (shared across all items in description)
+    hs_match = re.search(r"HTS[:\s]*(?:Code[:\s]*)?([\d.]{8,})", contents, re.IGNORECASE)
+    shared_hs_code = hs_match.group(1) if hs_match else "6203.42.4011"  # Default to jeans
+
+    if len(multi_matches) > 1:
+        # Multiple items found - create separate customs items for each
+        logger.info(f"Found {len(multi_matches)} items in contents")
+
+        # First pass: calculate total value for weight distribution
+        items_data: list[dict[str, Any]] = []
+        total_value = 0.0
+        for match in multi_matches:
+            quantity = int(match.group(1))
+            description = match.group(2).strip()
+            value_each = float(match.group(3))
+            item_total = float(quantity) * value_each
+            items_data.append(
+                {
+                    "quantity": quantity,
+                    "description": description,
+                    "value_each": value_each,
+                    "total_value": item_total,
+                }
+            )
+            total_value += item_total
+
+        # Second pass: create customs items with proportional weights
+        total_parcel_weight = calculate_item_weight(weight_oz)
+        for idx, item_data in enumerate(items_data):
+            # Distribute weight proportionally by total value of each item
+            item_total_val = float(item_data["total_value"])
+            if total_value > 0:
+                item_value_ratio = item_total_val / total_value
+            else:
+                item_value_ratio = 1.0 / len(items_data)
+            item_weight = total_parcel_weight * item_value_ratio
+
+            item_desc = str(item_data["description"])
+            item_qty = int(item_data["quantity"])
+            item_val = float(item_data["value_each"])
+
+            logger.info(
+                f"Item {idx + 1}: qty={item_qty}, desc={item_desc[:30]}, "
+                f"value=${item_val}, hs={shared_hs_code}, weight={item_weight:.1f}oz"
+            )
+
+            customs_items.append(
+                easypost_client.customs_item.create(
+                    description=item_desc,
+                    hs_tariff_number=shared_hs_code,
+                    origin_country="US",
+                    quantity=item_qty,
+                    value=item_val,
+                    weight=item_weight,
+                )
+            )
+
+        # Create customs_info with all items
+        try:
+            return easypost_client.customs_info.create(
+                customs_items=customs_items,
+                customs_certify=True,
+                customs_signer=customs_signer,
+                contents_type="merchandise",
+                restriction_type="none",
+                eel_pfc="NOEEI 30.37(a)",
+                non_delivery_option="return",
+            )
+        except Exception as e:
+            logger.error(f"Failed to create multi-item customs: {str(e)}")
+            return None
+
+    # Single item - use original logic
     quantity = 1
     description = ""
     hs_code = ""
@@ -208,8 +290,8 @@ def extract_customs_smart(
     ]
 
     for pattern_idx, (pattern, format_type) in enumerate(patterns):
-        match = re.search(pattern, contents, re.IGNORECASE)
-        if match:
+        match = re.search(pattern, contents, re.IGNORECASE)  # type: ignore[assignment]
+        if match is not None:
             groups = match.groups()
 
             # Handle different group orders based on format type

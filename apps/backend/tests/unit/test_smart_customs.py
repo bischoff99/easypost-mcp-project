@@ -294,3 +294,59 @@ class TestIntegration:
         # Value uses default
         value = estimate_believable_value(parcel_weight, "default")
         assert value == 25.0  # Exactly 2 lbs, no scaling yet
+
+
+class TestQuantityExtraction:
+    """Test quantity extraction from product descriptions."""
+
+    def test_quantity_with_slash_each(self):
+        """Test quantity extraction with $value/each format."""
+        import re
+
+        contents = "(2) Original Prints and Engravings HTS Code: 4911.10.00 ($22/each)"
+        pattern = r"\((\d+)\)\s*([^\(]+?)\s*\(\$(\d+(?:\.\d+)?)\s*/?\s*each\)"
+
+        matches = list(re.finditer(pattern, contents, re.IGNORECASE))
+
+        assert len(matches) == 1
+        assert int(matches[0].group(1)) == 2  # Quantity
+        assert float(matches[0].group(3)) == 22.0  # Value
+        assert "Original Prints and Engravings" in matches[0].group(2)
+
+    def test_quantity_multiple_items(self):
+        """Test multiple item quantity extraction."""
+        import re
+
+        contents = "(2) Summit Series Technical Denim Jeans ($22 each) (3) Summit Ridge Relaxed Jeans ($24 each) HTS: 6203.42.4011"
+        pattern = r"\((\d+)\)\s*([^\(]+?)\s*\(\$(\d+(?:\.\d+)?)\s*/?\s*each\)"
+
+        matches = list(re.finditer(pattern, contents, re.IGNORECASE))
+
+        assert len(matches) == 2
+
+        # First item
+        assert int(matches[0].group(1)) == 2
+        assert float(matches[0].group(3)) == 22.0
+        assert "Summit Series" in matches[0].group(2)
+
+        # Second item
+        assert int(matches[1].group(1)) == 3
+        assert float(matches[1].group(3)) == 24.0
+        assert "Summit Ridge" in matches[1].group(2)
+
+    def test_hts_code_extraction(self):
+        """Test HTS code extraction from various formats."""
+        import re
+
+        test_cases = [
+            ("HTS Code: 4911.10.00", "4911.10.00"),
+            ("HTS: 6203.42.4011", "6203.42.4011"),
+            ("HTS Code 4911.10.00", "4911.10.00"),
+        ]
+
+        pattern = r"HTS[:\s]*(?:Code[:\s]*)?([\d.]{8,})"
+
+        for contents, expected_hs in test_cases:
+            match = re.search(pattern, contents, re.IGNORECASE)
+            assert match is not None
+            assert match.group(1) == expected_hs
