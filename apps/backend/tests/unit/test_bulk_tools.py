@@ -65,6 +65,20 @@ class TestBulkToolsParsing:
         assert width == 10.0
         assert height == 3.0
 
+    def test_parse_dimensions_fractional(self):
+        """Test parsing dimensions with fractional inches (e.g., 11 1/2)."""
+        # Test fractional dimensions
+        length, width, height = parse_dimensions("16 x 11 1/2 x 3 1/2")
+        assert length == 16.0
+        assert width == 11.5
+        assert height == 3.5
+
+        # Test another fractional combination
+        length, width, height = parse_dimensions("11 1/2 x 9 3/4 x 2 1/4")
+        assert length == 11.5
+        assert width == 9.75
+        assert height == 2.25
+
     def test_parse_weight_pounds(self):
         """Test parsing weight in pounds."""
         weight = parse_weight("1.8 lbs")

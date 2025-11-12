@@ -771,13 +771,16 @@ def normalize_country_code(country: str) -> str:
 
 def parse_dimensions(dim_str: str) -> tuple:
     """
-    Parse dimensions string like '13 x 12 x 2' or '12.5 × 10.25 × 3.5' into (length, width, height).
+    Parse dimensions string into (length, width, height).
 
-    Supports multiple separators: x, ×, *, 'by', and whitespace.
-    Handles decimal dimensions (12.5, 10.25, etc.)
+    Supports multiple formats:
+    - Decimals: '12.5 x 10.25 x 3.75'
+    - Fractions: '11 1/2 x 9 3/4 x 2 1/4'
+    - Mixed: '12.5 × 11 1/2 × 3'
+    - Separators: x, ×, *, 'by'
 
     Args:
-        dim_str: Dimension string with separators (e.g., "12.5 x 10 x 3", "12×10×3", "12*10*3")
+        dim_str: Dimension string (e.g., "12.5 x 10 x 3", "11 1/2 x 9 x 2 1/4")
 
     Returns:
         Tuple of (length, width, height) as floats
@@ -793,17 +796,42 @@ def parse_dimensions(dim_str: str) -> tuple:
     for separator in ["×", "*", "by", "x"]:
         normalized = normalized.replace(separator, " ")
 
-    # Extract all numbers (including decimals)
+    # Extract all numbers (including decimals and fractions)
     parts = normalized.split()
     numbers = []
-    for part in parts:
-        part_clean = part.strip()
-        # Match decimal numbers (including .5, 12.5, 12., etc.)
-        if re.match(r"^\d*\.?\d+$", part_clean):
+    i = 0
+    while i < len(parts):
+        part = parts[i].strip()
+
+        # Check for fraction format (e.g., "1/2")
+        if "/" in part:
             try:
-                numbers.append(float(part_clean))
-            except ValueError:
+                num, denom = part.split("/")
+                numbers.append(float(num) / float(denom))
+                i += 1
                 continue
+            except (ValueError, ZeroDivisionError):
+                i += 1
+                continue
+
+        # Check for decimal number
+        if re.match(r"^\d*\.?\d+$", part):
+            try:
+                whole_num = float(part)
+                # Check if next part is a fraction (e.g., "11" followed by "1/2")
+                if i + 1 < len(parts) and "/" in parts[i + 1]:
+                    try:
+                        frac_num, frac_denom = parts[i + 1].split("/")
+                        fraction = float(frac_num) / float(frac_denom)
+                        numbers.append(whole_num + fraction)
+                        i += 2  # Skip both parts
+                        continue
+                    except (ValueError, ZeroDivisionError):
+                        pass
+                numbers.append(whole_num)
+            except ValueError:
+                pass
+        i += 1
 
     if len(numbers) >= 3:
         # Validate dimensions are reasonable (0.1 to 999 inches)
@@ -814,12 +842,12 @@ def parse_dimensions(dim_str: str) -> tuple:
     if len(numbers) > 0:
         raise ValueError(
             f"Insufficient dimensions: found {len(numbers)}, need 3 (L x W x H). "
-            f"Example: '12.5 x 10 x 3'"
+            f"Example: '12.5 x 10 x 3' or '11 1/2 x 9 x 2 1/4'"
         )
 
     raise ValueError(
         f"Could not parse dimensions from '{dim_str}'. "
-        "Please use format: '12.5 x 10 x 3' (length x width x height)"
+        "Please use format: '12.5 x 10 x 3' or '11 1/2 x 9 x 2 1/4' (length x width x height)"
     )
 
 
