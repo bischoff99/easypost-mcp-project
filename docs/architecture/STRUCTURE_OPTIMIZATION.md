@@ -1,34 +1,31 @@
 # 🏗️ Project Structure Optimization Plan
 
-## Current Issues
+**Status**: Historical Document - Most issues resolved (2025-11-11)
 
-### 1. **Root Directory Clutter** ❌
-Too many markdown files (25+ docs):
-- Multiple status reports
-- Overlapping guides
-- Redundant documentation
+## Historical Issues (RESOLVED)
 
-### 2. **Test Files Misplaced** ❌
-```
-backend/
-├── test_all_19_shipments.py      ← Should be in tests/
-├── test_bulk_integration.py       ← Should be in tests/
-├── test_full_batch.py             ← Should be in tests/
-└── test_live_rates.py             ← Should be in tests/
-```
+### 1. **Root Directory Clutter** ✅ RESOLVED
+- Documentation moved to `docs/` directory structure
+- Root directory is now clean
+- Proper organisation: `docs/architecture/`, `docs/reviews/`, `docs/guides/`
 
-### 3. **Duplicate Prompt Directories** ❌
-```
-.prompts/              ← Redundant
-.cursor/prompts/       ← Redundant (commands/ is the official location)
-.cursor/commands/      ← Keep this only
-```
+### 2. **Test Files Misplaced** ✅ RESOLVED
+- All test files are now in `apps/backend/tests/` directory
+- Proper structure: `tests/unit/` and `tests/integration/`
+- No test files in root or backend root
 
-### 4. **No Docs Organization** ❌
-All documentation at root level - no structure
+### 3. **Duplicate Prompt Directories** ✅ RESOLVED
+- Verified: No `.prompts/` directory exists
+- Verified: No `.cursor/prompts/` directory exists
+- Only `.cursor/commands/` exists (correct location)
 
-### 5. **Cache Files** ❌
-Multiple `.pytest_cache` directories in wrong places
+### 4. **No Docs Organization** ✅ RESOLVED
+- Documentation properly organised in `docs/` directory
+- Clear structure: architecture, reviews, guides, setup
+
+### 5. **Cache Files** ✅ RESOLVED
+- All cache files properly ignored in `.gitignore`
+- `__pycache__/`, `.pytest_cache/`, `.mypy_cache/` all ignored
 
 ---
 
