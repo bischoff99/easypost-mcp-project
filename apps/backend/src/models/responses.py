@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 """Response models for FastAPI endpoints."""
 
 from datetime import UTC, datetime
