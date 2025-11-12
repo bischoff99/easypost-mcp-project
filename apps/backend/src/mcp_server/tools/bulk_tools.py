@@ -1123,20 +1123,7 @@ def detect_field_type(value: str) -> str | None:
     if has_dimension_keywords and re.search(r"[\d.]+[\sx×]+[\d.]+[\sx×]+[\d.]+", value):
         return "dimensions"
 
-    # Name detection (contains common name patterns)
-    # Multiple words, capitalized, not all caps (unless short)
-    words = value.split()
-    has_capitalized_words = len(words) >= 2 and any(
-        word[0].isupper() if word else False for word in words
-    )
-    is_not_address = not any(
-        keyword in value_lower
-        for keyword in ["street", "st", "avenue", "ave", "road", "rd", "suite", "apt"]
-    )
-    if has_capitalized_words and is_not_address:
-        return "name"
-
-    # Street address detection (including PO Box and military addresses)
+    # Street address detection (check before name to avoid false positives)
     street_keywords = [
         "street",
         "st",
@@ -1159,20 +1146,50 @@ def detect_field_type(value: str) -> str | None:
         "pkwy",
     ]
 
-    # PO Box detection
+    # PO Box detection (must check before name detection)
     if re.match(r"^p\.?o\.?\s*box\s+\d+", value_lower) or re.match(r"^box\s+\d+", value_lower):
         return "street"
 
-    # Military address detection (APO, FPO, DPO)
+    # Military address detection (APO, FPO, DPO) - must check before name detection
     if re.match(r"^(apo|fpo|dpo)\s+[a-z]{2}\s+\d{5}", value_lower):
         return "street"
 
     # Standard street address
     if any(keyword in value_lower for keyword in street_keywords):
         return "street"
+
+    # Get words for subsequent checks
+    words = value.split()
+
     # Also detect addresses with numbers (e.g., "123 Main St", "720 East St Suite 2")
     if re.match(r"^\d+", value) and len(words) >= 1:
         return "street"
+
+    # Name detection (contains common name patterns)
+    # Multiple words, capitalized, not all caps (unless short)
+    # Check AFTER street detection to avoid false positives
+    has_capitalized_words = len(words) >= 2 and any(
+        word[0].isupper() if word else False for word in words
+    )
+    is_not_address = not any(
+        keyword in value_lower
+        for keyword in [
+            "street",
+            "st",
+            "avenue",
+            "ave",
+            "road",
+            "rd",
+            "suite",
+            "apt",
+            "box",
+            "apo",
+            "fpo",
+            "dpo",
+        ]
+    )
+    if has_capitalized_words and is_not_address:
+        return "name"
 
     # City detection (single word, capitalized, not a state code)
     if len(words) == 1 and value[0].isupper() and value.upper() not in us_states:
