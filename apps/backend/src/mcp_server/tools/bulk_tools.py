@@ -11,6 +11,9 @@ from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
+# API rate limiting - sequential processing to avoid EasyPost production rate limits
+MAX_CONCURRENT = 1  # Sequential API calls only (production rate limit compliance)
+
 
 class ShipmentLine(BaseModel):
     """Parsed shipment data from spreadsheet."""
@@ -768,20 +771,56 @@ def normalize_country_code(country: str) -> str:
 
 def parse_dimensions(dim_str: str) -> tuple:
     """
-    Parse dimensions string like '13 x 12 x 2' into (length, width, height).
+    Parse dimensions string like '13 x 12 x 2' or '12.5 × 10.25 × 3.5' into (length, width, height).
+
+    Supports multiple separators: x, ×, *, 'by', and whitespace.
+    Handles decimal dimensions (12.5, 10.25, etc.)
 
     Args:
-        dim_str: Dimension string with x separators
+        dim_str: Dimension string with separators (e.g., "12.5 x 10 x 3", "12×10×3", "12*10*3")
 
     Returns:
         Tuple of (length, width, height) as floats
+
+    Raises:
+        ValueError: If dimensions cannot be parsed or are invalid
     """
-    parts = [p.strip() for p in dim_str.lower().replace("x", " ").split()]
-    numbers = [float(p) for p in parts if p.replace(".", "").isdigit()]
+    if not dim_str or not dim_str.strip():
+        raise ValueError("Dimension string is empty")
+
+    # Replace all separators with spaces for uniform parsing
+    normalized = dim_str.lower()
+    for separator in ["×", "*", "by", "x"]:
+        normalized = normalized.replace(separator, " ")
+
+    # Extract all numbers (including decimals)
+    parts = normalized.split()
+    numbers = []
+    for part in parts:
+        part_clean = part.strip()
+        # Match decimal numbers (including .5, 12.5, 12., etc.)
+        if re.match(r"^\d*\.?\d+$", part_clean):
+            try:
+                numbers.append(float(part_clean))
+            except ValueError:
+                continue
 
     if len(numbers) >= 3:
-        return (numbers[0], numbers[1], numbers[2])
-    return (12.0, 9.0, 6.0)  # Default box dimensions
+        # Validate dimensions are reasonable (0.1 to 999 inches)
+        if all(0.1 <= dim <= 999 for dim in numbers[:3]):
+            return (numbers[0], numbers[1], numbers[2])
+        raise ValueError(f"Dimensions out of range (0.1-999 inches): {numbers[:3]}")
+
+    if len(numbers) > 0:
+        raise ValueError(
+            f"Insufficient dimensions: found {len(numbers)}, need 3 (L x W x H). "
+            f"Example: '12.5 x 10 x 3'"
+        )
+
+    raise ValueError(
+        f"Could not parse dimensions from '{dim_str}'. "
+        "Please use format: '12.5 x 10 x 3' (length x width x height)"
+    )
 
 
 def parse_weight(weight_str: str) -> float:
@@ -948,20 +987,33 @@ def detect_field_type(value: str) -> str | None:
     value = value.strip()
     value_lower = value.lower()
 
-    # Email detection
-    if re.match(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", value):
+    # Email detection (RFC 5322 compliant with practical restrictions)
+    # Supports: user+tag@example.com, user.name@example.co.uk, user123@sub.domain.com
+    email_pattern = (
+        r"^[a-zA-Z0-9][a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]*@"
+        r"[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?"
+        r"(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"
+    )
+    if re.match(email_pattern, value) and len(value) <= 254:  # RFC 5321 max length
         return "email"
 
-    # Phone detection (various formats)
+    # Phone detection (various formats including extensions)
+    # Formats: +1-555-123-4567, (555) 123-4567, 555-123-4567 x1234, +44 20 7123 4567 ext 100
     phone_patterns = [
-        r"^\+?[\d\s\-\(\)]{10,}$",  # International format
-        r"^\d{10,}$",  # Simple digits
-        r"^\d{3}[\s\-]?\d{3}[\s\-]?\d{4}$",  # US format
+        # International with optional extension
+        r"^\+?[\d\s\-\(\)]{10,}(?:[\s]?(?:x|ext|extension)[\s]?\d{1,6})?$",
+        # Simple digits with optional extension
+        r"^\d{10,15}(?:[\s]?(?:x|ext|extension)[\s]?\d{1,6})?$",
+        # US format with optional extension
+        r"^\d{3}[\s\-]?\d{3}[\s\-]?\d{4}(?:[\s]?(?:x|ext)[\s]?\d{1,6})?$",
     ]
     for pattern in phone_patterns:
         cleaned_value = value.replace(" ", "").replace("-", "").replace("(", "").replace(")", "")
         if re.match(pattern, cleaned_value):
-            return "phone"
+            # Validate digit count (7-15 typical for phone numbers, excluding extensions)
+            digit_count = sum(c.isdigit() for c in cleaned_value.split("x")[0].split("ext")[0])
+            if 7 <= digit_count <= 15:
+                return "phone"
 
     # Country code detection (2-letter ISO codes)
     if re.match(r"^[A-Z]{2}$", value.upper()) and len(value) == 2:
@@ -978,17 +1030,73 @@ def detect_field_type(value: str) -> str | None:
     ):
         return "country_name"
 
-    # Postal/ZIP code detection
-    if re.match(r"^\d{5,}(?:-\d{4})?$", value) or re.match(r"^[A-Z0-9\s]{3,10}$", value.upper()):
-        return "postal_code"
+    # Postal/ZIP code detection (international support)
+    postal_patterns = [
+        r"^\d{5}(?:-\d{4})?$",  # US ZIP: 12345 or 12345-6789
+        r"^[A-Z]\d[A-Z]\s?\d[A-Z]\d$",  # Canada: A1A 1A1 or A1A1A1
+        r"^[A-Z]{1,2}\d{1,2}[A-Z]?\s?\d[A-Z]{2}$",  # UK: SW1A 1AA, EC1A 1BB
+        r"^\d{5}$",  # Germany, France, Spain: 12345
+        r"^\d{4}$",  # Australia, Belgium: 1234
+        r"^\d{3}-\d{4}$",  # Japan: 123-4567
+        r"^\d{6}$",  # India, Singapore: 123456
+    ]
+    value_normalized = value.upper().strip()
+    for pattern in postal_patterns:
+        if re.match(pattern, value_normalized):
+            return "postal_code"
 
     # State code detection (US states)
     us_states = [
-        "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
-        "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
-        "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
-        "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
-        "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY",
+        "AL",
+        "AK",
+        "AZ",
+        "AR",
+        "CA",
+        "CO",
+        "CT",
+        "DE",
+        "FL",
+        "GA",
+        "HI",
+        "ID",
+        "IL",
+        "IN",
+        "IA",
+        "KS",
+        "KY",
+        "LA",
+        "ME",
+        "MD",
+        "MA",
+        "MI",
+        "MN",
+        "MS",
+        "MO",
+        "MT",
+        "NE",
+        "NV",
+        "NH",
+        "NJ",
+        "NM",
+        "NY",
+        "NC",
+        "ND",
+        "OH",
+        "OK",
+        "OR",
+        "PA",
+        "RI",
+        "SC",
+        "SD",
+        "TN",
+        "TX",
+        "UT",
+        "VT",
+        "VA",
+        "WA",
+        "WV",
+        "WI",
+        "WY",
     ]
     if value.upper() in us_states:
         return "state_code"
@@ -1007,8 +1115,10 @@ def detect_field_type(value: str) -> str | None:
             pass
 
     # Dimensions detection (contains x or dimension keywords)
-    has_dimension_keywords = "x" in value_lower or "×" in value or any(
-        keyword in value_lower for keyword in ["inch", "in", "cm", "dimension"]
+    has_dimension_keywords = (
+        "x" in value_lower
+        or "×" in value
+        or any(keyword in value_lower for keyword in ["inch", "in", "cm", "dimension"])
     )
     if has_dimension_keywords and re.search(r"[\d.]+[\sx×]+[\d.]+[\sx×]+[\d.]+", value):
         return "dimensions"
@@ -1026,11 +1136,38 @@ def detect_field_type(value: str) -> str | None:
     if has_capitalized_words and is_not_address:
         return "name"
 
-    # Street address detection
+    # Street address detection (including PO Box and military addresses)
     street_keywords = [
-        "street", "st", "avenue", "ave", "road", "rd",
-        "boulevard", "blvd", "drive", "dr", "lane", "ln",
+        "street",
+        "st",
+        "avenue",
+        "ave",
+        "road",
+        "rd",
+        "boulevard",
+        "blvd",
+        "drive",
+        "dr",
+        "lane",
+        "ln",
+        "court",
+        "ct",
+        "circle",
+        "cir",
+        "way",
+        "plaza",
+        "pkwy",
     ]
+
+    # PO Box detection
+    if re.match(r"^p\.?o\.?\s*box\s+\d+", value_lower) or re.match(r"^box\s+\d+", value_lower):
+        return "street"
+
+    # Military address detection (APO, FPO, DPO)
+    if re.match(r"^(apo|fpo|dpo)\s+[a-z]{2}\s+\d{5}", value_lower):
+        return "street"
+
+    # Standard street address
     if any(keyword in value_lower for keyword in street_keywords):
         return "street"
     # Also detect addresses with numbers (e.g., "123 Main St", "720 East St Suite 2")
@@ -1203,9 +1340,35 @@ def parse_spreadsheet_line(line: str) -> dict[str, Any]:
     # Split by tabs and strip whitespace
     parts = [p.strip() for p in line.split("\t")]
 
+    # Auto-detect column offset (skip leading reference/ID columns)
+    # Strategy: Find the carrier column, which should be at position 1 in standard format
+    offset = 0
+    carrier_names = ["USPS", "FEDEX", "UPS", "DHL", "ASENDIA"]
+
+    # Look for carrier name in first 5 columns
+    for i in range(min(5, len(parts))):
+        part_upper = parts[i].upper()
+        if any(carrier in part_upper for carrier in carrier_names):
+            # Carrier found at position i, so origin_state is at i-1
+            # Standard format: origin_state (0) | carrier (1) | recipient_name (2)...
+            # If carrier at position 3, offset is 2 (skip columns 0, 1)
+            offset = i - 1
+            break
+
+    # Adjust parts array by removing leading columns
+    if offset > 0:
+        parts = parts[offset:]
+        logger.info(f"Auto-detected column offset: {offset} (skipped {offset} leading columns)")
+
     # Try standard positional parsing first (backward compatibility)
     if len(parts) >= 16:
         try:
+            # Combine all content columns (15+) into single contents field
+            contents_parts = []
+            for i in range(15, min(len(parts), 25)):  # Stop before sender address columns
+                if parts[i] and parts[i].strip():
+                    contents_parts.append(parts[i].strip())
+
             result: dict[str, Any] = {
                 "origin_state": parts[0],
                 "carrier_preference": parts[1],
@@ -1221,7 +1384,7 @@ def parse_spreadsheet_line(line: str) -> dict[str, Any]:
                 "country": parts[11],
                 "dimensions": parts[13] if len(parts) > 13 else "",
                 "weight": parts[14] if len(parts) > 14 else "",
-                "contents": parts[15] if len(parts) > 15 else "",
+                "contents": " ".join(contents_parts) if contents_parts else "",
             }
 
             # Check if sender address is provided (columns 16+)
@@ -1241,9 +1404,7 @@ def parse_spreadsheet_line(line: str) -> dict[str, Any]:
 
             # Validate required fields for standard format
             has_required_fields = (
-                result["recipient_name"]
-                and result["street1"]
-                and result["country"]
+                result["recipient_name"] and result["street1"] and result["country"]
             )
             weight_valid = True
             if result["weight"]:
@@ -1252,8 +1413,7 @@ def parse_spreadsheet_line(line: str) -> dict[str, Any]:
                 except ValueError as e:
                     weight_valid = False
                     logger.warning(
-                        f"Standard format weight validation failed: {e}, "
-                        "trying field detection"
+                        f"Standard format weight validation failed: {e}, trying field detection"
                     )
 
             if has_required_fields and weight_valid:
@@ -1405,11 +1565,7 @@ def parse_human_readable_shipment(text: str) -> dict | None:
     Returns:
         Standardized shipment dict with sender/recipient or None
     """
-    lines = [
-        line.strip()
-        for line in text.strip().split("\n")
-        if line.strip()
-    ]
+    lines = [line.strip() for line in text.strip().split("\n") if line.strip()]
 
     if len(lines) < 5:
         return None
@@ -1434,16 +1590,12 @@ def parse_human_readable_shipment(text: str) -> dict | None:
     all_emails = []
 
     for section in sections:
-        section_lines = [
-            line.strip()
-            for line in section.split("\n")
-            if line.strip()
-        ]
+        section_lines = [line.strip() for line in section.split("\n") if line.strip()]
 
         for line in section_lines:
-            # Extract email
+            # Extract email (RFC 5322 compliant pattern)
             email_match = re.search(
-                r"(?:email[:\s]+)?([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})",
+                r"(?:email[:\s]+)?([a-zA-Z0-9][a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]*@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*)",
                 line,
                 re.IGNORECASE,
             )
@@ -1463,10 +1615,11 @@ def parse_human_readable_shipment(text: str) -> dict | None:
                 if len(phone_clean) >= 7:
                     all_phones.append(phone_clean)
 
-            # Extract dimensions (flexible: "Dimensions 12x12x2" or "12x12x2")
+            # Extract dimensions (flexible: "Dimensions 12x12x2" or "12.5x10.25x3.5")
+            # Supports decimal dimensions and multiple separators (x, ×, *, by)
             if result["dimensions"] is None:
                 dim_match = re.search(
-                    r"(?:dimensions?[:\s]+)?(\d+)\s*x\s*(\d+)\s*x\s*(\d+)",
+                    r"(?:dimensions?[:\s]+)?(\d+(?:\.\d+)?)\s*[x×*]\s*(\d+(?:\.\d+)?)\s*[x×*]\s*(\d+(?:\.\d+)?)",
                     line,
                     re.IGNORECASE,
                 )
@@ -1475,13 +1628,16 @@ def parse_human_readable_shipment(text: str) -> dict | None:
                         f"{dim_match.group(1)} x {dim_match.group(2)} x {dim_match.group(3)}"
                     )
 
-            # Extract weight (flexible: "Weight 5.26lb" or "5.26lb")
+            # Extract weight (flexible: "Weight 5.26lb", "2 oz", "1.5 kg")
+            # Supports all units: lbs, oz, kg, g, pounds, ounces, etc.
             if result["weight"] is None:
                 weight_match = re.search(
-                    r"(?:weight[:\s]+)?(\d+(?:\.\d+)?)\s*lb(?:s)?", line, re.IGNORECASE
+                    r"(?:weight[:\s]+)?(\d+(?:\.\d+)?)\s*(lbs?|oz|ounces?|pounds?|kg|kilograms?|g|grams?)",
+                    line,
+                    re.IGNORECASE,
                 )
                 if weight_match:
-                    result["weight"] = f"{weight_match.group(1)} lbs"
+                    result["weight"] = f"{weight_match.group(1)} {weight_match.group(2)}"
 
             # Extract customs item description
             if result["contents"] is None:
@@ -1510,11 +1666,7 @@ def parse_human_readable_shipment(text: str) -> dict | None:
     # Parse address sections (filter out metadata lines)
     address_sections = []
     for section in sections:
-        section_lines = [
-            line.strip()
-            for line in section.split("\n")
-            if line.strip()
-        ]
+        section_lines = [line.strip() for line in section.split("\n") if line.strip()]
         # Filter out metadata lines
         address_lines = []
         for line in section_lines:
@@ -1640,13 +1792,9 @@ def parse_human_readable_shipment(text: str) -> dict | None:
                     addr["city"] = remaining_before_postal[1]
                 else:
                     # Multiple lines - take first as street2, second as city
-                    addr["street2"] = (
-                        remaining_before_postal[0] if remaining_before_postal else ""
-                    )
+                    addr["street2"] = remaining_before_postal[0] if remaining_before_postal else ""
                     addr["city"] = (
-                        remaining_before_postal[1]
-                        if len(remaining_before_postal) > 1
-                        else ""
+                        remaining_before_postal[1] if len(remaining_before_postal) > 1 else ""
                     )
 
             addr["zip"] = lines[postal_idx]
@@ -2087,11 +2235,7 @@ def register_shipment_tools(mcp, easypost_service=None):
                     await ctx.info("✅ Successfully converted natural text to spreadsheet format")
             else:
                 # Split into lines and filter empty (standard tab-separated format)
-                lines = [
-                    line.strip()
-                    for line in spreadsheet_data.split("\n")
-                    if line.strip()
-                ]
+                lines = [line.strip() for line in spreadsheet_data.split("\n") if line.strip()]
 
             if not lines:
                 return {
@@ -2104,12 +2248,15 @@ def register_shipment_tools(mcp, easypost_service=None):
             total_lines = len(lines)
             used_warehouses = set()  # Track which warehouses are used
 
-            # M3 Max: Semaphore for rate limiting (16 concurrent API calls max)
-            semaphore = asyncio.Semaphore(16)
+            # Semaphore for rate limiting (reduced to avoid EasyPost rate limits)
+            semaphore = asyncio.Semaphore(MAX_CONCURRENT)
 
             async def process_one_line(idx: int, line: str) -> dict:
                 """Process single shipment line with rate limiting."""
                 async with semaphore:
+                    # Add delay to prevent EasyPost rate limiting (production API: 1 request/second)
+                    await asyncio.sleep(1.0)
+
                     try:
                         if ctx and idx % max(1, total_lines // 10) == 0:
                             await ctx.info(f"Processing shipment {idx + 1}/{total_lines}...")
