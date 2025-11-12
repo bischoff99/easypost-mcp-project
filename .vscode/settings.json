@@ -39,7 +39,15 @@
     "**/node_modules/**": true,
     "**/.git/objects/**": true,
     "**/dist/**": true,
-    "**/build/**": true
+    "**/build/**": true,
+    "**/.pytest_cache/**": true,
+    "**/.mypy_cache/**": true,
+    "**/.ruff_cache/**": true,
+    "**/htmlcov/**": true,
+    "**/coverage/**": true,
+    "**/.coverage": true,
+    "**/*.pyc": true,
+    "**/.DS_Store": true
   },
 
   // ===== Search Configuration =====
@@ -55,7 +63,7 @@
   },
 
   // ===== Python Configuration =====
-  "python.languageServer": "None",
+  "python.languageServer": "Pylance",
   "python.analysis.typeCheckingMode": "basic",
   "python.analysis.autoImportCompletions": true,
   "python.analysis.completeFunctionParens": true,
