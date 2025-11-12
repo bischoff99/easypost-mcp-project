@@ -1,4 +1,7 @@
 {
+  // VS Code Extensions Recommendations
+  // Schema provides IntelliSense and validation for extension IDs
+  "$schema": "https://raw.githubusercontent.com/microsoft/vscode/main/src/schemas/json/extensions.schema.json",
   "recommendations": [
     // ===================================
     // PYTHON/BACKEND - CORE (Essential Only)

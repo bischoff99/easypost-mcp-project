@@ -1,4 +1,8 @@
 {
+  // VS Code Workspace Settings
+  // Schema provides IntelliSense, validation, and hover descriptions
+  // Note: Schema is auto-detected by VS Code, but explicit reference helps with offline mode
+  "$schema": "https://raw.githubusercontent.com/microsoft/vscode/main/src/schemas/json/settings.schema.json",
   // ===== Editor Core Settings =====
   "editor.formatOnSave": true,
   "editor.formatOnPaste": true,

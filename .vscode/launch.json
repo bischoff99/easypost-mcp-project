@@ -1,4 +1,7 @@
 {
+  // VS Code Debug Configuration
+  // Schema provides IntelliSense, validation, and hover descriptions
+  "$schema": "https://raw.githubusercontent.com/microsoft/vscode/main/src/schemas/json/launch.schema.json",
   "version": "0.2.0",
   "configurations": [
     {

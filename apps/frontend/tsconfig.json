@@ -1,4 +1,7 @@
 {
+  // TypeScript Configuration
+  // Schema provides IntelliSense and validation for compiler options
+  "$schema": "https://json.schemastore.org/tsconfig.json",
   "compilerOptions": {
     "target": "ES2022",
     "module": "ESNext",

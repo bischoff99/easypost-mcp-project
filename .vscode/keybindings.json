@@ -1,3 +1,5 @@
+// VS Code Keybindings Configuration
+// Schema: https://raw.githubusercontent.com/microsoft/vscode/main/src/schemas/json/keybindings.schema.json
 [
   {
     "key": "ctrl+shift+t",
