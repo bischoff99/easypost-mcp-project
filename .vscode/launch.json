@@ -37,8 +37,11 @@
       "request": "launch",
       "program": "${file}",
       "console": "integratedTerminal",
-      "justMyCode": false,
-      "envFile": "${workspaceFolder}/apps/backend/.env"
+      "justMyCode": true,
+      "envFile": "${workspaceFolder}/apps/backend/.env",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/apps/backend"
+      }
     },
     {
       "name": "Python: Debug Tests",
