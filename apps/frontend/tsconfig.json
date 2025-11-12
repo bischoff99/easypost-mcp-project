@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 {
   // TypeScript Configuration
   // Schema provides IntelliSense and validation for compiler options
@@ -20,24 +19,3 @@
   "include": ["src"],
   "exclude": ["node_modules", "dist"]
 }
-||||||| 7a576da
-=======
-{
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "jsx": "react-jsx",
-    "strict": true,
-    "noImplicitAny": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"]
-    }
-  },
-  "include": ["src", "app", "pages", "components", "scripts", "tests"],
-  "exclude": ["node_modules", "dist"]
-}
->>>>>>> 99314e0f7fef772f5a4f4779d02c1c7df730f0d8

@@ -28,25 +28,11 @@
       "name": "Python: Start MCP Server",
       "type": "debugpy",
       "request": "launch",
-<<<<<<< HEAD
       "module": "src.mcp_server.server",
       "cwd": "${workspaceFolder}/apps/backend",
       "envFile": "${workspaceFolder}/apps/backend/.env",
       "console": "integratedTerminal",
       "justMyCode": true
-||||||| 7a576da
-      "module": "src.mcp",
-      "cwd": "${workspaceFolder}/backend",
-      "envFile": "${workspaceFolder}/backend/.env",
-      "console": "externalTerminal",
-      "justMyCode": false
-=======
-      "module": "src.mcp",
-      "cwd": "${workspaceFolder}/apps/backend",
-      "envFile": "${workspaceFolder}/apps/backend/.env",
-      "console": "externalTerminal",
-      "justMyCode": false
->>>>>>> 99314e0f7fef772f5a4f4779d02c1c7df730f0d8
     },
     {
       "name": "Python: Debug Current File",
@@ -54,19 +40,11 @@
       "request": "launch",
       "program": "${file}",
       "console": "integratedTerminal",
-<<<<<<< HEAD
       "justMyCode": true,
       "envFile": "${workspaceFolder}/apps/backend/.env",
       "env": {
         "PYTHONPATH": "${workspaceFolder}/apps/backend"
       }
-||||||| 7a576da
-      "justMyCode": false,
-      "envFile": "${workspaceFolder}/backend/.env"
-=======
-      "justMyCode": false,
-      "envFile": "${workspaceFolder}/apps/backend/.env"
->>>>>>> 99314e0f7fef772f5a4f4779d02c1c7df730f0d8
     },
     {
       "name": "Python: Debug Tests",
@@ -120,19 +98,10 @@
       "cwd": "${workspaceFolder}/apps/backend",
       "envFile": "${workspaceFolder}/apps/backend/.env",
       "console": "integratedTerminal",
-<<<<<<< HEAD
       "justMyCode": true,
       "env": {
         "ENVIRONMENT": "production"
       }
-||||||| 7a576da
-      "justMyCode": false
-=======
-      "justMyCode": false,
-      "env": {
-        "ENVIRONMENT": "production"
-      }
->>>>>>> 99314e0f7fef772f5a4f4779d02c1c7df730f0d8
     },
     {
       "name": "Python: Debug Current Test File",

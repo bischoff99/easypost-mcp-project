@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 // VS Code Keybindings Configuration
 // Schema: https://raw.githubusercontent.com/microsoft/vscode/main/src/schemas/json/keybindings.schema.json
 [
@@ -46,53 +45,3 @@
     "command": "workbench.action.reloadWindow"
   }
 ]
-||||||| 7a576da
-=======
-[
-  {
-    "key": "ctrl+shift+t",
-    "command": "workbench.action.tasks.runTask",
-    "args": "🧪 Test: Backend"
-  },
-  {
-    "key": "ctrl+shift+l",
-    "command": "workbench.action.tasks.runTask",
-    "args": "🎨 Lint: Backend"
-  },
-  {
-    "key": "ctrl+shift+f",
-    "command": "workbench.action.tasks.runTask",
-    "args": "✨ Format: Backend"
-  },
-  {
-    "key": "ctrl+shift+alt+t",
-    "command": "workbench.action.tasks.runTask",
-    "args": "🧪 Test: Frontend"
-  },
-  {
-    "key": "ctrl+shift+alt+l",
-    "command": "workbench.action.tasks.runTask",
-    "args": "🎨 Lint: Frontend"
-  },
-  {
-    "key": "ctrl+shift+alt+f",
-    "command": "workbench.action.tasks.runTask",
-    "args": "✨ Format: Frontend"
-  },
-  {
-    "key": "ctrl+shift+d",
-    "command": "workbench.action.debug.start",
-    "when": "!inDebugMode"
-  },
-  {
-    "key": "ctrl+shift+b",
-    "command": "workbench.action.tasks.build"
-  },
-  {
-    "key": "ctrl+shift+r",
-    "command": "workbench.action.reloadWindow"
-  }
-]
-
-
->>>>>>> 99314e0f7fef772f5a4f4779d02c1c7df730f0d8
