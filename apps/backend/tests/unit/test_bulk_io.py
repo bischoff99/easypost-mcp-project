@@ -281,7 +281,7 @@ class TestCreateShipmentWithRates:
                 "status": "success",
                 "data": {
                     "tracking_code": "TRACK123",
-                    "postage_label": {"label_url": "https://label.url"},
+                    "postage_label_url": "https://label.url",
                 },
             }
         )

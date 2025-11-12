@@ -165,7 +165,7 @@ from src.routers import analytics, shipments, tracking
 app.include_router(shipments.rates_router, prefix="/api")
 app.include_router(shipments.router, prefix="/api")
 app.include_router(analytics.router, prefix="/api")
-app.include_router(tracking.router, prefix="/api")
+app.include_router(tracking.router, prefix="/api/tracking")
 
 logger.info("Routers registered: shipments, analytics, tracking")
 
