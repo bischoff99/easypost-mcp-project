@@ -69,6 +69,8 @@
   "python.analysis.completeFunctionParens": true,
   "python.analysis.inlayHints.functionReturnTypes": true,
   "python.analysis.inlayHints.variableTypes": true,
+  "python.analysis.diagnosticMode": "workspace",
+  "python.analysis.indexing": true,
   "python.defaultInterpreterPath": "${workspaceFolder}/apps/backend/.venv/bin/python",
   "python.testing.pytestEnabled": true,
   "python.testing.unittestEnabled": false,
@@ -141,5 +143,10 @@
   // ===== Cursor-Specific Settings =====
   "cursor.general.enableShadowWorkspace": true,
   "cursor.cpp.disabledLanguages": [],
-  "cursor.chat.enabled": true
+  "cursor.chat.enabled": true,
+  "cursorpyright.analysis.autoImportCompletions": true,
+  "cursorpyright.analysis.diagnosticMode": "workspace",
+  "cursorpyright.analysis.inlayHints.functionReturnTypes": true,
+  "cursorpyright.analysis.inlayHints.variableTypes": true,
+  "cursorpyright.analysis.typeCheckingMode": "basic"
 }
