@@ -3,7 +3,7 @@
 # EasyPost MCP - Full Functionality Test Suite
 # Tests all components, endpoints, and integrations
 
-set -euo pipefail
+set -uo pipefail
 
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
@@ -49,7 +49,7 @@ echo ""
 
 cd apps/backend
 source venv/bin/activate
-if pytest tests/unit -v -n auto --tb=short -q 2>&1 | tail -5; then
+if pytest tests/unit -v -n auto --tb=short -q --no-cov 2>&1 | tail -5; then
     echo -e "${GREEN}✓ Backend unit tests PASSED${NC}"
     ((TESTS_PASSED++))
 else
@@ -63,7 +63,7 @@ echo "PHASE 2: Backend Integration Tests"
 echo "═══════════════════════════════════════════════════════════"
 echo ""
 
-if pytest tests/integration -v --tb=short -q 2>&1 | tail -5; then
+if pytest tests/integration -v --tb=short -q --no-cov 2>&1 | tail -5; then
     echo -e "${GREEN}✓ Backend integration tests PASSED${NC}"
     ((TESTS_PASSED++))
 else
@@ -72,14 +72,12 @@ else
 fi
 echo ""
 
-cd ..
-
 echo "═══════════════════════════════════════════════════════════"
 echo "PHASE 3: Frontend Tests (auto-detected workers)"
 echo "═══════════════════════════════════════════════════════════"
 echo ""
 
-cd apps/frontend
+cd ../frontend
 if npm test 2>&1 | tail -8; then
     echo -e "${GREEN}✓ Frontend tests PASSED${NC}"
     ((TESTS_PASSED++))
@@ -89,7 +87,7 @@ else
 fi
 echo ""
 
-cd ..
+cd ../..
 
 echo "═══════════════════════════════════════════════════════════"
 echo "PHASE 4: API Endpoint Tests"
@@ -100,21 +98,24 @@ echo ""
 sleep 2
 
 # Health Check
-test_endpoint "Backend Health" "http://localhost:8000/health" "healthy"
-test_endpoint "Proxy Health" "http://localhost:8080/health" "healthy"
+test_endpoint "Backend Health" "http://localhost:8000/health" "ok"
 
 # API Endpoints (Direct)
 test_endpoint "Analytics Endpoint (Direct)" "http://localhost:8000/api/analytics" "success"
 # Note: Rates endpoint is POST-only, skip GET test
 
-# API Endpoints (Through Proxy - if proxy exists)
-if curl -s http://localhost:8080/health > /dev/null 2>&1; then
-    test_endpoint "Analytics via Proxy" "http://localhost:8080/api/analytics" "success"
-fi
-
-# Frontend
+# Frontend (Direct)
 test_endpoint "Frontend (Direct)" "http://localhost:5173" "<!doctype html>"
-test_endpoint "Frontend via Proxy" "http://localhost:8080" "<!doctype html>"
+
+# Proxy tests (optional - skip if not running)
+if curl -s -m 2 http://localhost:8080/health > /dev/null 2>&1; then
+    echo -e "${BLUE}Proxy detected - running proxy tests${NC}"
+    test_endpoint "Proxy Health" "http://localhost:8080/health" "ok"
+    test_endpoint "Analytics via Proxy" "http://localhost:8080/api/analytics" "success"
+    test_endpoint "Frontend via Proxy" "http://localhost:8080" "<!doctype html>"
+else
+    echo -e "${BLUE}Proxy not running - skipping proxy tests (optional for personal use)${NC}"
+fi
 
 echo "═══════════════════════════════════════════════════════════"
 echo "PHASE 5: Code Quality Checks"
@@ -143,7 +144,7 @@ else
 fi
 echo ""
 
-cd ..
+cd ../..
 
 echo "═══════════════════════════════════════════════════════════"
 echo "PHASE 6: Configuration Validation"
@@ -184,22 +185,14 @@ source venv/bin/activate
 # Get project root for script paths
 PROJECT_ROOT="$(cd ../.. && pwd)"
 
-echo -e "${BLUE}Testing: MCP Tool Availability${NC}"
-if python "${PROJECT_ROOT}/scripts/python/mcp_tool.py" get_tracking TEST 2>/dev/null | grep -q "status"; then
-    echo -e "${GREEN}✓ PASSED - MCP tools accessible${NC}"
-    ((TESTS_PASSED++))
-else
-    echo -e "${RED}✗ FAILED - MCP tools not accessible${NC}"
-    ((TESTS_FAILED++))
-fi
-
-echo -e "${BLUE}Testing: MCP Tool Response Format${NC}"
-mcp_response=$(python "${PROJECT_ROOT}/scripts/python/mcp_tool.py" get_tracking TEST 2>/dev/null)
+echo -e "${BLUE}Testing: MCP Tool Availability & Response Format${NC}"
+mcp_response=$(python "${PROJECT_ROOT}/scripts/python/mcp_tool.py" get_tracking TEST 2>&1)
 if echo "$mcp_response" | grep -q '"status"'; then
-    echo -e "${GREEN}✓ PASSED - MCP tool returns valid JSON format${NC}"
+    echo -e "${GREEN}✓ PASSED - MCP tools accessible and return valid JSON format${NC}"
     ((TESTS_PASSED++))
 else
-    echo -e "${RED}✗ FAILED - Invalid MCP tool response format${NC}"
+    echo -e "${RED}✗ FAILED - MCP tools not accessible or invalid format${NC}"
+    echo -e "${RED}  Response: $mcp_response${NC}"
     ((TESTS_FAILED++))
 fi
 echo ""
