@@ -10,6 +10,7 @@ build
 out
 .nuxt
 .cache
+.vite
 
 # Lock files
 package-lock.json

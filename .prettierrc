@@ -1,4 +1,7 @@
 {
+  // Prettier Configuration
+  // Schema provides IntelliSense and validation in VS Code
+  "$schema": "https://json.schemastore.org/prettierrc.json",
   "semi": true,
   "trailingComma": "es5",
   "singleQuote": true,

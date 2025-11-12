@@ -79,18 +79,25 @@ repos:
             apps/frontend/coverage/.*
           )
 
-  # YAML formatting
+  # Code formatting (YAML, JavaScript, JSON, CSS, Markdown)
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v4.0.0-alpha.8
     hooks:
       - id: prettier
-        files: \.(yaml|yml)$
+        files: \.(yaml|yml|js|jsx|json|css|md)$
         exclude: |
           (?x)^(
             .*\.lock$|
             node_modules/.*|
             venv/.*|
-            \.venv/.*
+            \.venv/.*|
+            dist/.*|
+            build/.*|
+            coverage/.*|
+            apps/backend/.*|
+            apps/frontend/dist/.*|
+            apps/frontend/build/.*|
+            apps/frontend/coverage/.*
           )
 
 # Global exclude patterns
