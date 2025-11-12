@@ -52,8 +52,10 @@ describe('ShipmentsPage', () => {
 
     renderWithProviders(<ShipmentsPage />);
 
-    expect(screen.getByText('Shipments')).toBeInTheDocument();
-    expect(screen.getByText('View and manage all your shipments')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Shipments')).toBeInTheDocument();
+      expect(screen.getByText('View and manage all your shipments')).toBeInTheDocument();
+    });
   });
 
   it('renders New Shipment button', async () => {
@@ -64,8 +66,10 @@ describe('ShipmentsPage', () => {
 
     renderWithProviders(<ShipmentsPage />);
 
-    const newButton = screen.getByText('New Shipment');
-    expect(newButton).toBeInTheDocument();
+    await waitFor(() => {
+      const newButton = screen.getByText('New Shipment');
+      expect(newButton).toBeInTheDocument();
+    });
   });
 
   it('displays empty state when no shipments', async () => {
@@ -117,7 +121,9 @@ describe('ShipmentsPage', () => {
 
     renderWithProviders(<ShipmentsPage />);
 
-    expect(screen.getByText('Search & Filter')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Search & Filter')).toBeInTheDocument();
+    });
   });
 });
 
