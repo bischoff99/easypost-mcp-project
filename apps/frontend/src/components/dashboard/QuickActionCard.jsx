@@ -6,7 +6,7 @@ export default function QuickActionCard({
   description,
   icon: Icon,
   onClick,
-  delay = 0,
+  delay: _delay = 0,
   color = 'primary',
 }) {
   const colorClasses = {

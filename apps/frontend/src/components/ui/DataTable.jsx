@@ -200,7 +200,7 @@ export default function DataTable({
                 </TableCell>
               </TableRow>
             ) : (
-              paginatedData.map((row, index) => (
+              paginatedData.map((row) => (
                 <TableRow
                   key={row.id}
                   className={cn(
@@ -225,7 +225,7 @@ export default function DataTable({
                       {column.render ? column.render(row) : row[column.key]}
                     </TableCell>
                   ))}
-                  </tr>
+                </TableRow>
               ))
             )}
           </TableBody>

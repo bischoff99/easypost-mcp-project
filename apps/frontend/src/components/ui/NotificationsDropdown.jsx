@@ -2,7 +2,7 @@ import { Bell } from 'lucide-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 /**
  * NotificationsDropdown Component
@@ -11,39 +11,33 @@ import { useState, useEffect } from 'react';
  * Notifications are ephemeral and don't need persistence.
  */
 export default function NotificationsDropdown() {
-  const [notifications, setNotifications] = useState([]);
-
-  // Initialize with sample notifications if empty
-  useEffect(() => {
-    if (notifications.length === 0) {
-      setNotifications([
-        {
-          id: '1',
-          title: 'Shipment Created',
-          message: 'Shipment shp_36ee98e957274becb05171608e28f3d9 has been created',
-          type: 'success',
-          read: false,
-          createdAt: new Date().toISOString(),
-        },
-        {
-          id: '2',
-          title: 'Label Purchased',
-          message: 'Label purchased for tracking number 9434636208303342135797',
-          type: 'info',
-          read: false,
-          createdAt: new Date(Date.now() - 3600000).toISOString(),
-        },
-        {
-          id: '3',
-          title: 'Shipment In Transit',
-          message: 'Your shipment is now in transit',
-          type: 'info',
-          read: false,
-          createdAt: new Date(Date.now() - 7200000).toISOString(),
-        },
-      ]);
-    }
-  }, []);
+  // Initialize with sample notifications using useState initializer
+  const [notifications, setNotifications] = useState(() => [
+    {
+      id: '1',
+      title: 'Shipment Created',
+      message: 'Shipment shp_36ee98e957274becb05171608e28f3d9 has been created',
+      type: 'success',
+      read: false,
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: '2',
+      title: 'Label Purchased',
+      message: 'Label purchased for tracking number 9434636208303342135797',
+      type: 'info',
+      read: false,
+      createdAt: new Date(Date.now() - 3600000).toISOString(),
+    },
+    {
+      id: '3',
+      title: 'Shipment In Transit',
+      message: 'Your shipment is now in transit',
+      type: 'info',
+      read: false,
+      createdAt: new Date(Date.now() - 7200000).toISOString(),
+    },
+  ]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 

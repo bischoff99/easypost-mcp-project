@@ -10,7 +10,7 @@ export default function StatsCard({
   change,
   trend,
   icon: Icon,
-  delay = 0,
+  delay: _delay = 0,
 }) {
   // Support both 'title' and 'name' props for compatibility
   const displayTitle = title || name

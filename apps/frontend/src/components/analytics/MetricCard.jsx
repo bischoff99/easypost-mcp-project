@@ -9,7 +9,7 @@ export default function MetricCard({
   trend,
   icon: Icon,
   color = 'primary',
-  delay = 0,
+  delay: _delay = 0,
 }) {
   const isPositive = trend === 'up'
 

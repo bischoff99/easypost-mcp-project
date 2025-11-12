@@ -20,7 +20,7 @@ export default function EnhancedCard({
   hoverable = true,
   onClick,
   className = '',
-  delay = 0,
+  delay: _delay = 0,
 }) {
   return (
     <div
