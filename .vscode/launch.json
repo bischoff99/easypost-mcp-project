@@ -19,17 +19,17 @@
       "cwd": "${workspaceFolder}/apps/backend",
       "envFile": "${workspaceFolder}/apps/backend/.env",
       "console": "integratedTerminal",
-      "justMyCode": false
+      "justMyCode": true
     },
     {
       "name": "Python: Start MCP Server",
       "type": "debugpy",
       "request": "launch",
-      "module": "src.mcp",
+      "module": "src.mcp_server.server",
       "cwd": "${workspaceFolder}/apps/backend",
       "envFile": "${workspaceFolder}/apps/backend/.env",
-      "console": "externalTerminal",
-      "justMyCode": false
+      "console": "integratedTerminal",
+      "justMyCode": true
     },
     {
       "name": "Python: Debug Current File",
@@ -48,7 +48,10 @@
       "args": ["-vv", "-s", "--tb=short", "--no-cov", "-n", "0", "${file}"],
       "cwd": "${workspaceFolder}/apps/backend",
       "console": "integratedTerminal",
-      "justMyCode": false
+      "justMyCode": true,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/apps/backend"
+      }
     },
     {
       "name": "Python: Debug Unit Tests Only",
@@ -58,7 +61,7 @@
       "args": ["tests/unit", "-vv", "-s", "--tb=short", "--no-cov", "-n", "0"],
       "cwd": "${workspaceFolder}/apps/backend",
       "console": "integratedTerminal",
-      "justMyCode": false
+      "justMyCode": true
     },
     {
       "name": "Python: Debug Integration Tests",
@@ -68,7 +71,7 @@
       "args": ["tests/integration", "-vv", "-s", "--tb=short", "-n", "0"],
       "cwd": "${workspaceFolder}/apps/backend",
       "console": "integratedTerminal",
-      "justMyCode": false
+      "justMyCode": true
     },
     {
       "name": "Node: Start Frontend Dev Server",
@@ -89,7 +92,7 @@
       "cwd": "${workspaceFolder}/apps/backend",
       "envFile": "${workspaceFolder}/apps/backend/.env",
       "console": "integratedTerminal",
-      "justMyCode": false,
+      "justMyCode": true,
       "env": {
         "ENVIRONMENT": "production"
       }
@@ -112,7 +115,7 @@
       ],
       "cwd": "${workspaceFolder}/apps/backend",
       "console": "integratedTerminal",
-      "justMyCode": false
+      "justMyCode": true
     },
     {
       "name": "Browser: Debug Frontend (Chrome)",
@@ -122,7 +125,9 @@
       "webRoot": "${workspaceFolder}/apps/frontend/src",
       "sourceMaps": true,
       "sourceMapPathOverrides": {
-        "webpack:///./src/*": "${webRoot}/*"
+        "/@fs/*": "${webRoot}/*",
+        "/@id/*": "${webRoot}/*",
+        "/src/*": "${webRoot}/*"
       }
     },
     {
@@ -164,7 +169,7 @@
       "args": ["-vv", "-s", "--tb=long", "--no-cov", "-n", "0", "-k", "${input:testPattern}"],
       "cwd": "${workspaceFolder}/apps/backend",
       "console": "integratedTerminal",
-      "justMyCode": false
+      "justMyCode": true
     }
   ],
   "compounds": [
