@@ -114,7 +114,9 @@
         "-m",
         "pytest",
         "tests/",
-        "-v"
+        "-v",
+        "-n",
+        "auto"
       ],
       "options": {
         "cwd": "${workspaceFolder}/apps/backend",
@@ -155,95 +157,6 @@
       }
     },
     {
-      "label": "🎨 Lint: Backend",
-      "type": "shell",
-      "command": "${command:python.interpreterPath}",
-      "args": [
-        "-m",
-        "ruff",
-        "check",
-        "src/",
-        "tests/"
-      ],
-      "options": {
-        "cwd": "${workspaceFolder}/apps/backend"
-      },
-      "problemMatcher": {
-        "owner": "ruff",
-        "source": "ruff",
-        // Regex pattern matches: file:line:column: code: message
-        // Example: "src/server.py:42:5: F401: Unused import"
-        "pattern": {
-          "regexp": "^(.+):(\\d+):(\\d+): (\\w+): (.+)$",
-          "file": 1,
-          "line": 2,
-          "column": 3,
-          "code": 4,
-          "message": 5
-        }
-      },
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared"
-      }
-    },
-    {
-      "label": "🎨 Lint: Frontend",
-      "type": "shell",
-      "command": "npm",
-      "args": [
-        "run",
-        "lint"
-      ],
-      "options": {
-        "cwd": "${workspaceFolder}/apps/frontend"
-      },
-      "problemMatcher": [
-        "$eslint-stylish"
-      ],
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared"
-      }
-    },
-    {
-      "label": "✨ Format: Backend",
-      "type": "shell",
-      "command": "${command:python.interpreterPath}",
-      "args": [
-        "-m",
-        "ruff",
-        "format",
-        "src/",
-        "tests/"
-      ],
-      "options": {
-        "cwd": "${workspaceFolder}/apps/backend"
-      },
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared"
-      }
-    },
-    {
-      "label": "✨ Format: Frontend",
-      "type": "shell",
-      "command": "npm",
-      "args": [
-        "run",
-        "format"
-      ],
-      "options": {
-        "cwd": "${workspaceFolder}/apps/frontend"
-      },
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared"
-      }
-    },
-    {
       "label": "🏗️ Build: Frontend",
       "type": "shell",
       "command": "npm",
@@ -267,18 +180,21 @@
       }
     },
     {
-      // Pre-commit workflow: Runs format, lint, and test in sequence
+      // Pre-commit workflow: Runs format, lint, and test via Makefile
       // Use before committing code to ensure quality
+      // Note: Uses Makefile commands for consistency (lint/format tasks removed to reduce redundancy)
       "label": "✅ Pre-Commit: Run All Checks",
-      "dependsOn": [
-        "✨ Format: Backend",
-        "✨ Format: Frontend",
-        "🎨 Lint: Backend",
-        "🎨 Lint: Frontend",
-        "🧪 Test: Backend"
-      ],
-      "dependsOrder": "sequence",
-      "problemMatcher": []
+      "type": "shell",
+      "command": "make",
+      "args": ["check"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
     },
     {
       "label": "🗄️ Database: Create Migration",

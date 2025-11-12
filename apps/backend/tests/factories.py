@@ -64,7 +64,7 @@ class EasyPostFactory:
         tracking_code: str = "9400111899223345", status: str = "delivered", **kwargs
     ) -> dict[str, Any]:
         """Create a mock tracking response.
-        
+
         Matches format returned by EasyPostService.get_tracking()
         """
         base = {
