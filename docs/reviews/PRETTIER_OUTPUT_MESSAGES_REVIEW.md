@@ -1,7 +1,7 @@
 # Prettier Output Messages Review
 
-**Date**: 2025-11-12  
-**Issue**: Prettier showing INFO messages in Output panel  
+**Date**: 2025-11-12
+**Issue**: Prettier showing INFO messages in Output panel
 **Question**: Why are these messages appearing and how to control them?
 
 ---
@@ -140,7 +140,7 @@ This is **correct** because:
 
 ### ✅ Keep Messages (Recommended)
 
-**Reason**: 
+**Reason**:
 - Helpful for debugging formatting issues
 - Shows which files are being processed
 - Confirms ignore patterns are working
@@ -210,7 +210,7 @@ This is correct and tells Prettier where to find your config.
 
 ---
 
-**Reviewer**: AI Assistant (Claude)  
-**Date**: 2025-11-12  
+**Reviewer**: AI Assistant (Claude)
+**Date**: 2025-11-12
 **Status**: Informational - No action required (messages are normal)
 

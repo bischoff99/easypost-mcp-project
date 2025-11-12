@@ -2,13 +2,22 @@
 
 Helper scripts for development, testing, and maintenance of the EasyPost MCP project.
 
+## Organization
+
+Scripts are organized into subdirectories:
+- **`dev/`** - Development startup scripts
+- **`test/`** - Testing and benchmarking scripts
+- **`utils/`** - Utility and maintenance scripts
+- **`python/`** - Python tool scripts
+- **`lib/`** - Shared library functions (`common.sh`)
+
 ## Development Scripts
 
 ### `start-dev.sh`
 Start both backend and frontend servers in separate terminal windows (macOS only).
 
 ```bash
-./scripts/start-dev.sh
+./scripts/dev/start-dev.sh
 ```
 
 **What it does:**
@@ -29,40 +38,23 @@ Start both backend and frontend servers in separate terminal windows (macOS only
 Start only the backend FastAPI server.
 
 ```bash
-./scripts/start-backend.sh
+./scripts/dev/start-backend.sh          # Standard mode (single worker, reload)
+./scripts/dev/start-backend.sh --jit   # JIT mode (Python 3.13+, multi-worker)
+./scripts/dev/start-backend.sh --mcp-verify  # Enhanced MCP verification
 ```
 
 **What it does:**
 - Activates Python virtual environment
-- Starts uvicorn with hot reload
+- Standard mode: Starts uvicorn with hot reload (single worker)
+- JIT mode: Multi-worker setup with JIT compilation (Python 3.13+)
+  - Calculates workers: (2 × CPU cores) + 1
+  - Uses uvloop for better performance
+  - Expects 10-20% performance boost
 - Port: 8000
 
 ---
 
-### `start-backend-jit.sh`
-Start backend with JIT compilation optimizations.
-
-```bash
-./scripts/start-backend-jit.sh
-```
-
-**What it does:**
-- Similar to `start-backend.sh`
-- Enables Python JIT optimizations
-- Faster startup and runtime
-
----
-
-### `start-frontend.sh`
-Start only the frontend Vite development server.
-
-```bash
-./scripts/start-frontend.sh
-```
-
-**What it does:**
-- Starts Vite dev server with hot reload
-- Port: 5173
+**Note**: For frontend-only development, use `cd apps/frontend && npm run dev` directly or use VS Code task "Dev: Frontend".
 
 ---
 
@@ -72,7 +64,7 @@ Start only the frontend Vite development server.
 Run quick test suite for both backend and frontend.
 
 ```bash
-./scripts/quick-test.sh
+./scripts/test/quick-test.sh
 ```
 
 **What it does:**
@@ -88,7 +80,7 @@ Run quick test suite for both backend and frontend.
 Run tests in watch mode for active development.
 
 ```bash
-./scripts/watch-tests.sh
+./scripts/test/watch-tests.sh
 ```
 
 **What it does:**
@@ -104,7 +96,7 @@ Run tests in watch mode for active development.
 Run comprehensive performance benchmarks (M3 Max optimized).
 
 ```bash
-./scripts/benchmark.sh
+./scripts/test/benchmark.sh
 ```
 
 **What it does:**
@@ -126,22 +118,19 @@ Run comprehensive performance benchmarks (M3 Max optimized).
 
 ## Additional Development Scripts
 
-### `dev.sh` / `dev_local.sh`
-Alternative development startup scripts.
+### `dev_local.sh`
+Development startup script with Docker PostgreSQL.
 
 ```bash
-./scripts/dev.sh
-# or
-./scripts/dev_local.sh
+./scripts/dev/dev_local.sh
 ```
 
-**What they do:**
-- Start PostgreSQL Docker container
+**What it does:**
+- Starts PostgreSQL Docker container
 - Setup and start backend server
 - Setup and start frontend server
-- Handle cleanup on exit
-
-**Difference:** `dev_local.sh` includes more error checking and user feedback
+- Includes error checking and user feedback
+- Handles cleanup on exit
 
 ---
 
@@ -149,7 +138,7 @@ Alternative development startup scripts.
 Start production servers.
 
 ```bash
-./scripts/start-prod.sh
+./scripts/dev/start-prod.sh
 ```
 
 **What it does:**
@@ -165,7 +154,7 @@ Start production servers.
 Monitor PostgreSQL database activity.
 
 ```bash
-./scripts/monitor-database.sh
+./scripts/utils/monitor-database.sh
 ```
 
 **What it does:**
@@ -179,7 +168,7 @@ Monitor PostgreSQL database activity.
 Setup Nginx reverse proxy for production.
 
 ```bash
-./scripts/setup-nginx-proxy.sh
+./scripts/utils/setup-nginx-proxy.sh
 ```
 
 **What it does:**
@@ -194,7 +183,7 @@ Setup Nginx reverse proxy for production.
 Run comprehensive functionality tests.
 
 ```bash
-./scripts/test-full-functionality.sh
+./scripts/test/test-full-functionality.sh
 ```
 
 **What it does:**
@@ -209,7 +198,7 @@ Run comprehensive functionality tests.
 Python script for bulk rate testing.
 
 ```bash
-python scripts/get-bulk-rates.py
+python scripts/python/get-bulk-rates.py
 ```
 
 **What it does:**
@@ -223,7 +212,7 @@ python scripts/get-bulk-rates.py
 Verify MCP server configuration.
 
 ```bash
-python scripts/verify_mcp_server.py
+python scripts/python/verify_mcp_server.py
 ```
 
 **What it does:**
@@ -241,37 +230,42 @@ python scripts/verify_mcp_server.py
 make dev
 
 # Option 2: Use script
-./scripts/start-dev.sh
+./scripts/dev/start-dev.sh
 ```
 
 ### Testing Workflow
 ```bash
 # Quick test before commit
-./scripts/quick-test.sh
+./scripts/test/quick-test.sh
 
 # Watch mode during development
-./scripts/watch-tests.sh
+./scripts/test/watch-tests.sh
 
 # Performance benchmarks
-./scripts/benchmark.sh
+./scripts/test/benchmark.sh
 ```
 
 ### Utility Workflow
 ```bash
 # Monitor database
-./scripts/monitor-database.sh
+./scripts/utils/monitor-database.sh
 
 # Test full functionality
-./scripts/test-full-functionality.sh
+./scripts/test/test-full-functionality.sh
 
 # Verify MCP server
-python scripts/verify_mcp_server.py
+python scripts/python/verify_mcp_server.py
+
+# MCP utilities
+./scripts/utils/mcp-utils.sh health
+./scripts/utils/mcp-utils.sh verify
+./scripts/utils/mcp-utils.sh test
 ```
 
 ## Script Requirements
 
 ### macOS-Specific Scripts
-- `start-dev.sh` - Uses `osascript` for Terminal
+- `dev/start-dev.sh` - Uses `osascript` for Terminal
 
 ### General Requirements
 - `bash` - All scripts
@@ -285,11 +279,11 @@ Scripts respect these environment variables:
 
 ```bash
 # Use production environment
-ENVIRONMENT=production ./scripts/start-backend.sh
+ENVIRONMENT=production ./scripts/dev/start-backend.sh
 
 # Custom ports
-PORT=3000 ./scripts/start-frontend.sh
-API_PORT=9000 ./scripts/start-backend.sh
+cd apps/frontend && PORT=3000 npm run dev
+API_PORT=9000 ./scripts/dev/start-backend.sh
 ```
 
 ## Exit Codes
@@ -302,12 +296,18 @@ Scripts follow standard exit code conventions:
 
 ## Adding New Scripts
 
-1. Create script in `scripts/` directory
-2. Make executable: `chmod +x scripts/your-script.sh`
-3. Add shebang: `#!/bin/bash`
+1. Create script in appropriate subdirectory:
+   - `scripts/dev/` - Development startup scripts
+   - `scripts/test/` - Testing and benchmarking scripts
+   - `scripts/utils/` - Utility and maintenance scripts
+   - `scripts/python/` - Python tool scripts
+2. Make executable: `chmod +x scripts/<subdir>/your-script.sh`
+3. Add shebang: `#!/usr/bin/env zsh` (or `#!/usr/bin/env bash` for bash-specific scripts)
 4. Add description comment at top
-5. Document in this README
-6. Test on clean environment
+5. Use `scripts/lib/common.sh` for shared functions (source it: `source "$(dirname "$0")/../lib/common.sh"`)
+6. Document in this README
+7. Test on clean environment
+8. Update Makefile if script should be accessible via `make` command
 
 ### Script Template
 
@@ -363,12 +363,9 @@ pip install -r requirements.txt
 Most scripts have Makefile aliases (from project root):
 
 ```bash
-make dev          # ./scripts/start-dev.sh
-make backend      # ./scripts/start-backend.sh
-make frontend     # ./scripts/start-frontend.sh
+make dev          # ./scripts/dev/start-dev.sh (via Makefile)
 make test         # Comprehensive tests
-make test-fast    # ./scripts/quick-test.sh
-make benchmark    # ./scripts/benchmark.sh
+make prod         # ./scripts/dev/start-prod.sh
 ```
 
 See [Makefile](../Makefile) for complete list.

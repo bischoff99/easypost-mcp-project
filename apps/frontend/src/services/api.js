@@ -41,13 +41,68 @@ export const shipmentAPI = {
   },
 
   getRecentShipments: async (limit = 10) => {
-    const response = await api.get(`/db/shipments?limit=${limit}`);
+    const response = await api.get('/shipments', { params: { page_size: limit } });
     return response.data;
   },
 
   getAnalytics: async () => {
     const response = await api.get('/analytics');
     return response.data;
+  },
+
+  getStats: async () => {
+    const response = await api.get('/analytics');
+    if (response.data.status === 'success' && response.data.data) {
+      const { summary, by_carrier } = response.data.data;
+      const totalShipments = summary?.total_shipments || 0;
+      const totalCost = summary?.total_cost || 0;
+      const deliveredCount = by_carrier?.reduce((sum, c) => sum + (c.shipment_count * c.success_rate / 100), 0) || 0;
+      const deliveryRate = totalShipments > 0 ? deliveredCount / totalShipments : 0;
+
+      return {
+        status: 'success',
+        data: {
+          total_shipments: {
+            label: 'Total Shipments',
+            value: totalShipments,
+            note: 'Last 100 from API',
+          },
+          in_transit: {
+            label: 'In Transit',
+            value: Math.max(0, totalShipments - Math.floor(deliveredCount)),
+            note: 'Currently shipping',
+          },
+          total_cost: {
+            label: 'Total Spent',
+            value: totalCost,
+            note: 'From shipment rates',
+          },
+          delivery_rate: {
+            label: 'Delivery Rate',
+            value: deliveryRate,
+            note: 'Delivered / Total',
+          },
+        },
+      };
+    }
+    throw new Error(response.data.message || 'Failed to fetch stats');
+  },
+
+  getCarrierPerformance: async () => {
+    const response = await api.get('/analytics');
+    if (response.data.status === 'success' && response.data.data) {
+      const { by_carrier } = response.data.data;
+      return {
+        status: 'success',
+        data: (by_carrier || []).map((carrier) => ({
+          carrier: carrier.carrier,
+          shipments: carrier.shipment_count,
+          delivered: Math.floor(carrier.shipment_count * carrier.success_rate / 100),
+          rate: carrier.success_rate,
+        })),
+      };
+    }
+    throw new Error(response.data.message || 'Failed to fetch carrier performance');
   },
 
   getShipment: async (shipmentId) => {

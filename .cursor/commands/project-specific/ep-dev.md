@@ -41,22 +41,23 @@ Start EasyPost development environment (backend + frontend + MCP).
 
 **Process 1 - Backend:**
 ```bash
-cd backend
-source venv/bin/activate
+cd apps/backend
+source .venv/bin/activate  # or venv/bin/activate
 uvicorn src.server:app --reload --host 0.0.0.0 --port 8000
 ```
 
 **Process 2 - Frontend:**
 ```bash
-cd frontend
+cd apps/frontend
 npm run dev
 ```
 
 **Process 3 - MCP Server:**
 ```bash
-cd backend
-source venv/bin/activate
-python -m src.mcp
+cd apps/backend
+source .venv/bin/activate  # or venv/bin/activate
+python -m src.mcp_server.server
+# Alternative: python run_mcp.py
 ```
 
 ## Output Format
@@ -125,15 +126,15 @@ python -m src.mcp
 
 ### Backend Settings
 ```python
-# backend/src/utils/config.py
-EASYPOST_API_KEY: from .env
+# apps/backend/src/utils/config.py
+EASYPOST_API_KEY: from .env (apps/backend/.env)
 WORKERS: auto-detected (max 16)
 LOG_LEVEL: "info"
 ```
 
 ### Frontend Settings
 ```javascript
-// frontend/vite.config.js
+// apps/frontend/vite.config.js
 server: {
   port: 5173,
   host: true,
@@ -143,13 +144,13 @@ server: {
 
 ### MCP Settings
 ```json
-// claude_desktop_config.json
+// .cursor/mcp.json or ~/.cursor/mcp.json
 {
   "mcpServers": {
     "easypost-shipping": {
       "command": "python",
-      "args": ["-m", "src.mcp"],
-      "cwd": "backend"
+      "args": ["-m", "src.mcp_server.server"],
+      "cwd": "apps/backend"
     }
   }
 }
@@ -164,20 +165,51 @@ server: {
 
 **Dependencies missing:**
 ```bash
-cd backend && pip install -r requirements.txt
-cd frontend && npm install
+# Use make setup for full setup
+make setup
+
+# Or manually:
+cd apps/backend && pip install -e .
+cd apps/frontend && npm install
 ```
 
 **Environment variables:**
 ```bash
 # Check .env file
-cat backend/.env
+cat apps/backend/.env
 
 # Set if missing
-echo "EASYPOST_API_KEY=your_key_here" >> backend/.env
+echo "EASYPOST_API_KEY=your_key_here" >> apps/backend/.env
+```
+
+**Use existing scripts:**
+```bash
+# Backend only (with options)
+./scripts/dev/start-backend.sh [--jit] [--mcp-verify]
+
+# Full stack (macOS Terminal windows)
+./scripts/dev/start-dev.sh
+
+# Or use Makefile
+make dev  # Starts backend + frontend
 ```
 
 ## Advanced Usage
+
+**Backend with JIT (Performance):**
+```bash
+/ep-dev backend --jit
+# Enables JIT compilation (Python 3.13+)
+# Multi-worker mode with uvloop
+# Expect 10-20% performance boost
+```
+
+**Backend with MCP Verification:**
+```bash
+/ep-dev backend --mcp-verify
+# Verifies MCP tools after startup
+# Shows tool registration status
+```
 
 **Watch specific directories:**
 ```bash
@@ -198,6 +230,7 @@ echo "EASYPOST_API_KEY=your_key_here" >> backend/.env
 ```bash
 /ep-dev --prod
 # Uses production builds, no hot reload
+# Or use: make prod
 ```
 
 ## Related Commands

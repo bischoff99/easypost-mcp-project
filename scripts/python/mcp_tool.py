@@ -3,12 +3,12 @@
 MCP Tool CLI - Call EasyPost MCP tools from bash scripts.
 
 Usage:
-    python scripts/mcp_tool.py <tool_name> [args...]
+    python scripts/python/mcp_tool.py <tool_name> [args...]
 
 Examples:
-    python scripts/mcp_tool.py get_tracking EZ1234567890
-    python scripts/mcp_tool.py get_shipment_rates --data "John Doe\t123 Main St..."
-    python scripts/mcp_tool.py create_shipment --data "..." --dry-run
+    python scripts/python/mcp_tool.py get_tracking EZ1234567890
+    python scripts/python/mcp_tool.py get_shipment_rates --data "John Doe\t123 Main St..."
+    python scripts/python/mcp_tool.py create_shipment --data "..." --dry-run
 """
 
 import asyncio
@@ -16,8 +16,8 @@ import json
 import sys
 from pathlib import Path
 
-# Add backend to path
-backend_path = Path(__file__).parent.parent / "apps" / "backend"
+# Add backend to path (mcp_tool.py is now in scripts/python/, so go up two levels)
+backend_path = Path(__file__).parent.parent.parent / "apps" / "backend"
 sys.path.insert(0, str(backend_path))
 
 from src.mcp_server import mcp, easypost_service

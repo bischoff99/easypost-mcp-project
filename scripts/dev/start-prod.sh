@@ -6,10 +6,10 @@ set -euo pipefail
 
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${(%):-%x}")" && pwd)"
-# Project root is one level up from scripts directory
-PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-BACKEND_DIR="${PROJECT_ROOT}/backend"
-FRONTEND_DIR="${PROJECT_ROOT}/frontend"
+# Project root is two levels up from scripts/dev/
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+BACKEND_DIR="${PROJECT_ROOT}/apps/backend"
+FRONTEND_DIR="${PROJECT_ROOT}/apps/frontend"
 
 # Colours for output
 RED='\033[0;31m'

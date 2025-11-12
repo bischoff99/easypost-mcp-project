@@ -300,14 +300,14 @@ Error handling:
     result = await edit_block(...)
   except ToolError as e:
     error_msg = str(e)
-    
+
     if "not unique" in error_msg:
       await ctx.error("Multiple matches found for old_string")
       # Try with more context lines
       await ctx.info("Retrying with more context...")
       expanded_old = add_more_context(old_string, file_content)
       await edit_block(file_path, expanded_old, new_string)
-      
+
     elif "not found" in error_msg:
       await ctx.warning("Exact match failed, showing diff")
       # Show character-level diff
@@ -316,7 +316,7 @@ Error handling:
       # Try with adjusted whitespace
       normalized_old = normalize_whitespace(old_string)
       await edit_block(file_path, normalized_old, new_string)
-      
+
     else:
       raise  # Re-raise unexpected errors
 
@@ -336,8 +336,8 @@ Best practice: If multiple edits needed, make separate calls:
 ```yaml
 Tool: mcp_desktop-commander_start_process
 Command: Test command for affected file
-  Python: "pytest {test_file} -v"
-  JS: "vitest run {test_file}"
+  Python: "cd apps/backend && pytest {test_file} -v"
+  JS: "cd apps/frontend && vitest run {test_file}"
   Go: "go test {package} -run {test_function}"
   Rust: "cargo test {test_name}"
 
@@ -348,7 +348,7 @@ Success path:
   Tool: mcp_desktop-commander_read_process_output
   PID: Test process PID
   Parse: Test results
-  
+
   if "passed" in output or "PASS" in output:
     await ctx.info("Fix verified, tests passed")
     ctx.clear_state("backup")  # No longer needed
@@ -361,19 +361,19 @@ Success path:
 
 Failure path:
   await ctx.error("Fix failed verification, rolling back")
-  
+
   # Rollback using backup
   backup = ctx.get_state("backup")
   current_content = await read_file(backup["path"])
-  
+
   await mcp_desktop-commander_edit_block(
     file_path=backup["path"],
     old_string=current_content,
     new_string=backup["content"]
   )
-  
+
   await ctx.info("Rolled back to backup")
-  
+
   # Try alternative fix
   prepared_fixes = ctx.get_state("prepared_fixes")
   if len(prepared_fixes) > 1:
@@ -381,7 +381,7 @@ Failure path:
     # Use prepared_fixes[1] and repeat stages 6-7
     max_retries = 2
     retry_count = ctx.get_state("retry_count", 0)
-    
+
     if retry_count < max_retries:
       ctx.set_state("retry_count", retry_count + 1)
       # Retry with alternative fix
@@ -418,7 +418,7 @@ Terminal shows:
   ImportError: No module named 're'
 
 AI detects:
-  - File: easypost_service.py
+  - File: apps/backend/src/services/easypost_service.py
   - Line: 391
   - Missing: import re
   - Context: Function uses re.sub() but re not imported
@@ -440,7 +440,7 @@ Editor shows:
   TypeError: 'datetime.utcnow()' is deprecated
 
 AI detects:
-  - File: utils.py
+  - File: apps/backend/src/utils.py
   - Line: 45
   - Issue: Deprecated method usage
   - Context: Python 3.12+ incompatibility
@@ -465,7 +465,7 @@ pytest output:
 
 AI detects:
   - Test: test_create
-  - File: tests/test_service.py
+  - File: apps/backend/tests/test_service.py
   - Line: 42
   - Error: AssertionError: expected 200, got 404
 
@@ -488,7 +488,7 @@ AI fixes:
 /fix
 
 # With specific file (if error not visible)
-/fix backend/src/services/easypost_service.py
+/fix apps/backend/src/services/easypost_service.py
 
 # With error type hint
 /fix import-error
@@ -508,7 +508,7 @@ AI fixes:
 
 ```
 🔍 Error Detection:
-Found: ImportError in backend/src/services/easypost_service.py:391
+Found: ImportError in apps/backend/src/services/easypost_service.py:391
 Message: No module named 're'
 Context: Function _sanitize_error uses re.sub() but re not imported
 
@@ -526,20 +526,20 @@ Python imports should be grouped:
 3. Local (from src.utils import)
 
 ✅ Fix Prepared:
-File: backend/src/services/easypost_service.py
+File: apps/backend/src/services/easypost_service.py
 Line 11: Add 'import re'
 Safety score: 0.95 (high)
 
 💾 Backup Created:
-Backed up: backend/src/services/easypost_service.py (1250 lines)
+Backed up: apps/backend/src/services/easypost_service.py (1250 lines)
 
 ✅ Fix Applied:
-File: backend/src/services/easypost_service.py
+File: apps/backend/src/services/easypost_service.py
 Line 11: Added 'import re'
 Change: Inserted in standard library imports section
 
 🧪 Verification:
-Running: pytest backend/tests/unit/test_easypost_service.py -v
+Running: pytest apps/backend/tests/unit/test_easypost_service.py -v
 Result: ✅ All tests passed (45/45)
 
 ✅ Fix complete and verified!
@@ -549,7 +549,7 @@ Result: ✅ All tests passed (45/45)
 
 ```
 🔍 Error Detection:
-Found: TypeError in backend/src/utils.py:45
+Found: TypeError in apps/backend/src/utils.py:45
 Message: 'datetime.utcnow()' is deprecated
 
 🧠 AI Analysis:
@@ -557,23 +557,23 @@ Root cause: Using deprecated datetime.utcnow()
 Fix strategy: Replace with datetime.now(timezone.utc)
 
 ✅ Fix Applied:
-File: backend/src/utils.py
+File: apps/backend/src/utils.py
 Line 45: Replaced datetime.utcnow() with datetime.now(timezone.utc)
 
 🧪 Verification:
-Running: pytest backend/tests/unit/test_utils.py -v
+Running: pytest apps/backend/tests/unit/test_utils.py -v
 Result: ❌ 2 tests failed
 
 🔄 Rollback:
 Rolled back to backup
 
 🔄 Retrying with Alternative Fix:
-File: backend/src/utils.py
+File: apps/backend/src/utils.py
 Line 1: Added 'from datetime import timezone'
 Line 45: Replaced datetime.utcnow() with datetime.now(timezone.utc)
 
 🧪 Verification:
-Running: pytest backend/tests/unit/test_utils.py -v
+Running: pytest apps/backend/tests/unit/test_utils.py -v
 Result: ✅ All tests passed (45/45)
 
 ✅ Fix complete and verified!

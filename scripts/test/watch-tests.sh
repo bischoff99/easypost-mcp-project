@@ -3,9 +3,9 @@
 
 set -euo pipefail
 
-# Get project root (parent of scripts directory)
+# Get project root (two levels up from scripts/test/)
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 BACKEND_DIR="${PROJECT_ROOT}/apps/backend"
 
 # Cleanup handler

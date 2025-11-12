@@ -8,8 +8,9 @@ set -euo pipefail
 
 # Get script directory and project root
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 BACKEND_DIR="${PROJECT_ROOT}/apps/backend"
+SCRIPTS_DIR="${PROJECT_ROOT}/scripts"
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -36,7 +37,7 @@ mcp_tool() {
     if [ ! -d "$venv_bin" ]; then
         venv_bin="${BACKEND_DIR}/venv/bin"
     fi
-    "${venv_bin}/python" "${SCRIPT_DIR}/mcp_tool.py" "$tool_name" "$@"
+    "${venv_bin}/python" "${SCRIPTS_DIR}/python/mcp_tool.py" "$tool_name" "$@"
 }
 
 # Enhanced MCP verification
@@ -44,7 +45,7 @@ verify_mcp_tools() {
     echo -e "${BLUE}🔍 Verifying MCP tools...${NC}"
 
     # Check if mcp_tool.py exists
-    if [ ! -f "${SCRIPT_DIR}/mcp_tool.py" ]; then
+    if [ ! -f "${SCRIPTS_DIR}/python/mcp_tool.py" ]; then
         echo -e "${YELLOW}⚠️  MCP tool script not found${NC}"
         return 1
     fi
@@ -71,7 +72,7 @@ verify_mcp_tools() {
 
 echo "🔧 Setting up backend..."
 
-cd apps/backend
+cd "${BACKEND_DIR}"
 
 # Detect venv location (prefers .venv, then venv)
 if [ -d ".venv" ]; then
@@ -138,7 +139,7 @@ if [ "$JIT_MODE" = true ]; then
   else
     # Basic verification
     if command -v python >/dev/null 2>&1; then
-      if python "${SCRIPT_DIR}/mcp_tool.py" get_tracking TEST 2>/dev/null | grep -q "status"; then
+      if python "${SCRIPTS_DIR}/python/mcp_tool.py" get_tracking TEST 2>/dev/null | grep -q "status"; then
         echo -e "${GREEN}✅ MCP tools verified${NC}"
       else
         echo -e "${YELLOW}⚠️  MCP tools not yet accessible (server may still be starting)${NC}"
@@ -164,7 +165,7 @@ else
   else
     # Basic verification
     if command -v python >/dev/null 2>&1; then
-      if python "${SCRIPT_DIR}/mcp_tool.py" get_tracking TEST 2>/dev/null | grep -q "status"; then
+      if python "${SCRIPTS_DIR}/python/mcp_tool.py" get_tracking TEST 2>/dev/null | grep -q "status"; then
         echo -e "${GREEN}✅ MCP tools verified${NC}"
       else
         echo -e "${YELLOW}⚠️  MCP tools not yet accessible (server may still be starting)${NC}"

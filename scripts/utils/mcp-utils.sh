@@ -1,17 +1,23 @@
 #!/usr/bin/env bash
-# Enhanced development script with MCP tool integration
+# MCP Utility Commands
+# Standalone MCP verification and testing utilities
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 VENV_BIN="${PROJECT_ROOT}/apps/backend/.venv/bin"
+
+# Detect venv location
+if [ ! -d "$VENV_BIN" ]; then
+    VENV_BIN="${PROJECT_ROOT}/apps/backend/venv/bin"
+fi
 
 # MCP Tool Helper
 mcp_tool() {
     local tool_name="$1"
     shift
-    "${VENV_BIN}/python" "${SCRIPT_DIR}/mcp_tool.py" "$tool_name" "$@"
+    "${VENV_BIN}/python" "${PROJECT_ROOT}/scripts/python/mcp_tool.py" "$tool_name" "$@"
 }
 
 # Check MCP server health
@@ -43,36 +49,6 @@ verify_mcp_tools() {
     fi
 }
 
-# Start backend with MCP verification
-start_backend_with_mcp() {
-    echo "🚀 Starting backend server..."
-
-    cd "${PROJECT_ROOT}/apps/backend"
-    source "${VENV_BIN}/activate"
-
-    # Start server in background
-    uvicorn src.server:app --host 0.0.0.0 --port 8000 --reload &
-    local backend_pid=$!
-
-    # Wait for server to start
-    echo "⏳ Waiting for server to start..."
-    for i in {1..30}; do
-        if curl -s http://localhost:8000/health > /dev/null 2>&1; then
-            echo "✅ Backend server started (PID: $backend_pid)"
-
-            # Verify MCP tools after server starts
-            sleep 2
-            verify_mcp_tools
-
-            return 0
-        fi
-        sleep 1
-    done
-
-    echo "❌ Backend server failed to start"
-    return 1
-}
-
 # Test MCP tools with sample data
 test_mcp_tools() {
     echo "🧪 Testing MCP tools..."
@@ -87,9 +63,6 @@ test_mcp_tools() {
 # Main function
 main() {
     case "${1:-help}" in
-        start)
-            start_backend_with_mcp
-            ;;
         health)
             check_mcp_health
             ;;
@@ -100,10 +73,9 @@ main() {
             test_mcp_tools
             ;;
         *)
-            echo "Usage: $0 {start|health|verify|test}"
+            echo "Usage: $0 {health|verify|test}"
             echo ""
             echo "Commands:"
-            echo "  start   - Start backend server with MCP verification"
             echo "  health  - Check MCP server health"
             echo "  verify  - Verify MCP tools are registered"
             echo "  test    - Test MCP tools with sample data"

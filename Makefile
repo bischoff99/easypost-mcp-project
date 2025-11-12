@@ -35,7 +35,7 @@ endef
 # Phony Targets
 # ============================================================================
 
-.PHONY: help setup dev test lint format check build prod db-reset db-migrate clean qcp
+.PHONY: help help-all setup dev test lint format check build prod db-reset db-migrate clean qcp d t l f c
 
 # ============================================================================
 # Default Target
@@ -75,7 +75,15 @@ help:
 	@echo "Git:"
 	@echo "  make qcp          - Quick commit + push (use: make qcp m=\"message\")"
 	@echo ""
-	@echo "💡 Tip: Use scripts/ for advanced workflows (backend-only, frontend-only,"
+	@echo "Quick Aliases:"
+	@echo "  make d            - Alias for 'make dev'"
+	@echo "  make t            - Alias for 'make test'"
+	@echo "  make l            - Alias for 'make lint'"
+	@echo "  make f            - Alias for 'make format'"
+	@echo "  make c            - Alias for 'make check'"
+	@echo ""
+	@echo "💡 Tip: Use 'make help-all' to see all commands (Makefile + Scripts + VS Code + Cursor)"
+	@echo "      Use scripts/ for advanced workflows (backend-only, frontend-only,"
 	@echo "      docker, benchmarks, health checks, reviews, etc.)"
 
 # ============================================================================
@@ -118,7 +126,7 @@ dev:
 	(cd $(BACKEND_DIR) && $(VENV_BIN)/uvicorn src.server:app --host 0.0.0.0 --port 8000 --reload) & \
 	(cd $(FRONTEND_DIR) && pnpm run dev) & \
 	sleep 3 && \
-	($(VENV_BIN)/python $(SCRIPTS_DIR)/mcp_tool.py get_tracking TEST 2>/dev/null | grep -q "status" && echo "✅ MCP tools verified" || echo "⚠️  MCP tools not yet accessible") & \
+	($(VENV_BIN)/python $(SCRIPTS_DIR)/python/mcp_tool.py get_tracking TEST 2>/dev/null | grep -q "status" && echo "✅ MCP tools verified" || echo "⚠️  MCP tools not yet accessible") & \
 	wait
 
 # ============================================================================
@@ -148,14 +156,14 @@ test:
 lint:
 	@echo "🔍 Running linters..."
 	$(check_venv)
-	@cd $(BACKEND_DIR) && $(VENV_BIN)/ruff check src/ tests/ || exit 1 & \
+	@cd $(BACKEND_DIR) && if [ -f "$(VENV_BIN)/ruff" ]; then $(VENV_BIN)/ruff check src/ tests/ || exit 1; else echo "⚠️  ruff not found, skipping backend lint"; fi & \
 	cd $(FRONTEND_DIR) && pnpm run lint || exit 1 & \
 	wait
 
 format:
 	@echo "✨ Formatting code..."
 	$(check_venv)
-	@cd $(BACKEND_DIR) && $(VENV_BIN)/ruff format src/ tests/ && $(VENV_BIN)/ruff check src/ tests/ --fix || exit 1 & \
+	@cd $(BACKEND_DIR) && if [ -f "$(VENV_BIN)/ruff" ]; then $(VENV_BIN)/ruff format src/ tests/ && $(VENV_BIN)/ruff check src/ tests/ --fix || exit 1; else echo "⚠️  ruff not found, skipping backend format"; fi & \
 	cd $(FRONTEND_DIR) && pnpm run format || exit 1 & \
 	wait
 
@@ -191,7 +199,7 @@ build:
 
 prod:
 	@echo "🚀 Starting production servers..."
-	@./$(SCRIPTS_DIR)/start-prod.sh
+	@./$(SCRIPTS_DIR)/dev/start-prod.sh
 
 # ============================================================================
 # Database Targets
@@ -217,17 +225,13 @@ db-migrate:
 # ============================================================================
 
 clean:
-	@if [ -f $(SCRIPTS_DIR)/clean_project_parallel.sh ]; then \
-		bash $(SCRIPTS_DIR)/clean_project_parallel.sh; \
-	else \
-		echo "🧹 Cleaning build artifacts..."; \
-		find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true; \
-		find . -type f -name "*.pyc" -delete; \
-		find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true; \
-		rm -rf $(BACKEND_DIR)/.pytest_cache $(BACKEND_DIR)/htmlcov $(BACKEND_DIR)/.coverage; \
-		rm -rf $(FRONTEND_DIR)/dist $(FRONTEND_DIR)/node_modules/.vite $(FRONTEND_DIR)/coverage; \
-		echo "✨ Cleaned!"; \
-	fi
+	@echo "🧹 Cleaning build artifacts..."; \
+	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true; \
+	find . -type f -name "*.pyc" -delete; \
+	find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true; \
+	rm -rf $(BACKEND_DIR)/.pytest_cache $(BACKEND_DIR)/htmlcov $(BACKEND_DIR)/.coverage; \
+	rm -rf $(FRONTEND_DIR)/dist $(FRONTEND_DIR)/node_modules/.vite $(FRONTEND_DIR)/coverage; \
+	echo "✨ Cleaned!"
 
 # ============================================================================
 # Git Shortcuts
@@ -239,3 +243,97 @@ qcp:
 		exit 1; \
 	fi
 	@git add -A && git commit -m "$(m)" && git push
+
+# ============================================================================
+# Command Aliases (Quick shortcuts for daily use)
+# ============================================================================
+
+d: dev
+	@# Alias for 'make dev'
+
+t: test
+	@# Alias for 'make test'
+
+l: lint
+	@# Alias for 'make lint'
+
+f: format
+	@# Alias for 'make format'
+
+c: check
+	@# Alias for 'make check'
+
+# ============================================================================
+# Comprehensive Help (All Commands)
+# ============================================================================
+
+help-all:
+	@echo "📚 Complete Command Reference"
+	@echo "════════════════════════════════════════════════════════════"
+	@echo ""
+	@echo "🔧 MAKEFILE COMMANDS (12)"
+	@echo "────────────────────────────────────────────────────────────"
+	@make help | grep -v "^💡\|^───\|^Quick Aliases\|^make help-all" || true
+	@echo ""
+	@echo "📜 BASH SCRIPTS (13)"
+	@echo "────────────────────────────────────────────────────────────"
+	@echo "Development:"
+	@echo "  ./scripts/dev/start-dev.sh          - macOS Terminal windows (backend + frontend)"
+	@echo "  ./scripts/dev/start-backend.sh      - Backend only (standard, --jit, or --mcp-verify)"
+	@echo "  ./scripts/dev/dev_local.sh          - Docker PostgreSQL + servers"
+	@echo "  ./scripts/dev/start-prod.sh         - Production servers"
+	@echo ""
+	@echo "Testing:"
+	@echo "  ./scripts/test/quick-test.sh         - Quick test suite (~30-60s)"
+	@echo "  ./scripts/test/watch-tests.sh       - Watch mode (TDD)"
+	@echo "  ./scripts/test/test-full-functionality.sh - Comprehensive tests"
+	@echo "  ./scripts/test/benchmark.sh          - Performance benchmarks"
+	@echo ""
+	@echo "Utilities:"
+	@echo "  ./scripts/utils/monitor-database.sh  - Database monitoring"
+	@echo "  ./scripts/utils/setup-nginx-proxy.sh  - Nginx reverse proxy"
+	@echo "  ./scripts/utils/clean-git-history.sh  - Remove API keys from git history"
+	@echo "  ./scripts/utils/mcp-utils.sh {health|verify|test} - MCP utility commands"
+	@echo ""
+	@echo "Python Tools:"
+	@echo "  python scripts/python/get-bulk-rates.py - Bulk rate testing"
+	@echo "  python scripts/python/verify_mcp_server.py - MCP server verification"
+	@echo "  python scripts/python/mcp_tool.py <tool> <args> - MCP tool CLI"
+	@echo ""
+	@echo "🎯 VS CODE TASKS (8)"
+	@echo "────────────────────────────────────────────────────────────"
+	@echo "  🚀 Dev: Full Stack          - Start backend + frontend (parallel)"
+	@echo "  Dev: Backend                - Backend server only"
+	@echo "  Dev: Frontend              - Frontend server only"
+	@echo "  🧪 Test: Backend            - Run backend tests (parallel)"
+	@echo "  🧪 Test: Frontend           - Run frontend tests"
+	@echo "  🏗️ Build: Frontend          - Build frontend (default build)"
+	@echo "  ✅ Pre-Commit: Run All Checks - Format + lint + test"
+	@echo "  🗄️ Database: Create Migration - Create Alembic migration"
+	@echo ""
+	@echo "🤖 CURSOR WORKFLOWS (6)"
+	@echo "────────────────────────────────────────────────────────────"
+	@echo "  /workflow:pre-commit        - Pre-commit workflow (review → fix → test → commit)"
+	@echo "  /workflow:feature-dev        - Feature development workflow"
+	@echo "  /workflow:error-resolution   - Error resolution workflow"
+	@echo "  /workflow:code-improvement  - Code improvement workflow"
+	@echo "  /workflow:cleanup           - Cleanup workflow"
+	@echo "  /workflow:pre-push          - Pre-push workflow"
+	@echo ""
+	@echo "⚡ UNIVERSAL COMMANDS (10)"
+	@echo "────────────────────────────────────────────────────────────"
+	@echo "  /test                       - Smart parallel testing"
+	@echo "  /fix                        - Auto-repair errors"
+	@echo "  /explain                    - AI code understanding"
+	@echo "  /commit                     - Smart git commits"
+	@echo "  /review                     - Automated code review"
+	@echo "  /refactor                   - Safe code refactoring"
+	@echo "  /docs                       - Documentation generation"
+	@echo "  /debug                      - Interactive debugging"
+	@echo "  /clean                      - Comprehensive cleanup"
+	@echo "  /workflow                   - Command chain orchestration"
+	@echo ""
+	@echo "════════════════════════════════════════════════════════════"
+	@echo "📖 Full Documentation: docs/COMMANDS_REFERENCE.md"
+	@echo "🎯 Tool Selection Guide: docs/TOOL_SELECTION_GUIDE.md"
+	@echo "════════════════════════════════════════════════════════════"

@@ -104,14 +104,13 @@ test_endpoint "Backend Health" "http://localhost:8000/health" "healthy"
 test_endpoint "Proxy Health" "http://localhost:8080/health" "healthy"
 
 # API Endpoints (Direct)
-test_endpoint "Stats Endpoint (Direct)" "http://localhost:8000/stats" "success"
-test_endpoint "Analytics Endpoint (Direct)" "http://localhost:8000/analytics" "success"
-test_endpoint "Carrier Performance (Direct)" "http://localhost:8000/carrier-performance" "success"
+test_endpoint "Analytics Endpoint (Direct)" "http://localhost:8000/api/analytics" "success"
+# Note: Rates endpoint is POST-only, skip GET test
 
-# API Endpoints (Through Proxy)
-test_endpoint "Stats via Proxy" "http://localhost:8080/api/stats" "success"
-test_endpoint "Analytics via Proxy" "http://localhost:8080/api/analytics" "success"
-test_endpoint "Carrier Performance via Proxy" "http://localhost:8080/api/carrier-performance" "success"
+# API Endpoints (Through Proxy - if proxy exists)
+if curl -s http://localhost:8080/health > /dev/null 2>&1; then
+    test_endpoint "Analytics via Proxy" "http://localhost:8080/api/analytics" "success"
+fi
 
 # Frontend
 test_endpoint "Frontend (Direct)" "http://localhost:5173" "<!doctype html>"
@@ -182,8 +181,11 @@ echo ""
 cd apps/backend
 source venv/bin/activate
 
+# Get project root for script paths
+PROJECT_ROOT="$(cd ../.. && pwd)"
+
 echo -e "${BLUE}Testing: MCP Tool Availability${NC}"
-if python ../../scripts/mcp_tool.py get_tracking TEST 2>/dev/null | grep -q "status"; then
+if python "${PROJECT_ROOT}/scripts/python/mcp_tool.py" get_tracking TEST 2>/dev/null | grep -q "status"; then
     echo -e "${GREEN}✓ PASSED - MCP tools accessible${NC}"
     ((TESTS_PASSED++))
 else
@@ -192,7 +194,7 @@ else
 fi
 
 echo -e "${BLUE}Testing: MCP Tool Response Format${NC}"
-mcp_response=$(python ../../scripts/mcp_tool.py get_tracking TEST 2>/dev/null)
+mcp_response=$(python "${PROJECT_ROOT}/scripts/python/mcp_tool.py" get_tracking TEST 2>/dev/null)
 if echo "$mcp_response" | grep -q '"status"'; then
     echo -e "${GREEN}✓ PASSED - MCP tool returns valid JSON format${NC}"
     ((TESTS_PASSED++))
@@ -234,7 +236,8 @@ fi
 # Test MCP tool call time
 cd apps/backend
 source venv/bin/activate
-mcp_time=$(time (python ../../scripts/mcp_tool.py get_tracking TEST > /dev/null 2>&1) 2>&1 | grep real | awk '{print $2}' | sed 's/[ms]//g')
+PROJECT_ROOT="$(cd ../.. && pwd)"
+mcp_time=$(time (python "${PROJECT_ROOT}/scripts/python/mcp_tool.py" get_tracking TEST > /dev/null 2>&1) 2>&1 | grep real | awk '{print $2}' | sed 's/[ms]//g')
 if [ -n "$mcp_time" ]; then
     echo -e "${GREEN}✓ MCP tool call time: ${mcp_time}${NC}"
     ((TESTS_PASSED++))

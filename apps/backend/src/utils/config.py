@@ -8,10 +8,30 @@ from dotenv import load_dotenv
 # Configure logger
 logger = logging.getLogger(__name__)
 
-# Load .env file from project root (single source of truth)
-env_file = Path(__file__).parent.parent.parent.parent / ".env"
-load_dotenv(env_file)
-logger.info(f"Loaded environment from: {env_file}")
+# Load environment files in priority order:
+# 1. Project root .env (base config, may contain ENVIRONMENT)
+# 2. .env.production or .env.development (environment-specific, based on ENVIRONMENT from step 1)
+# 3. .env (local overrides, highest priority)
+backend_dir = Path(__file__).parent.parent.parent
+
+# Step 1: Load project root .env first (to get ENVIRONMENT if set)
+root_env = backend_dir.parent.parent / ".env"
+if root_env.exists():
+    load_dotenv(root_env, override=False)
+    logger.info(f"Loaded root config: {root_env}")
+
+# Step 2: Determine environment and load environment-specific file
+env = os.getenv("ENVIRONMENT", "development")
+env_specific = backend_dir / f".env.{env}"
+if env_specific.exists():
+    load_dotenv(env_specific, override=False)
+    logger.info(f"Loaded environment-specific config: {env_specific}")
+
+# Step 3: Load local .env last (overrides everything)
+local_env = backend_dir / ".env"
+if local_env.exists():
+    load_dotenv(local_env, override=True)
+    logger.info(f"Loaded local config: {local_env}")
 
 
 class Settings:
