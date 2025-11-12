@@ -1,7 +1,7 @@
 # Security Alert: API Keys in Git History
 
-**Date**: 2025-11-12  
-**Severity**: 🔴 **CRITICAL**  
+**Date**: 2025-11-12
+**Severity**: 🔴 **CRITICAL**
 **Status**: ⚠️ **ACTION REQUIRED**
 
 ---
@@ -123,6 +123,5 @@ git log --all --full-history -S "EZAK151720b5bbc44c08bd3c3f7a055b69ac"
 
 **Status**: ⚠️ **Keys must be rotated and git history cleaned**
 
-**Owner**: Development Team  
+**Owner**: Development Team
 **Priority**: 🔴 **CRITICAL**
-

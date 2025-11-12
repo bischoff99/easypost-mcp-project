@@ -31,7 +31,7 @@
 4. **Rotate Exposed API Keys** ⏱️ 15 min ⚠️ **ACTION REQUIRED**
    - **Status**: Keys found in git history (24 commits with test key, 2 with production key)
    - **Impact**: CRITICAL - Keys are permanently in git history
-   - **Action Required**: 
+   - **Action Required**:
      - Log in to https://easypost.com/account/api-keys
      - Deactivate exposed keys immediately
      - Generate new test and production keys

@@ -1,10 +1,16 @@
-"""Integration tests for database-backed server endpoints."""
+"""Integration tests for database-backed server endpoints.
 
+NOTE: Database-backed endpoints (/db/*) were removed for personal use.
+These tests are skipped as the endpoints no longer exist.
+"""
+
+import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from fastapi.testclient import TestClient
 
 
+@pytest.mark.skip(reason="Database-backed endpoints (/db/*) removed for personal use")
 class TestDatabaseBackedEndpoints:
     """Test database-backed API endpoints."""
 

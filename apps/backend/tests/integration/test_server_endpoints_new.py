@@ -28,8 +28,9 @@ class TestServerEndpoints:
         assert response.status_code == 200
         data = response.json()
 
-        # Health endpoint should return status
-        assert "status" in data
+        # Health endpoint returns {"ok": True}
+        assert "ok" in data
+        assert data["ok"] is True
 
     @pytest.mark.asyncio
     async def test_metrics_endpoint(self, async_client):
@@ -48,7 +49,7 @@ class TestServerEndpoints:
         mock_easypost_service.get_rates.return_value = EasyPostFactory.rates()
 
         response = await async_client.post(
-            "/rates",
+            "/api/rates",
             json={
                 "to_address": EasyPostFactory.address(),
                 "from_address": EasyPostFactory.address(),
@@ -68,7 +69,7 @@ class TestServerEndpoints:
         """Test successful shipment creation."""
         mock_easypost_service.create_shipment.return_value = EasyPostFactory.shipment()
 
-        response = await async_client.post("/shipments", json=EasyPostFactory.shipment_request())
+        response = await async_client.post("/api/shipments", json=EasyPostFactory.shipment_request())
 
         assert response.status_code == 200
         data = response.json()
@@ -81,7 +82,7 @@ class TestServerEndpoints:
         """Test successful shipments listing."""
         mock_easypost_service.list_shipments.return_value = EasyPostFactory.shipment_list()
 
-        response = await async_client.get("/shipments")
+        response = await async_client.get("/api/shipments")
 
         assert response.status_code == 200
         data = response.json()
