@@ -88,8 +88,10 @@ class TestEndpointsAsync:
         data = response.json()
 
         assert data["status"] == "success"
-        assert "id" in data
-        assert "tracking_code" in data
+        assert "shipment_id" in data
+        assert "tracking_number" in data
+        assert data["shipment_id"] is not None
+        assert data["tracking_number"] is not None
 
     @pytest.mark.asyncio
     async def test_list_shipments_success(self, async_client, mock_easypost_service):
@@ -129,7 +131,9 @@ class TestEndpointsAsync:
         data = response.json()
 
         assert data["status"] == "success"
-        assert data["data"]["status"] == "delivered"
+        assert data["data"] is not None
+        # Check for status_detail (service format) or status (factory format)
+        assert data["data"].get("status_detail") == "delivered" or data["data"].get("status") == "delivered"
 
     # ========== Analytics Endpoints ==========
 

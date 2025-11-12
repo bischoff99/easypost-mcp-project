@@ -50,4 +50,3 @@ echo "⚠️  Next steps:"
 echo "1. Force push to remote: git push origin --force --all"
 echo "2. Notify collaborators to re-clone repository"
 echo "3. Rotate API keys at https://easypost.com/account/api-keys"
-

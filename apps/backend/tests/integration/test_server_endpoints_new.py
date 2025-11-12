@@ -62,7 +62,8 @@ class TestServerEndpoints:
 
         assert data["status"] == "success"
         assert "data" in data
-        assert "rates" in data["data"]
+        assert isinstance(data["data"], list)  # RatesResponse expects data as list
+        assert len(data["data"]) > 0
 
     @pytest.mark.asyncio
     async def test_create_shipment_endpoint_success(self, async_client, mock_easypost_service):
@@ -75,7 +76,8 @@ class TestServerEndpoints:
         data = response.json()
 
         assert data["status"] == "success"
-        assert "id" in data
+        assert "shipment_id" in data
+        assert data["shipment_id"] is not None
 
     @pytest.mark.asyncio
     async def test_list_shipments_endpoint_success(self, async_client, mock_easypost_service):
@@ -113,7 +115,9 @@ class TestServerEndpoints:
         data = response.json()
 
         assert data["status"] == "success"
-        assert data["data"]["status"] == "delivered"
+        assert data["data"] is not None
+        # Check for status_detail (service format) or status (factory format)
+        assert data["data"].get("status_detail") == "delivered" or data["data"].get("status") == "delivered"
 
     @pytest.mark.asyncio
     async def test_analytics_endpoint_success(self, async_client, mock_easypost_service):

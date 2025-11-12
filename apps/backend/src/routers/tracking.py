@@ -32,7 +32,12 @@ async def track_shipment(
         logger.info(f"[{request_id}] Tracking info retrieved")
         metrics.track_api_call("track_shipment", True)
 
-        return result
+        # Transform service response to match TrackingResponse model
+        return {
+            "status": result.get("status", "success"),
+            "data": result.get("data"),
+            "tracking_number": result.get("data", {}).get("tracking_number") or tracking_number,
+        }
 
     except Exception as e:
         error_msg = str(e)[:MAX_REQUEST_LOG_SIZE]

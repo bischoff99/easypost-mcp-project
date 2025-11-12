@@ -97,7 +97,13 @@ async def create_shipment(
         logger.info(f"[{request_id}] Shipment created successfully")
         metrics.track_api_call("create_shipment", True)
 
-        return result
+        # Transform service response to match CreateShipmentResponse model
+        return {
+            "status": result.get("status", "success"),
+            "data": result,
+            "shipment_id": result.get("id"),
+            "tracking_number": result.get("tracking_code"),
+        }
 
     except Exception as e:
         error_msg = str(e)[:MAX_REQUEST_LOG_SIZE]

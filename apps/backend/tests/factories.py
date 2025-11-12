@@ -35,7 +35,7 @@ class EasyPostFactory:
     @staticmethod
     def rates(rates: list[dict] = None) -> dict[str, Any]:
         """Create a mock rates response.
-        
+
         Returns format expected by RatesResponse model: {"status": "success", "data": [...]}
         """
         default_rates = [
@@ -63,12 +63,16 @@ class EasyPostFactory:
     def tracking(
         tracking_code: str = "9400111899223345", status: str = "delivered", **kwargs
     ) -> dict[str, Any]:
-        """Create a mock tracking response."""
+        """Create a mock tracking response.
+        
+        Matches format returned by EasyPostService.get_tracking()
+        """
         base = {
             "status": "success",
             "data": {
-                "tracking_code": tracking_code,
-                "status": status,
+                "tracking_number": tracking_code,  # Service uses tracking_number, not tracking_code
+                "status_detail": status,  # Service uses status_detail
+                "status": status,  # Keep for backward compatibility
                 "tracking_details": [
                     {
                         "message": "Delivered",
