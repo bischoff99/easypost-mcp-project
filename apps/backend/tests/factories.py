@@ -34,7 +34,10 @@ class EasyPostFactory:
 
     @staticmethod
     def rates(rates: list[dict] = None) -> dict[str, Any]:
-        """Create a mock rates response."""
+        """Create a mock rates response.
+        
+        Returns format expected by RatesResponse model: {"status": "success", "data": [...]}
+        """
         default_rates = [
             {
                 "carrier": "USPS",
@@ -53,7 +56,7 @@ class EasyPostFactory:
         ]
         return {
             "status": "success",
-            "data": {"rates": rates if rates is not None else default_rates},
+            "data": rates if rates is not None else default_rates,
         }
 
     @staticmethod

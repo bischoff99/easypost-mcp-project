@@ -95,7 +95,7 @@ class TestServerEndpoints:
         """Test shipments listing with query parameters."""
         mock_easypost_service.list_shipments.return_value = EasyPostFactory.shipment_list([])
 
-        response = await async_client.get("/shipments?page_size=50&before_id=shp_123")
+        response = await async_client.get("/api/shipments?page_size=50&before_id=shp_123")
 
         assert response.status_code == 200
         mock_easypost_service.list_shipments.assert_called_once_with(
@@ -107,7 +107,7 @@ class TestServerEndpoints:
         """Test successful shipment tracking."""
         mock_easypost_service.get_tracking.return_value = EasyPostFactory.tracking()
 
-        response = await async_client.get("/tracking/9400111899223345")
+        response = await async_client.get("/api/tracking/9400111899223345")
 
         assert response.status_code == 200
         data = response.json()
@@ -132,7 +132,7 @@ class TestServerEndpoints:
             ],
         }
 
-        response = await async_client.get("/analytics?days=30")
+        response = await async_client.get("/api/analytics?days=30")
 
         assert response.status_code == 200
         data = response.json()
@@ -147,10 +147,11 @@ class TestServerEndpoints:
             "data": [],
         }
 
-        response = await async_client.get("/analytics")
+        response = await async_client.get("/api/analytics")
 
         assert response.status_code == 200
 
+    @pytest.mark.skip(reason="/stats endpoint removed for personal use - use /api/analytics instead")
     @pytest.mark.asyncio
     async def test_stats_endpoint_success(self, async_client, mock_easypost_service):
         """Test successful dashboard stats endpoint."""
@@ -171,6 +172,7 @@ class TestServerEndpoints:
         assert data["status"] == "success"
         assert "total_shipments" in data["data"]
 
+    @pytest.mark.skip(reason="/carrier-performance endpoint removed for personal use - use /api/analytics instead")
     @pytest.mark.asyncio
     async def test_carrier_performance_endpoint_success(self, async_client, mock_easypost_service):
         """Test successful carrier performance endpoint."""
@@ -192,7 +194,7 @@ class TestServerEndpoints:
     @pytest.mark.asyncio
     async def test_get_rates_validation_error(self, async_client):
         """Test rates endpoint with invalid data."""
-        response = await async_client.post("/rates", json={"invalid": "data"})
+        response = await async_client.post("/api/rates", json={"invalid": "data"})
 
         assert response.status_code == 422  # Validation error
 
@@ -206,7 +208,7 @@ class TestServerEndpoints:
 
         tasks = [
             async_client.post(
-                "/rates",
+                "/api/rates",
                 json={
                     "to_address": EasyPostFactory.address(),
                     "from_address": EasyPostFactory.address(),
