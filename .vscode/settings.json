@@ -117,6 +117,7 @@
 
   // ===== Prettier Configuration =====
   "prettier.configPath": ".prettierrc",
+  "prettier.enableDebugLogs": false, // Set to false to reduce INFO messages in Output panel
 
   // ===== Security Settings =====
   "security.workspace.trust.enabled": false,
