@@ -1,7 +1,13 @@
 {
+  // VS Code Tasks Configuration
+  // Supports JSON with Comments (jsonc) mode for documentation
+  // Schema provides IntelliSense, validation, and hover descriptions
+  "$schema": "https://raw.githubusercontent.com/microsoft/vscode/main/src/vs/workbench/contrib/tasks/common/tasks.json.schema.json",
   "version": "2.0.0",
   "tasks": [
     {
+      // Compound task: Starts both backend and frontend servers in parallel
+      // Uses background tasks with problem matchers for error detection
       "label": "🚀 Dev: Full Stack",
       "dependsOn": [
         "Dev: Backend",
@@ -37,6 +43,8 @@
       "problemMatcher": {
         "owner": "python",
         "source": "uvicorn",
+        // Regex pattern matches: file:line:column: severity: message
+        // Example: "src/server.py:42:5: error: Undefined variable"
         "pattern": {
           "regexp": "^(.+):(\\d+):(\\d+): (\\w+): (.+)$",
           "file": 1,
@@ -47,6 +55,7 @@
         },
         "background": {
           "activeOnStart": true,
+          // Wait for uvicorn startup message before marking task as ready
           "beginsPattern": "^.*Uvicorn running.*$",
           "endsPattern": "^.*Application startup complete.*$"
         }
@@ -73,6 +82,8 @@
       "problemMatcher": {
         "owner": "vite",
         "source": "vite",
+        // Regex pattern matches: file:line:column: error|warning: message
+        // Example: "src/App.jsx:15:3: error: Unexpected token"
         "pattern": {
           "regexp": "^(.+):(\\d+):(\\d+): (error|warning): (.+)$",
           "file": 1,
@@ -83,6 +94,7 @@
         },
         "background": {
           "activeOnStart": true,
+          // Wait for Vite startup message before marking task as ready
           "beginsPattern": "^.*VITE.*$",
           "endsPattern": "^.*ready in.*$"
         }
@@ -159,6 +171,8 @@
       "problemMatcher": {
         "owner": "ruff",
         "source": "ruff",
+        // Regex pattern matches: file:line:column: code: message
+        // Example: "src/server.py:42:5: F401: Unused import"
         "pattern": {
           "regexp": "^(.+):(\\d+):(\\d+): (\\w+): (.+)$",
           "file": 1,
@@ -253,6 +267,8 @@
       }
     },
     {
+      // Pre-commit workflow: Runs format, lint, and test in sequence
+      // Use before committing code to ensure quality
       "label": "✅ Pre-Commit: Run All Checks",
       "dependsOn": [
         "✨ Format: Backend",
@@ -281,12 +297,16 @@
   ],
   "inputs": [
     {
+      // Prompt for backend server port when starting dev server
+      // Default: 8000 (FastAPI default port)
       "id": "backendPort",
       "type": "promptString",
       "description": "Backend server port",
       "default": "8000"
     },
     {
+      // Prompt for migration message when creating database migration
+      // Example: "add user table" or "update shipment schema"
       "id": "migrationMessage",
       "type": "promptString",
       "description": "Migration message",
