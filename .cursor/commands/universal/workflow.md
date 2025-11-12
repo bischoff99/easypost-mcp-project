@@ -46,30 +46,49 @@ Orchestrate universal commands into high-value workflow chains with intelligent 
 
 ## Available Workflows
 
+**Total**: 6 core workflows (optimized from 8)
+
+**Consolidation Notes**:
+
+- `debugging` workflow merged into `error-resolution` with `--debug` flag
+- `morning-routine` workflow merged into `pre-commit` with `--quick` flag
+
 ### 1. Pre-Commit Workflow (`pre-commit`)
 
 **Purpose**: Ensure code quality before committing
 
-**Chain**: `review → fix → test → commit`
+**Chain**: `review → fix → test → commit` (default) or `test → fix → commit` (quick mode)
+
+**Flags**:
+
+- `--quick` - Skip review step for faster execution (quick health check)
 
 **Conditions**:
 
-- `review.if-fails=fix` - Run fix if review finds issues
+- `review.if-fails=fix` - Run fix if review finds issues (default mode)
+- `test.if-fails=fix` - Run fix if tests fail (quick mode)
 - `test.if-success=commit` - Run commit if tests pass
 
 **Error Handling**: `stop` (default)
 
-**Estimated Time**: 30-60s
+**Estimated Time**:
 
-**When to use**: Before every commit
+- Default: 30-60s
+- Quick mode: 20-50s
+
+**When to use**:
+
+- Default: Before every commit (full quality check)
+- Quick mode: Start of day, after pulling changes (quick health check)
 
 **Benefits**:
 
 - Catches issues before they enter repository
 - Ensures tests pass before commit
 - Maintains code quality standards
+- Quick mode for fast feedback
 
-**Execution Flow**:
+**Execution Flow** (Default Mode):
 
 ```
 1. /review → Static analysis, linting, best practices
@@ -97,6 +116,31 @@ Orchestrate universal commands into high-value workflow chains with intelligent 
 5. If any step fails → Stop and report
    - Error handling: stop (default)
    - Reports: Failed step and error details
+```
+
+**Execution Flow** (Quick Mode with --quick flag):
+
+```
+1. /test → Check project health
+   - Runs: All tests
+   - Condition: test.if-fails=fix (if tests fail)
+   - State: {status: "success|error", test_results: {...}, next_command: "fix"}
+
+2. If failures → /fix → Fix issues
+   - Condition: fix.if-success=commit (if fix succeeds)
+   - Fixes: Test failures automatically
+   - State: {status: "success", fixed: [...], next_command: "commit"}
+
+3. /commit → Commit any fixes
+   - Commits: Changes and fixes
+   - State: {status: "success", commit_hash: "..."}
+```
+
+**Usage**:
+
+```bash
+/workflow:pre-commit          # Full quality check (default)
+/workflow:pre-commit --quick   # Quick health check (skip review)
 ```
 
 ---
@@ -167,24 +211,32 @@ Error handling: rollback (if any step fails, rollback all changes)
 
 ### 3. Error Resolution Workflow (`error-resolution`)
 
-**Purpose**: Fix errors with quality checks
+**Purpose**: Fix errors with quality checks (with optional debugging)
 
-**Chain**: `fix → test → review → commit`
+**Chain**: `[debug] → fix → test → review → commit`
+
+**Flags**:
+
+- `--debug` - Add debug step before fix (systematic bug resolution)
 
 **Conditions**:
 
+- `debug.if-success=fix` - Run fix if debug identifies issue (if --debug flag)
 - `test.if-success=review` - Run review if tests pass
 - `review.if-success=commit` - Run commit if review passes
 
 **Error Handling**: `stop` (default)
 
-**Estimated Time**: 40-130s
+**Estimated Time**:
+
+- Default: 40-130s
+- With --debug: 50-150s
 
 **When to use**: When fixing bugs or errors
 
 **Benefits**:
 
-- Fix errors automatically
+- Fix errors automatically (with optional debug instrumentation)
 - Verify fixes with tests
 - Ensure code quality maintained
 - Commit fixes properly
@@ -192,27 +244,40 @@ Error handling: rollback (if any step fails, rollback all changes)
 **Execution Flow**:
 
 ```
-1. /fix → Auto-detect and fix errors
-   - Detects: Errors from terminal/editor/linter
+1. [Optional] /debug → Add debug instrumentation, analyze output (if --debug flag)
+   - Adds: Debug logging, breakpoints
+   - Analyzes: Debug output
+   - Condition: debug.if-success=fix (if issue identified)
+   - State: {status: "success", issue_identified: {...}, next_command: "fix"}
+
+2. /fix → Auto-detect and fix errors
+   - Detects: Errors from terminal/editor/linter (or debug output)
    - Fixes: Errors automatically
    - Verifies: Fixes with tests
    - State: {status: "success", fixed: [...], next_command: "test"}
 
-2. /test → Verify fixes work
+3. /test → Verify fixes work
    - Condition: test.if-success=review (if tests pass)
    - Runs: Tests for fixed code
    - Verifies: All tests pass
    - State: {status: "success|error", test_results: {...}, next_command: "review"}
 
-3. /review → Ensure code quality
+4. /review → Ensure code quality
    - Condition: review.if-success=commit (if review passes)
    - Checks: Code quality maintained
    - State: {status: "success|error", review_results: {...}, next_command: "commit"}
 
-4. /commit → Commit fixes
+5. /commit → Commit fixes
    - Generates: Fix commit message
    - Commits: Fixes with proper message
    - State: {status: "success", commit_hash: "..."}
+```
+
+**Usage**:
+
+```bash
+/workflow:error-resolution          # Standard error resolution
+/workflow:error-resolution --debug  # With debug instrumentation
 ```
 
 ---
@@ -269,56 +334,6 @@ Error handling: rollback (if any step fails, rollback all changes)
    - State: {status: "success", commit_hash: "..."}
 
 Error handling: rollback (if any step fails, rollback all changes)
-```
-
----
-
-### 5. Debugging Workflow (`debugging`)
-
-**Purpose**: Systematic bug resolution
-
-**Chain**: `debug → fix → test → commit`
-
-**Conditions**:
-
-- `debug.if-success=fix` - Run fix if debug identifies issue
-- `test.if-success=commit` - Run commit if tests pass
-
-**Error Handling**: `stop` (default)
-
-**Estimated Time**: 30-120s
-
-**When to use**: When debugging issues
-
-**Benefits**:
-
-- Add debug instrumentation
-- Fix identified issues
-- Verify fixes
-- Commit resolution
-
-**Execution Flow**:
-
-```
-1. /debug → Add debug instrumentation, analyze output
-   - Adds: Debug logging, breakpoints
-   - Analyzes: Debug output
-   - Condition: debug.if-success=fix (if issue identified)
-   - State: {status: "success", issue_identified: {...}, next_command: "fix"}
-
-2. /fix → Fix identified issues
-   - Fixes: Issues found by debug
-   - Verifies: Fixes work
-   - State: {status: "success", fixed: [...], next_command: "test"}
-
-3. /test → Verify fixes
-   - Condition: test.if-success=commit (if tests pass)
-   - Verifies: All tests pass
-   - State: {status: "success|error", test_results: {...}, next_command: "commit"}
-
-4. /commit → Commit resolution
-   - Commits: Bug fix with proper message
-   - State: {status: "success", commit_hash: "..."}
 ```
 
 ---
@@ -388,52 +403,7 @@ Error handling: rollback (if cleanup breaks tests, rollback changes)
 
 ---
 
-### 7. Morning Routine Workflow (`morning-routine`)
-
-**Purpose**: Quick project health check
-
-**Chain**: `test → fix → commit`
-
-**Conditions**:
-
-- `test.if-fails=fix` - Run fix if tests fail
-- `fix.if-success=commit` - Run commit if fix succeeds
-
-**Error Handling**: `continue` (gather all information)
-
-**Estimated Time**: 20-100s
-
-**When to use**: Start of day, after pulling changes
-
-**Benefits**:
-
-- Verify project health
-- Fix any issues
-- Commit overnight changes
-
-**Execution Flow**:
-
-```
-1. /test → Check project health
-   - Runs: All tests
-   - Condition: test.if-fails=fix (if tests fail)
-   - State: {status: "success|error", test_results: {...}, next_command: "fix"}
-
-2. If failures → /fix → Fix issues
-   - Condition: fix.if-success=commit (if fix succeeds)
-   - Fixes: Test failures automatically
-   - State: {status: "success", fixed: [...], next_command: "commit"}
-
-3. /commit → Commit any fixes
-   - Commits: Overnight changes and fixes
-   - State: {status: "success", commit_hash: "..."}
-
-Error handling: continue (gather all information even if steps fail)
-```
-
----
-
-### 8. Pre-Push Workflow (`pre-push`)
+### 7. Pre-Push Workflow (`pre-push`)
 
 **Purpose**: Final quality check before pushing
 
@@ -524,7 +494,7 @@ Logging:
 Error handling:
   If workflow not found:
     await ctx.error(f"Workflow '{workflow_name}' not found")
-    await ctx.info("Available workflows: pre-commit, feature-dev, error-resolution, code-improvement, debugging, cleanup, morning-routine, pre-push")
+    await ctx.info("Available workflows: pre-commit, feature-dev, error-resolution, code-improvement, cleanup, pre-push")
     return {"status": "error", "message": "Workflow not found"}
 ```
 
@@ -1052,14 +1022,12 @@ explain → [SUCCESS] → refactor → [SUCCESS] → test → [FAILS] → ROLLBA
 # Code improvement workflow
 /workflow:code-improvement
 
-# Debugging workflow
-/workflow:debugging
+# Error resolution workflow (with optional debug step)
+/workflow:error-resolution
+/workflow:error-resolution --debug
 
 # Cleanup workflow
 /workflow:cleanup
-
-# Morning routine workflow
-/workflow:morning-routine
 
 # Pre-push workflow
 /workflow:pre-push
@@ -1177,13 +1145,11 @@ explain → [SUCCESS] → refactor → [SUCCESS] → test → [FAILS] → ROLLBA
 
 **Workflow Times**:
 
-- Pre-commit: 30-60s
+- Pre-commit: 30-60s (default), 20-50s (--quick)
 - Feature-dev: 60-180s
-- Error-resolution: 40-130s
+- Error-resolution: 40-130s (default), 50-150s (--debug)
 - Code-improvement: 55-175s
-- Debugging: 30-120s
 - Cleanup: 2-5 minutes
-- Morning-routine: 20-100s
 - Pre-push: 30-130s
 
 ## Desktop Commander Tools Used

@@ -5,25 +5,24 @@ echo "🔧 Setting up backend..."
 
 cd apps/backend
 
-# Install uv if not present
-if ! command -v uv &> /dev/null; then
-  echo "📦 Installing uv package manager..."
-  curl -LsSf https://astral.sh/uv/install.sh | sh
-  export PATH="$HOME/.local/bin:$PATH"
-fi
-
-# Create virtual environment if not exists
-if [ ! -d ".venv" ]; then
+# Detect venv location (prefers .venv, then venv)
+if [ -d ".venv" ]; then
+  VENV_PATH=".venv"
+elif [ -d "venv" ]; then
+  VENV_PATH="venv"
+else
   echo "📁 Creating virtual environment..."
-  uv venv .venv
+  python3 -m venv .venv
+  VENV_PATH=".venv"
 fi
 
 # Activate virtual environment
-source .venv/bin/activate
+source "${VENV_PATH}/bin/activate"
 
 # Install dependencies
 echo "📚 Installing dependencies..."
-uv pip install -r requirements.txt
+pip install -U pip setuptools wheel
+pip install -r requirements.txt
 
 # Start backend server
 echo "🚀 Starting backend server on http://localhost:8000"

@@ -33,7 +33,7 @@ if [ -d "backend" ]; then
     python -c "
 import multiprocessing
 cpu_count = multiprocessing.cpu_count()
-max_workers = min(32, cpu_count * 2)
+max_workers = min(16, cpu_count * 2)
 print(f'CPU Cores: {cpu_count}')
 print(f'ThreadPoolExecutor Workers: {max_workers}')
 print(f'Uvicorn Workers: {(2 * cpu_count) + 1}')

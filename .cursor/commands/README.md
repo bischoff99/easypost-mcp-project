@@ -163,11 +163,11 @@ Comprehensive suite of MCP-enhanced developer commands that work across any tech
 /clean --dry-run         # Show what would be deleted
 ```
 
-**How**: 10-stage workflow with deep code analysis, dependency analysis, and code quality cleanup
-**Performance**: 60-180s for analysis, 2-5 minutes for full cleanup (3-7 minutes with code-improvement)
+**How**: 13-stage workflow with deep code analysis, dependency analysis, script redundancy analysis, root organization, large file analysis, and code quality cleanup
+**Performance**: 85-225s for analysis, 2-5 minutes for full cleanup (3-7 minutes with code-improvement)
 **MCP**: Desktop Commander + Sequential-thinking + Context7
-**Stages**: 10 (Scan → Deep Code Analysis → Dependency Analysis → Patterns → Classify → Plan → Backup → Apply → Verify)
-**Categories**: 12 (temporary, build artifacts, unused, duplicates, large, documentation, code quality, dependencies, configuration, tests, git)
+**Stages**: 13 (Scan → Deep Code Analysis → Script Redundancy → Root Organization → Large Files → File Dependencies → Dependency Analysis → Patterns → Classify → Plan → Backup → Apply → Structure Optimization → Verify)
+**Categories**: 16 (temporary, build artifacts, unused, duplicates, documentation, code quality, dependencies, configuration, tests, git, script redundancy, root organization, large files, README consolidation)
 
 ---
 
@@ -176,15 +176,17 @@ Comprehensive suite of MCP-enhanced developer commands that work across any tech
 **Orchestrate universal commands into high-value workflow chains**
 
 ```bash
-/workflow:pre-commit      # Pre-commit workflow (review → fix → test → commit)
-/workflow:feature-dev     # Feature development workflow
-/workflow:error-resolution # Error resolution workflow
-/workflow:code-improvement # Code improvement workflow
-/workflow:debugging       # Debugging workflow
-/workflow:cleanup         # Cleanup workflow
-/workflow:morning-routine # Morning routine workflow
-/workflow:pre-push        # Pre-push workflow
+/workflow:pre-commit              # Pre-commit workflow (review → fix → test → commit)
+/workflow:pre-commit --quick      # Quick mode (test → fix → commit)
+/workflow:feature-dev             # Feature development workflow
+/workflow:error-resolution        # Error resolution workflow
+/workflow:error-resolution --debug # With debug instrumentation
+/workflow:code-improvement        # Code improvement workflow
+/workflow:cleanup                 # Cleanup workflow
+/workflow:pre-push                # Pre-push workflow
 ```
+
+**Total**: 6 core workflows (optimized from 8)
 
 **How**: Parse → Plan → Execute → Handle Errors → Report
 **Performance**: Varies by workflow (30s - 5 minutes)
@@ -338,7 +340,7 @@ All commands leverage your hardware:
 ```
 
 **Universal 10**: test, fix, explain, commit, review, refactor, docs, debug, clean, workflow
-**Bonus**: api, component, crud, optimize, simplify
+**Bonus**: api, component, crud, optimize, simplify (used by cleanup workflow)
 
 ---
 
@@ -423,7 +425,7 @@ Adapts from .dev-config.json:
 | `/refactor` | 12-28s                                               | 6      | Sequential             |
 | `/docs`     | 8-20s                                                | 4      | Sequential             |
 | `/debug`    | 10-23s                                               | 4      | Sequential             |
-| `/clean`    | 60-180s (analysis), 2-5min (full), 3-7min (enhanced) | 10     | Sequential             |
+| `/clean`    | 85-225s (analysis), 2-5min (full), 3-7min (enhanced) | 13     | Sequential             |
 | `/workflow` | 30s - 5min (varies by workflow)                      | 5      | Sequential/Parallel    |
 
 **Total productivity gain**: Comprehensive development workflow with AI-powered assistance
@@ -480,17 +482,23 @@ Adapts from .dev-config.json:
 /simplify          # Analyze enterprise features and overbloat
 /simplify --apply   # Auto-remove enterprise features and simplify
 /clean --from-simplify  # Clean up files identified by simplify
-/clean              # General cleanup (temporary files, build artifacts)
+/clean              # General cleanup (temporary files, build artifacts, code quality)
 /test              # Verify simplifications didn't break anything
+
+# Or use the workflow chain:
+/workflow:cleanup  # simplify → clean → test → commit
 ```
 
 ### Cleanup Workflow
 
 ```bash
-/clean             # Clean up everything (temporary files, build artifacts)
+/clean             # Clean up everything (temporary files, build artifacts, code quality)
 /clean --dry-run   # Preview what would be deleted
 /clean --category=temporary  # Clean specific category
+/clean --category=code-quality  # Clean code quality issues
+/clean --category=script-redundancy  # Clean redundant scripts
 /clean --from-simplify  # Clean files from simplify recommendations
+/clean --with-code-improvement  # Include code improvements
 ```
 
 ### Workflow Orchestration
@@ -513,8 +521,9 @@ Adapts from .dev-config.json:
 # Debugging
 /workflow:debugging       # debug → fix → test → commit
 
-# Cleanup
+# Cleanup (enhanced with code improvement option)
 /workflow:cleanup         # simplify → clean → test → commit
+/workflow:cleanup --with-code-improvement  # simplify → clean → code-improvement → test → commit
 
 # Morning routine
 /workflow:morning-routine # test → fix → commit
@@ -547,7 +556,7 @@ Type `/` in Cursor chat - you should see:
 - refactor ✅ (new - 6 stages, safe refactoring, test verification)
 - docs ✅ (new - 4 stages, docstrings, README)
 - debug ✅ (new - 4 stages, intelligent debugging)
-- clean ✅ (new - 8 stages, file cleanup, simplify integration)
+- clean ✅ (new - 13 stages, comprehensive cleanup with code analysis, simplify integration)
 - workflow ✅ (new - 5 stages, command orchestration, 8 workflow chains)
 
 **All commands support:**
@@ -577,8 +586,8 @@ Type `/` in Cursor chat - you should see:
 ## 📚 DOCUMENTATION
 
 - **This file**: Quick command reference
-- **Workflow Chains Reference**: `WORKFLOW_CHAINS_REFERENCE.md` - Complete reference for all 8 workflow chains
-- **Workflow Usage Guide**: `WORKFLOW_USAGE_GUIDE.md` - Complete guide for using `/workflow` command
+- **Workflow Chains Reference**: `WORKFLOW_CHAINS_REFERENCE.md` - Complete reference for all 8 workflow chains (quick lookup)
+- **Workflow Usage Guide**: `WORKFLOW_USAGE_GUIDE.md` - Complete guide for using `/workflow` command (detailed examples)
 - **Workflow Analysis**: `WORKFLOW_CHAINING_ANALYSIS.md` - Research and implementation details
 - **Workflows (Current)**: `WORKFLOWS-CURRENT.md` - ✅ All working workflows
 - **Workflows (Future)**: `WORKFLOW-EXAMPLES.md` - 🔴 Aspirational templates
@@ -586,6 +595,8 @@ Type `/` in Cursor chat - you should see:
 - **Quick ref**: `.cursor/docs/COMMANDS_QUICK_REF.md`
 - **Configuration**: `.cursor/config/universal-commands.json`
 - **Main README**: `.cursor/README.md`
+
+**Note**: For workflow details, see `WORKFLOW_CHAINS_REFERENCE.md` (quick reference) or `WORKFLOW_USAGE_GUIDE.md` (comprehensive guide).
 
 ---
 

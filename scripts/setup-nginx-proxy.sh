@@ -1,6 +1,8 @@
 #!/bin/bash
 # Setup nginx reverse proxy for EasyPost MCP project
 
+set -euo pipefail
+
 echo "🔧 Setting up Nginx Reverse Proxy"
 echo "=================================="
 echo ""
@@ -54,4 +56,3 @@ else
     echo "❌ Nginx config has errors"
     exit 1
 fi
-

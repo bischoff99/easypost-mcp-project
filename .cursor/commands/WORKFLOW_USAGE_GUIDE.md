@@ -294,6 +294,7 @@
 ```
 
 **Enhanced version** (with code improvements):
+
 ```bash
 /workflow:cleanup --with-code-improvement
 ```
@@ -895,7 +896,7 @@ Status: Success (committed changes)
 
 ```bash
 # Morning routine is faster than feature-dev
-/workflow:morning-routine  # 20-100s
+/workflow:pre-commit --quick  # 20-50s
 /workflow:feature-dev      # 60-180s
 ```
 
@@ -1114,7 +1115,7 @@ Conditions:
 
 The `/workflow` command orchestrates universal commands into powerful workflow chains:
 
-- **8 workflows** for different scenarios
+- **6 workflows** for different scenarios (optimized from 8)
 - **State passing** between commands
 - **Conditional execution** based on results
 - **Error handling** with stop/continue/rollback

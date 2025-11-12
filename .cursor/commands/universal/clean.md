@@ -4,7 +4,7 @@ Clean up project by removing unnecessary files, build artifacts, temporary files
 
 ## How It Works
 
-**Complete MCP Workflow (10 Stages):**
+**Complete MCP Workflow (13 Stages):**
 
 **Stage 1 - Scan for Cleanup Targets**:
 - Identifies temporary files (`.tmp`, `.log`, `.cache`, `.swp`, `.bak`)
@@ -23,6 +23,25 @@ Clean up project by removing unnecessary files, build artifacts, temporary files
 - Import dependency graph building
 - Code duplication detection
 - Complexity metrics calculation
+
+**Stage 1.6 - Script Redundancy Analysis**:
+- Parses Makefile to extract all targets and commands
+- Compares scripts with Makefile targets
+- Identifies scripts that duplicate Makefile functionality
+- Checks script usage frequency (git history, references)
+- Flags scripts that are never referenced
+
+**Stage 1.7 - Root-Level Organization Analysis**:
+- Identifies files at root level that should be in `docs/`
+- Checks if root-level markdown files are referenced
+- Identifies root-level config files that could be organized
+- Flags files that belong in subdirectories
+
+**Stage 1.8 - Large File Analysis**:
+- Scans for files >1MB that aren't build artifacts
+- Identifies test data files (images, PDFs, large JSON)
+- Checks if large files are in `.gitignore`
+- Flags large files that could be moved to external storage or removed
 
 **Stage 2 - Analyze File Dependencies**:
 - Checks if files are imported/referenced
@@ -45,7 +64,7 @@ Clean up project by removing unnecessary files, build artifacts, temporary files
 - Caches patterns for reuse
 
 **Stage 4 - Classify Cleanup Targets**:
-- Categorizes (temporary, build artifacts, unused, duplicate, large, code quality, dependencies, configuration, tests, git)
+- Categorizes (temporary, build artifacts, unused, duplicate, documentation, code quality, dependencies, configuration, tests, git, script redundancy, root organization, large files, README consolidation)
 - Calculates impact scores (1-10) for each cleanup action
 - Prioritizes by safety, impact, and effort
 - Groups related files
@@ -74,7 +93,18 @@ Clean up project by removing unnecessary files, build artifacts, temporary files
 - Removes unused dependencies
 - Cleans configuration files
 - Applies code refactoring cleanup (extract duplicates, simplify complexity)
-- Optimizes project structure
+- Removes redundant scripts
+- Moves root-level files to appropriate directories
+- Removes or gitignores large test data files
+- Consolidates README files
+- Optimizes project structure (Stage 7.5)
+
+**Stage 7.5 - Structure Optimization**:
+- Consolidates empty directories
+- Moves files to correct directories
+- Standardizes naming conventions
+- Removes orphaned directories
+- Organizes files by type/function
 
 **Stage 8 - Verify**:
 - Checks for broken imports/references
@@ -103,20 +133,23 @@ Clean up project by removing unnecessary files, build artifacts, temporary files
 - Old migration files (if safe)
 - Unused test fixtures
 
-**Duplicate Files:**
+**Duplicate Files (Enhanced):**
 - Identical files in different locations
 - Backup copies (`.bak`, `.old`)
 - Version duplicates
+- Content-based duplicates (similar files with minor differences)
+- Duplicate data files (test fixtures, sample data)
+- Files with same content but different names
 
-**Large Files:**
-- Unnecessary large files
-- Old database dumps
-- Unused assets
-
-**Documentation Bloat:**
+**Documentation Bloat (Enhanced):**
 - Temporary fix summaries
 - Redundant documentation
 - Old changelogs
+- Duplicate content across markdown files
+- Outdated documentation (check modification dates vs project state)
+- Documentation referencing non-existent files/code
+- Review files covering similar topics (consolidate)
+- Multiple cleanup summaries (consolidate into archive)
 
 **Code Quality Cleanup:**
 - Unused imports (detected via AST analysis)
@@ -152,6 +185,31 @@ Clean up project by removing unnecessary files, build artifacts, temporary files
 - Large files in history (optional)
 - Unused remotes
 - Stale tags
+
+**Script Redundancy:**
+- Scripts that duplicate Makefile targets
+- Unused scripts (never referenced)
+- Scripts with no git history
+- Scripts that can be replaced by Makefile
+
+**Root Organization:**
+- Root-level documentation files that should be in `docs/`
+- Root-level analysis/review files
+- Root-level config files that could be organized
+- Temporary files at root level
+
+**Large Files:**
+- Test data files (images >500KB, PDFs >1MB)
+- Large JSON fixtures (>100KB)
+- Database dumps (>5MB)
+- Large log files (>10MB)
+- Build artifacts not in .gitignore
+
+**README Consolidation:**
+- Redundant README files with duplicate content
+- Outdated README files
+- README files that can be consolidated
+- Missing README files in important directories
 
 ## MCP Integration
 
@@ -283,6 +341,267 @@ Logging:
   await ctx.info(f"Found {len(code_duplication)} code duplication patterns")
 ```
 
+### Stage 1.6 - Script Redundancy Analysis
+
+```yaml
+Tool: mcp_desktop-commander_read_file
+Path: Makefile (absolute path)
+Read: Makefile content
+Extract: All targets and their commands
+
+Tool: mcp_desktop-commander_list_directory
+Path: scripts/ (absolute path)
+List: All script files (*.sh, *.py)
+
+For each script file:
+  Tool: mcp_desktop-commander_read_file
+  Path: Script file (absolute path)
+  Read: Script content
+
+  Tool: mcp_desktop-commander_start_search
+  Pattern: Script filename or function name
+  SearchType: "content"
+  Find: References to script in code/docs/Makefile
+
+  Tool: mcp_sequential-thinking_sequentialthinking
+  Input: Script content + Makefile targets + references
+  Thoughts: 8-10
+  Analyze:
+    1. Does script name match a Makefile target?
+    2. Does script functionality duplicate a Makefile command?
+    3. Is script referenced anywhere (code, docs, other scripts)?
+    4. Is script actively used (check git history frequency)?
+    5. Can script functionality be replaced by Makefile?
+    6. Is script an alternative implementation or primary?
+
+  Classify:
+    - Redundant (duplicates Makefile, can be removed)
+    - Unused (never referenced, safe to remove)
+    - Alternative (provides alternative implementation, keep)
+    - Primary (actively used, no Makefile equivalent, keep)
+
+Progress: await ctx.report_progress(1.6, 13, "Analyzing script redundancy")
+State: ctx.set_state("script_analysis", {
+  "redundant": [
+    {
+      "script": "scripts/start-backend.sh",
+      "makefile_target": "backend",
+      "reason": "Duplicates 'make backend' functionality",
+      "safe_to_remove": True,
+      "impact_score": 3,
+      "references": 0
+    }
+  ],
+  "unused": [
+    {
+      "script": "scripts/old-script.sh",
+      "reason": "Never referenced, no git history",
+      "safe_to_remove": True,
+      "impact_score": 2,
+      "references": 0
+    }
+  ],
+  "alternative": [
+    {
+      "script": "scripts/start-backend-jit.sh",
+      "reason": "Provides JIT optimization alternative",
+      "safe_to_remove": False,
+      "impact_score": 1
+    }
+  ],
+  "primary": [
+    {
+      "script": "scripts/mcp_tool.py",
+      "reason": "No Makefile equivalent, actively used",
+      "safe_to_remove": False,
+      "impact_score": 1
+    }
+  ]
+})
+
+Logging:
+  await ctx.info(f"Found {len(redundant)} redundant scripts")
+  await ctx.info(f"Found {len(unused)} unused scripts")
+  await ctx.info(f"Found {len(alternative)} alternative scripts")
+  await ctx.info(f"Found {len(primary)} primary scripts")
+```
+
+### Stage 1.7 - Root-Level Organization Analysis
+
+```yaml
+Tool: mcp_desktop-commander_list_directory
+Path: Project root (absolute path)
+Depth: 1
+List: All files and directories at root level
+
+Standard root files (keep):
+  - README.md (main project readme)
+  - LICENSE (standard location)
+  - .gitignore (standard location)
+  - Makefile (standard location)
+  - package.json, pnpm-workspace.yaml (monorepo config)
+  - CODE_OF_CONDUCT.md (standard location)
+  - CONTRIBUTING.md (standard location)
+  - SECURITY.md (standard location)
+  - CLAUDE.md (project documentation)
+
+For each root-level file:
+  Tool: mcp_desktop-commander_start_search
+  Pattern: Filename or content reference
+  SearchType: "content"
+  Find: References to file
+
+  Tool: mcp_desktop-commander_get_file_info
+  Path: Root file (absolute path)
+  Get: File size, modification date, type
+
+  Tool: mcp_sequential-thinking_sequentialthinking
+  Input: File info + references + file type
+  Thoughts: 5-7
+  Analyze:
+    1. Is file a standard root file (README, LICENSE, etc.)?
+    2. Should file be in docs/ directory?
+    3. Is file referenced from root location?
+    4. Would moving file break references?
+    5. What is the appropriate location?
+
+  Classify:
+    - Keep at root (standard location)
+    - Move to docs/ (documentation file)
+    - Move to .config/ (config file)
+    - Delete (temporary/analysis file)
+
+Progress: await ctx.report_progress(1.7, 13, "Analyzing root-level organization")
+State: ctx.set_state("root_organization", {
+  "keep_at_root": [
+    {
+      "file": "README.md",
+      "reason": "Standard root location",
+      "action": "keep"
+    },
+    {
+      "file": "CLAUDE.md",
+      "reason": "Project documentation, standard location",
+      "action": "keep"
+    }
+  ],
+  "move_to_docs": [
+    {
+      "file": "CLEANUP_ANALYSIS.md",
+      "target": "docs/reviews/CLEANUP_ANALYSIS.md",
+      "reason": "Analysis document belongs in docs/reviews/",
+      "safe_to_move": True,
+      "impact_score": 2,
+      "references": 0
+    }
+  ],
+  "move_to_config": [],
+  "delete": []
+})
+
+Logging:
+  await ctx.info(f"Found {len(keep_at_root)} files to keep at root")
+  await ctx.info(f"Found {len(move_to_docs)} files to move to docs/")
+  await ctx.info(f"Found {len(move_to_config)} files to move to config/")
+  await ctx.info(f"Found {len(delete)} files to delete")
+```
+
+### Stage 1.8 - Large File Analysis
+
+```yaml
+Tool: mcp_desktop-commander_list_directory
+Path: Project root (recursive, depth=5)
+List: All files
+
+For each file:
+  Tool: mcp_desktop-commander_get_file_info
+  Path: File (absolute path)
+  Get: File size
+
+  If file_size > threshold:
+    Thresholds:
+      - Images: >500KB (test data)
+      - PDFs: >1MB (test invoices)
+      - JSON: >100KB (test fixtures)
+      - Logs: >10MB
+      - Database dumps: >5MB
+      - Other: >1MB
+
+    Tool: mcp_desktop-commander_start_search
+    Pattern: Filename or content reference
+    SearchType: "content"
+    Find: References to large file
+
+    Tool: mcp_sequential-thinking_sequentialthinking
+    Input: File size + type + references + path
+    Thoughts: 5-7
+    Analyze:
+      1. Is file a build artifact (should be in .gitignore)?
+      2. Is file test/sample data?
+      3. Is file referenced in code/tests?
+      4. Can file be regenerated?
+      5. Should file be moved to external storage?
+      6. Should file be added to .gitignore?
+
+    Classify:
+      - Test data (can be removed or moved to .gitignore)
+      - Sample data (can be removed)
+      - Build artifact (should be in .gitignore)
+      - Required file (keep, but may need optimization)
+      - Large log (can be deleted)
+
+Progress: await ctx.report_progress(1.8, 13, "Analyzing large files")
+State: ctx.set_state("large_files", {
+  "test_data": [
+    {
+      "file": "data/shipping-labels/UPS_Express_1Z09E1D36626453915_label.png",
+      "size": 245760,
+      "type": "image",
+      "reason": "Test/sample shipping label",
+      "safe_to_remove": True,
+      "impact_score": 2,
+      "action": "delete_or_gitignore"
+    },
+    {
+      "file": "data/shipping-labels/UPS_Express_1Z09E1D36634440520_official_invoice.pdf",
+      "size": 1048576,
+      "type": "pdf",
+      "reason": "Test invoice",
+      "safe_to_remove": True,
+      "impact_score": 2,
+      "action": "delete_or_gitignore"
+    }
+  ],
+  "build_artifacts": [
+    {
+      "file": "apps/frontend/dist/bundle.js",
+      "size": 2097152,
+      "type": "build",
+      "reason": "Build artifact, should be in .gitignore",
+      "safe_to_remove": True,
+      "impact_score": 1,
+      "action": "verify_gitignore"
+    }
+  ],
+  "required": [
+    {
+      "file": "apps/backend/tests/captured_responses/large_response.json",
+      "size": 153600,
+      "type": "test_fixture",
+      "reason": "Required for tests",
+      "safe_to_remove": False,
+      "impact_score": 1,
+      "action": "keep"
+    }
+  ]
+})
+
+Logging:
+  await ctx.info(f"Found {len(test_data)} test data files ({total_size} bytes)")
+  await ctx.info(f"Found {len(build_artifacts)} build artifacts")
+  await ctx.info(f"Found {len(required)} required large files")
+```
+
 ### Stage 2 - Analyze File Dependencies
 
 ```yaml
@@ -309,7 +628,7 @@ Read: Ignore patterns
 If file matches .gitignore:
   Mark as "should_be_ignored" (not deleted, should be in .gitignore)
 
-Progress: await ctx.report_progress(2, 10, "Analyzing file dependencies")
+Progress: await ctx.report_progress(2, 13, "Analyzing file dependencies")
 State: ctx.set_state("dependency_analysis", {
   "safe_to_delete": [list of files],
   "keep": [list of referenced files],
@@ -371,7 +690,7 @@ Command: Check for updates
   Rust: "cargo outdated"
 Timeout: 60000ms
 
-Progress: await ctx.report_progress(3, 10, "Analyzing dependencies")
+Progress: await ctx.report_progress(3, 13, "Analyzing dependencies")
 State: ctx.set_state("dependency_analysis", {
   "unused_packages": [
     {
@@ -434,7 +753,7 @@ Library: Resolved ID
 Topic: "project cleanup patterns temporary files build artifacts best practices"
 Tokens: 3000
 
-Progress: await ctx.report_progress(4, 10, "Loading cleanup patterns")
+Progress: await ctx.report_progress(4, 13, "Loading cleanup patterns")
 State: ctx.set_state("cleanup_patterns", patterns_content)
 
 Error handling:
@@ -467,7 +786,7 @@ Classify:
   6. What breaks if deleted?
   7. Can it be regenerated?
 
-Progress: await ctx.report_progress(5, 10, "Classifying cleanup targets")
+Progress: await ctx.report_progress(5, 13, "Classifying cleanup targets")
 State: ctx.set_state("classified_targets", {
   "temporary": [...],
   "build_artifacts": [...],
@@ -506,7 +825,48 @@ State: ctx.set_state("classified_targets", {
   ],
   "configuration": [...],
   "tests": [...],
-  "git": [...]
+  "git": [...],
+  "script_redundancy": [
+    {
+      "script": "scripts/start-backend.sh",
+      "type": "redundant",
+      "priority": "medium",
+      "safety": "safe",
+      "impact_score": 3,
+      "reason": "Duplicates Makefile target"
+    }
+  ],
+  "root_organization": [
+    {
+      "file": "CLEANUP_ANALYSIS.md",
+      "type": "move_to_docs",
+      "target": "docs/reviews/CLEANUP_ANALYSIS.md",
+      "priority": "low",
+      "safety": "safe",
+      "impact_score": 2
+    }
+  ],
+  "large_files": [
+    {
+      "file": "data/shipping-labels/label.png",
+      "type": "test_data",
+      "size": 245760,
+      "priority": "medium",
+      "safety": "safe",
+      "impact_score": 2,
+      "action": "delete_or_gitignore"
+    }
+  ],
+  "readme_consolidation": [
+    {
+      "file": "docs/reviews/README.md",
+      "type": "redundant",
+      "priority": "low",
+      "safety": "safe",
+      "impact_score": 2,
+      "reason": "Content overlaps with docs/README.md"
+    }
+  ]
 })
 
 Logging:
@@ -518,6 +878,10 @@ Logging:
   await ctx.info(f"Classified {len(configuration)} configuration issues")
   await ctx.info(f"Classified {len(tests)} test cleanup issues")
   await ctx.info(f"Classified {len(git)} git cleanup issues")
+  await ctx.info(f"Classified {len(script_redundancy)} script redundancy issues")
+  await ctx.info(f"Classified {len(root_organization)} root organization issues")
+  await ctx.info(f"Classified {len(large_files)} large file issues")
+  await ctx.info(f"Classified {len(readme_consolidation)} README consolidation issues")
 ```
 
 ### Stage 5 - Generate Cleanup Plan
@@ -535,7 +899,7 @@ Plan structure:
   4. Remove duplicates (safe, medium priority)
   5. Clean empty directories (safe, low priority)
 
-Progress: await ctx.report_progress(6, 10, "Generating cleanup plan")
+Progress: await ctx.report_progress(6, 13, "Generating cleanup plan")
 State: ctx.set_state("cleanup_plan", {
   "plan": [
     {
@@ -599,6 +963,10 @@ State: ctx.set_state("cleanup_plan", {
     "configuration": 3,
     "tests": 4,
     "git": 2,
+    "script_redundancy": 3,
+    "root_organization": 2,
+    "large_files": 5,
+    "readme_consolidation": 2,
     "estimated_time": "2-5 minutes",
     "risk": "low",
     "average_impact_score": 3.2
@@ -648,7 +1016,7 @@ For directories:
     "timestamp": datetime.now().isoformat()
   })
 
-Progress: await ctx.report_progress(7, 10, "Backing up critical files")
+Progress: await ctx.report_progress(7, 13, "Backing up critical files")
 Logging:
   await ctx.debug(f"Backed up {file_path}")
 ```
@@ -734,7 +1102,151 @@ For each item in cleanup plan:
     Logging:
       await ctx.info(f"Cleaned configuration: {target}")
 
-Progress: await ctx.report_progress(8, 10, f"Applying cleanup {i}/{total}")
+  If action == "remove_redundant_script":
+    Tool: mcp_desktop-commander_delete_file
+    Path: Redundant script (absolute path)
+
+    Logging:
+      await ctx.info(f"Removed redundant script: {target}")
+
+  If action == "move_file":
+    Tool: mcp_desktop-commander_read_file
+    Path: Source file (absolute path)
+    Read: File content
+
+    Tool: mcp_desktop-commander_write_file
+    Path: Destination file (absolute path)
+    Content: File content
+
+    Tool: mcp_desktop-commander_delete_file
+    Path: Source file (absolute path)
+
+    Logging:
+      await ctx.info(f"Moved: {source} → {destination}")
+
+  If action == "remove_large_file":
+    Tool: mcp_desktop-commander_delete_file
+    Path: Large file (absolute path)
+
+    Logging:
+      await ctx.info(f"Removed large file: {target} ({size} bytes)")
+
+  If action == "add_to_gitignore":
+    Tool: mcp_desktop-commander_read_file
+    Path: .gitignore (absolute path)
+    Read: Current .gitignore content
+
+    Tool: mcp_desktop-commander_edit_block
+    File: .gitignore
+    Add: Pattern for large file
+
+    Logging:
+      await ctx.info(f"Added {pattern} to .gitignore")
+
+  If action == "consolidate_readme":
+    Tool: mcp_desktop-commander_read_file
+    Path: README files (absolute paths)
+    Read: All README content
+
+    Tool: mcp_sequential-thinking_sequentialthinking
+    Input: Multiple README contents
+    Thoughts: 8-10
+    Generate: Consolidated README content
+
+    Tool: mcp_desktop-commander_edit_block
+    File: Primary README
+    Replace: With consolidated content
+
+    Tool: mcp_desktop-commander_delete_file
+    Path: Redundant README files
+
+    Logging:
+      await ctx.info(f"Consolidated README files: {redundant_readmes} → {primary_readme}")
+
+Progress: await ctx.report_progress(8, 13, f"Applying cleanup {i}/{total}")
+```
+
+### Stage 7.5 - Structure Optimization
+
+```yaml
+Tool: mcp_sequential-thinking_sequentialthinking
+Input: File structure + cleanup plan + classified targets
+Thoughts: 12-15
+Generate: Structure optimization plan
+
+Analyze:
+  1. Which directories are empty or contain only empty subdirectories?
+  2. Which files are in wrong directories?
+  3. Are there inconsistent naming conventions?
+  4. Can directories be consolidated?
+  5. Are there orphaned directories (no files, only empty subdirs)?
+  6. What is the optimal directory structure?
+
+Actions:
+  1. Move root-level docs to docs/
+  2. Consolidate empty directories
+  3. Standardize naming conventions
+  4. Create missing directory structure
+  5. Remove orphaned directories
+  6. Organize files by type/function
+
+For each optimization:
+  Tool: mcp_desktop-commander_list_directory
+  Path: Directory to optimize
+  List: Current structure
+
+  Tool: mcp_sequential-thinking_sequentialthinking
+  Input: Current structure + best practices
+  Thoughts: 5-7
+  Generate: Optimized structure plan
+
+  Apply optimizations:
+    - Move files to correct directories
+    - Consolidate empty directories
+    - Standardize naming
+    - Remove orphaned directories
+
+Progress: await ctx.report_progress(7.5, 13, "Optimizing project structure")
+State: ctx.set_state("structure_optimization", {
+  "file_moves": [
+    {
+      "source": "CLEANUP_ANALYSIS.md",
+      "destination": "docs/reviews/CLEANUP_ANALYSIS.md",
+      "reason": "Analysis document belongs in docs/reviews/",
+      "safe": True
+    }
+  ],
+  "directory_consolidations": [
+    {
+      "directories": ["docs/temp/", "docs/old/"],
+      "target": "docs/archive/",
+      "reason": "Consolidate temporary/old docs",
+      "safe": True
+    }
+  ],
+  "empty_directories": [
+    {
+      "directory": "apps/backend/temp/",
+      "action": "remove",
+      "reason": "Empty directory",
+      "safe": True
+    }
+  ],
+  "naming_fixes": [
+    {
+      "file": "docs/API.md",
+      "target": "docs/API_REFERENCE.md",
+      "reason": "Standardize naming convention",
+      "safe": True
+    }
+  ]
+})
+
+Logging:
+  await ctx.info(f"Planned {len(file_moves)} file moves")
+  await ctx.info(f"Planned {len(directory_consolidations)} directory consolidations")
+  await ctx.info(f"Planned {len(empty_directories)} empty directory removals")
+  await ctx.info(f"Planned {len(naming_fixes)} naming fixes")
 ```
 
 ### Stage 8 - Verify
@@ -763,7 +1275,7 @@ Command: Run tests (quick check)
   Go: "go test ./..." (quick)
   Rust: "cargo test" (quick)
 
-Progress: await ctx.report_progress(9, 10, "Verifying cleanup")
+Progress: await ctx.report_progress(9, 13, "Verifying cleanup")
 
 Success path:
   if no_broken_imports and dependency_integrity_ok and code_quality_ok and tests_pass:
@@ -866,6 +1378,10 @@ If --from-simplify flag:
 /clean --category=configuration
 /clean --category=tests
 /clean --category=git
+/clean --category=script-redundancy
+/clean --category=root-organization
+/clean --category=large-files
+/clean --category=readme-consolidation
 
 # Enable code improvement integration
 /clean --with-code-improvement
@@ -902,6 +1418,10 @@ Found: 35 cleanup targets
   - Configuration issues: 3 (redundant settings)
   - Test cleanup: 4 (unused fixtures)
   - Git cleanup: 2 (unused branches)
+  - Script redundancy: 3 (redundant scripts)
+  - Root organization: 2 (files to move)
+  - Large files: 5 (test data files)
+  - README consolidation: 2 (redundant READMEs)
 
 🔍 Deep Code Analysis:
 Analyzing code files for unused imports and dead code...
@@ -950,6 +1470,20 @@ Configuration Issues (3):
   1. .env.example - Unused environment variables (impact: 2/10)
   2. vite.config.js - Redundant settings (impact: 1/10)
 
+Script Redundancy (3):
+  1. scripts/start-backend.sh - Duplicates 'make backend' (impact: 3/10)
+  2. scripts/old-script.sh - Never referenced (impact: 2/10)
+
+Root Organization (2):
+  1. CLEANUP_ANALYSIS.md → docs/reviews/ (impact: 2/10)
+
+Large Files (5):
+  1. data/shipping-labels/label.png - 245 KB test data (impact: 2/10)
+  2. data/shipping-labels/invoice.pdf - 1 MB test invoice (impact: 2/10)
+
+README Consolidation (2):
+  1. docs/reviews/README.md - Overlaps with docs/README.md (impact: 2/10)
+
 💡 Cleanup Plan:
 Priority Order:
   1. Delete temporary files (1.0 MB freed, impact: 1/10)
@@ -960,8 +1494,13 @@ Priority Order:
   6. Refactor duplicate code (3 patterns, impact: 5/10)
   7. Delete unused files (40 KB freed, impact: 2/10)
   8. Remove duplicates (8 KB freed, impact: 2/10)
+  9. Remove redundant scripts (3 scripts, impact: 3/10)
+  10. Move root-level files (2 files, impact: 2/10)
+  11. Remove large test data files (5 files, 1.5 MB freed, impact: 2/10)
+  12. Consolidate README files (2 files, impact: 2/10)
+  13. Optimize project structure (impact: 3/10)
 
-Estimated Space Savings: 51.5 MB
+Estimated Space Savings: 53.0 MB
 Estimated Code Reduction: 250 lines
 Estimated Time: 2-5 minutes
 Risk Level: Low (all deletions are safe)
@@ -977,7 +1516,7 @@ Average Impact Score: 3.2/10
 Found: 25 cleanup targets
 
 💡 Cleanup Plan Generated:
-10 temporary, 5 build artifacts, 8 unused, 2 duplicates, 12 code quality, 5 dependencies, 3 config, 4 tests
+10 temporary, 5 build artifacts, 8 unused, 2 duplicates, 12 code quality, 5 dependencies, 3 config, 4 tests, 3 scripts, 2 root files, 5 large files, 2 READMEs
 
 ✅ Applying Cleanup:
 
@@ -1001,8 +1540,12 @@ Step 6/35: Refactoring duplicate code...
 
 ...
 
-Step 35/35: Cleaning Git branches...
-  ✅ Removed: merged-branch (impact: 1/10)
+Step 35/47: Consolidating README files...
+  ✅ Consolidated: docs/reviews/README.md → docs/README.md (impact: 2/10)
+
+Step 36/47: Optimizing project structure...
+  ✅ Moved: CLEANUP_ANALYSIS.md → docs/reviews/ (impact: 2/10)
+  ✅ Removed: 2 empty directories (impact: 1/10)
 
 🧪 Verifying Cleanup:
 Checking imports...
@@ -1018,14 +1561,19 @@ Running quick tests...
 Result: ✅ All tests passed
 
 ✅ Cleanup Complete:
-  - Deleted: 25 files/directories
+  - Deleted: 30 files/directories
+  - Moved: 2 files
   - Code reduced: 250 lines
   - Dependencies removed: 5 packages
-  - Space freed: 51.5 MB
+  - Scripts removed: 3 redundant scripts
+  - Large files removed: 5 test data files
+  - READMEs consolidated: 2 files
+  - Space freed: 53.0 MB
   - Tests: ✅ All passed
   - Imports: ✅ All valid
   - Dependencies: ✅ All valid
   - Code quality: ✅ Improved
+  - Structure: ✅ Optimized
 
 Summary:
   - Temporary files: 10 removed
@@ -1036,6 +1584,11 @@ Summary:
   - Configuration: 3 cleaned
   - Tests: 4 cleaned
   - Git: 2 branches removed
+  - Script redundancy: 3 scripts removed
+  - Root organization: 2 files moved
+  - Large files: 5 files removed
+  - README consolidation: 2 files consolidated
+  - Structure optimization: Completed
   - Total time: 3.5 minutes
   - Average impact score: 3.2/10
 ```
@@ -1044,15 +1597,19 @@ Summary:
 
 - Target scanning: 5-10s (recursive directory listing)
 - Deep code analysis: 10-30s (AST parsing, parallel execution)
+- Script redundancy analysis: 5-10s (Makefile parsing, script comparison)
+- Root organization analysis: 3-5s (root file listing, classification)
+- Large file analysis: 5-10s (file size checking, classification)
 - Dependency analysis: 5-15s (package parsing, import mapping)
 - File dependency analysis: 3-5s per file (search for references)
 - Classification: 3-5s (Sequential-thinking, enhanced with impact scoring)
 - Pattern loading: 2-4s (Context7, cached 24h)
 - Plan generation: 5-8s (Sequential-thinking, enhanced planning)
 - Backup: 1-5s (depends on file sizes)
-- Cleanup: 20-60s (depends on number of files and code changes)
+- Cleanup: 30-90s (depends on number of files and code changes, includes structure optimization)
+- Structure optimization: 10-20s (directory consolidation, file moves)
 - Verification: 15-45s (dependency check, code quality, test execution)
-- **Total: 60-180s** for analysis, **2-5 minutes** for full cleanup
+- **Total: 85-225s** for analysis, **2-5 minutes** for full cleanup
 
 **Performance Optimizations:**
 - **Parallel Analysis**: AST parsing runs in parallel for multiple files

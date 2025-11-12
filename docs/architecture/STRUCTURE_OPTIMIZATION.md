@@ -5,25 +5,30 @@
 ## Historical Issues (RESOLVED)
 
 ### 1. **Root Directory Clutter** ✅ RESOLVED
+
 - Documentation moved to `docs/` directory structure
 - Root directory is now clean
 - Proper organisation: `docs/architecture/`, `docs/reviews/`, `docs/guides/`
 
 ### 2. **Test Files Misplaced** ✅ RESOLVED
+
 - All test files are now in `apps/backend/tests/` directory
 - Proper structure: `tests/unit/` and `tests/integration/`
 - No test files in root or backend root
 
 ### 3. **Duplicate Prompt Directories** ✅ RESOLVED
+
 - Verified: No `.prompts/` directory exists
 - Verified: No `.cursor/prompts/` directory exists
 - Only `.cursor/commands/` exists (correct location)
 
 ### 4. **No Docs Organization** ✅ RESOLVED
+
 - Documentation properly organised in `docs/` directory
 - Clear structure: architecture, reviews, guides, setup
 
 ### 5. **Cache Files** ✅ RESOLVED
+
 - All cache files properly ignored in `.gitignore`
 - `__pycache__/`, `.pytest_cache/`, `.mypy_cache/` all ignored
 
@@ -122,7 +127,9 @@ easypost-mcp-project/
 ## 🔧 Optimization Actions
 
 ### 1. **Consolidate Documentation**
+
 Move all markdown docs to `docs/`:
+
 ```bash
 mkdir -p docs/{setup,guides,reports,architecture}
 
@@ -134,6 +141,7 @@ mv *STATUS*.md docs/reports/
 ```
 
 ### 2. **Move Test Files**
+
 ```bash
 # Move misplaced tests
 mv backend/test_*.py backend/tests/integration/
@@ -146,6 +154,7 @@ mv backend/tests/test_live_*.py backend/tests/integration/
 ```
 
 ### 3. **Remove Duplicate Directories**
+
 ```bash
 # Remove redundant prompt directories
 rm -rf .prompts/
@@ -155,6 +164,7 @@ rm -rf .cursor/prompts/
 ```
 
 ### 4. **Clean Up Documentation in .cursor/**
+
 ```bash
 # Move .cursor/*.md to docs/reports/
 mv .cursor/*REPORT*.md docs/reports/
@@ -164,6 +174,7 @@ mv .cursor/*SUMMARY*.md docs/reports/
 ```
 
 ### 5. **Organize Scripts**
+
 ```bash
 # Create scripts directory if not exists
 mkdir -p scripts/
@@ -176,6 +187,7 @@ mv *.sh scripts/  # Root level scripts
 ```
 
 ### 6. **Clean Cache Files**
+
 ```bash
 # Add to .gitignore
 echo ".pytest_cache/" >> .gitignore
@@ -189,7 +201,9 @@ git rm -r --cached .pytest_cache
 ```
 
 ### 7. **Update Root README**
+
 Keep only essential docs at root:
+
 - `README.md` - Main project overview
 - `QUICK_REFERENCE.md` - Quick commands
 - `.dev-config.json` - Project config
@@ -200,19 +214,23 @@ Keep only essential docs at root:
 ## 📊 Before/After Comparison
 
 ### Root Directory Files:
-**Before:** 35+ markdown files ❌  
+
+**Before:** 35+ markdown files ❌
 **After:** 2 markdown files + config ✅
 
 ### Test Organization:
-**Before:** Tests scattered in multiple places ❌  
+
+**Before:** Tests scattered in multiple places ❌
 **After:** All tests in `backend/tests/{unit,integration}` ✅
 
 ### Documentation:
-**Before:** No organization, hard to find ❌  
+
+**Before:** No organization, hard to find ❌
 **After:** Organized by category in `docs/` ✅
 
 ### Scripts:
-**Before:** Scattered across directories ❌  
+
+**Before:** Scattered across directories ❌
 **After:** Centralized in `scripts/` ✅
 
 ---
@@ -230,17 +248,20 @@ Keep only essential docs at root:
 ## 🎯 Priority Actions
 
 ### **HIGH PRIORITY:**
+
 1. Move test files to correct location
 2. Consolidate documentation to `docs/`
 3. Remove duplicate prompt directories
 4. Clean up root directory
 
 ### **MEDIUM PRIORITY:**
+
 5. Organize scripts into `scripts/`
 6. Update .gitignore for cache files
 7. Create conftest.py for shared fixtures
 
 ### **LOW PRIORITY:**
+
 8. Add architecture diagrams to `docs/architecture/`
 9. Create CONTRIBUTING.md guide
 10. Add badges to README.md
@@ -250,6 +271,7 @@ Keep only essential docs at root:
 ## 🚀 Quick Execution
 
 Run all optimizations:
+
 ```bash
 # Create structure
 mkdir -p docs/{setup,guides,reports,architecture}
@@ -298,6 +320,7 @@ EOF
 ## ✅ Validation
 
 After optimization, verify:
+
 ```bash
 # Tests still discoverable
 pytest backend/tests/ --collect-only
@@ -325,7 +348,7 @@ ls docs/
 
 ## 🎉 Result
 
-**Before:** Cluttered, confusing, hard to navigate  
-**After:** Clean, organized, professional structure  
+**Before:** Cluttered, confusing, hard to navigate
+**After:** Clean, organized, professional structure
 
 **Your project will look like a well-maintained production system!** 🚀

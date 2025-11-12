@@ -1,41 +1,55 @@
 # All Workflow Chains Reference
 
-**Complete reference for all 8 workflow chains available in `/workflow` command.**
+**Complete reference for all 6 workflow chains available in `/workflow` command.**
+
+**Consolidated from 8 workflows** (optimized for usability):
+
+- `debugging` → Merged into `error-resolution` with `--debug` flag
+- `morning-routine` → Merged into `pre-commit` with `--quick` flag
 
 ---
 
 ## Quick Reference Table
 
-| #   | Workflow           | Chain                                                | Steps | Time    | Error Handling | Use Case                 |
-| --- | ------------------ | ---------------------------------------------------- | ----- | ------- | -------------- | ------------------------ |
-| 1   | `pre-commit`       | `review → fix → test → commit`                       | 4     | 30-60s  | stop           | Before every commit      |
-| 2   | `feature-dev`      | `explain → refactor → test → review → docs → commit` | 6     | 60-180s | rollback       | New feature development  |
-| 3   | `error-resolution` | `fix → test → review → commit`                       | 4     | 40-130s | stop           | Bug fixing               |
-| 4   | `code-improvement` | `review → refactor → test → docs → commit`           | 5     | 55-175s | rollback       | Code quality improvement |
-| 5   | `debugging`        | `debug → fix → test → commit`                        | 4     | 30-120s | stop           | Debugging issues         |
-| 6   | `cleanup`          | `simplify → clean → test → commit`<br>`simplify → clean → code-improvement → test → commit` (enhanced) | 4-5   | 2-5 min<br>(3-7 min enhanced) | rollback       | Project cleanup          |
-| 7   | `morning-routine`  | `test → fix → commit`                                | 3     | 20-100s | continue       | Daily health check       |
-| 8   | `pre-push`         | `review → test → commit`                             | 3     | 30-130s | stop           | Before pushing           |
+| #   | Workflow           | Chain                                                                                                  | Steps | Time                          | Error Handling | Use Case                 | Flags                     |
+| --- | ------------------ | ------------------------------------------------------------------------------------------------------ | ----- | ----------------------------- | -------------- | ------------------------ | ------------------------- |
+| 1   | `pre-commit`       | `review → fix → test → commit` (default)<br>`test → fix → commit` (quick)                              | 4/3   | 30-60s / 20-50s               | stop           | Before every commit      | `--quick`                 |
+| 2   | `feature-dev`      | `explain → refactor → test → review → docs → commit`                                                   | 6     | 60-180s                       | rollback       | New feature development  | -                         |
+| 3   | `error-resolution` | `[debug] → fix → test → review → commit`                                                               | 4-5   | 40-130s / 50-150s             | stop           | Bug fixing               | `--debug`                 |
+| 4   | `code-improvement` | `review → refactor → test → docs → commit`                                                             | 5     | 55-175s                       | rollback       | Code quality improvement | -                         |
+| 5   | `cleanup`          | `simplify → clean → test → commit`<br>`simplify → clean → code-improvement → test → commit` (enhanced) | 4-5   | 2-5 min<br>(3-7 min enhanced) | rollback       | Project cleanup          | `--with-code-improvement` |
+| 6   | `pre-push`         | `review → test → commit`                                                                               | 3     | 30-130s                       | stop           | Before pushing           | -                         |
 
 ---
 
 ## 1. Pre-Commit Workflow ⭐⭐⭐⭐⭐
 
-**Command**: `/workflow:pre-commit`
+**Command**: `/workflow:pre-commit` or `/workflow:pre-commit --quick`
 
-**Chain**: `review → fix → test → commit`
+**Chain**: `review → fix → test → commit` (default) or `test → fix → commit` (quick mode)
 
 **Purpose**: Ensure code quality before committing
 
-**When to use**: Before every commit
+**When to use**:
 
-**Estimated Time**: 30-60s
+- Default: Before every commit (full quality check)
+- Quick mode: Start of day, after pulling changes (quick health check)
+
+**Estimated Time**:
+
+- Default: 30-60s
+- Quick mode: 20-50s
+
+**Flags**:
+
+- `--quick` - Skip review step for faster execution (quick health check)
 
 **Error Handling**: `stop` (default)
 
 **Conditions**:
 
-- `review.if-fails=fix` - Run fix if review finds issues
+- `review.if-fails=fix` - Run fix if review finds issues (default mode)
+- `test.if-fails=fix` - Run fix if tests fail (quick mode)
 - `test.if-success=commit` - Run commit if tests pass
 
 **Execution Flow**:
@@ -253,59 +267,7 @@ Error handling: rollback (if any step fails, rollback all changes)
 
 ---
 
-## 5. Debugging Workflow ⭐⭐⭐⭐
-
-**Command**: `/workflow:debugging`
-
-**Chain**: `debug → fix → test → commit`
-
-**Purpose**: Systematic bug resolution
-
-**When to use**: When debugging issues
-
-**Estimated Time**: 30-120s
-
-**Error Handling**: `stop` (default)
-
-**Conditions**:
-
-- `debug.if-success=fix` - Run fix if debug identifies issue
-- `test.if-success=commit` - Run commit if tests pass
-
-**Execution Flow**:
-
-```
-Step 1: /debug
-  → Adds: Debug logging, breakpoints
-  → Analyzes: Debug output
-  → Condition: debug.if-success=fix (if issue identified)
-  → State: {status: "success", issue_identified: {...}, next_command: "fix"}
-
-Step 2: /fix
-  → Fixes: Issues found by debug
-  → Verifies: Fixes work
-  → State: {status: "success", fixed: [...], next_command: "test"}
-
-Step 3: /test
-  → Condition: test.if-success=commit
-  → Verifies: All tests pass
-  → State: {status: "success|error", test_results: {...}, next_command: "commit"}
-
-Step 4: /commit
-  → Commits: Bug fix with proper message
-  → State: {status: "success", commit_hash: "..."}
-```
-
-**Benefits**:
-
-- Add debug instrumentation
-- Fix identified issues
-- Verify fixes
-- Commit resolution
-
----
-
-## 6. Cleanup Workflow ⭐⭐⭐
+## 5. Cleanup Workflow ⭐⭐⭐⭐⭐
 
 **Command**: `/workflow:cleanup`
 
@@ -372,54 +334,7 @@ Error handling: rollback (if cleanup breaks tests, rollback changes)
 
 ---
 
-## 7. Morning Routine Workflow ⭐⭐⭐
-
-**Command**: `/workflow:morning-routine`
-
-**Chain**: `test → fix → commit`
-
-**Purpose**: Quick project health check
-
-**When to use**: Start of day, after pulling changes
-
-**Estimated Time**: 20-100s
-
-**Error Handling**: `continue` (gather all information)
-
-**Conditions**:
-
-- `test.if-fails=fix` - Run fix if tests fail
-- `fix.if-success=commit` - Run commit if fix succeeds
-
-**Execution Flow**:
-
-```
-Step 1: /test
-  → Runs: All tests
-  → Condition: test.if-fails=fix (if tests fail)
-  → State: {status: "success|error", test_results: {...}, next_command: "fix"}
-
-Step 2: If failures → /fix
-  → Condition: fix.if-success=commit (if fix succeeds)
-  → Fixes: Test failures automatically
-  → State: {status: "success", fixed: [...], next_command: "commit"}
-
-Step 3: /commit
-  → Commits: Overnight changes and fixes
-  → State: {status: "success", commit_hash: "..."}
-
-Error handling: continue (gather all information even if steps fail)
-```
-
-**Benefits**:
-
-- Verify project health
-- Fix any issues
-- Commit overnight changes
-
----
-
-## 8. Pre-Push Workflow ⭐⭐⭐⭐
+## 6. Pre-Push Workflow ⭐⭐⭐⭐
 
 **Command**: `/workflow:pre-push`
 
@@ -593,16 +508,16 @@ error_handling: rollback
 
 ## Workflow Selection Guide
 
-| Scenario         | Recommended Workflow | Why                           |
-| ---------------- | -------------------- | ----------------------------- |
-| Before commit    | `pre-commit`         | Ensures quality before commit |
-| New feature      | `feature-dev`        | Complete lifecycle            |
-| Bug fix          | `error-resolution`   | Fix with quality checks       |
-| Code improvement | `code-improvement`   | Systematic improvement        |
-| Debugging        | `debugging`          | Systematic bug resolution     |
-| Project cleanup  | `cleanup`            | Remove bloat                  |
-| Morning check    | `morning-routine`    | Quick health check            |
-| Before push      | `pre-push`           | Final quality gate            |
+| Scenario           | Recommended Workflow       | Why                           |
+| ------------------ | -------------------------- | ----------------------------- |
+| Before commit      | `pre-commit`               | Ensures quality before commit |
+| Quick health check | `pre-commit --quick`       | Fast feedback (skip review)   |
+| New feature        | `feature-dev`              | Complete lifecycle            |
+| Bug fix            | `error-resolution`         | Fix with quality checks       |
+| Debugging          | `error-resolution --debug` | With debug instrumentation    |
+| Code improvement   | `code-improvement`         | Systematic improvement        |
+| Project cleanup    | `cleanup`                  | Remove bloat                  |
+| Before push        | `pre-push`                 | Final quality gate            |
 
 ---
 
@@ -614,25 +529,26 @@ error_handling: rollback
 | feature-dev      | 60-180s         | 60-180s       | 0s (sequential required)        |
 | error-resolution | 40-130s         | 40-130s       | 0s (sequential required)        |
 | code-improvement | 55-175s         | 55-175s       | 0s (sequential required)        |
-| debugging        | 30-120s         | 30-120s       | 0s (sequential required)        |
 | cleanup          | 2-5 min         | 2-5 min       | 0s (sequential required)        |
-| morning-routine  | 20-100s         | 20-100s       | 0s (sequential required)        |
 | pre-push         | 30-130s         | 20-96s        | 10-34s (review + test parallel) |
 
 ---
 
 ## Summary
 
-**8 workflows** covering all development scenarios:
+**6 workflows** covering all development scenarios (optimized from 8):
 
-1. **Pre-commit** - Quality gate before commit
+1. **Pre-commit** - Quality gate before commit (with `--quick` flag for health checks)
 2. **Feature-dev** - Complete feature lifecycle
-3. **Error-resolution** - Bug fixing with quality checks
+3. **Error-resolution** - Bug fixing with quality checks (with `--debug` flag for debugging)
 4. **Code-improvement** - Systematic code quality improvement
-5. **Debugging** - Systematic bug resolution
-6. **Cleanup** - Project cleanup and simplification
-7. **Morning-routine** - Quick health check
-8. **Pre-push** - Final quality gate before push
+5. **Cleanup** - Project cleanup and simplification
+6. **Pre-push** - Final quality gate before push
+
+**Consolidation Notes**:
+
+- `debugging` workflow → Merged into `error-resolution` with `--debug` flag
+- `morning-routine` workflow → Merged into `pre-commit` with `--quick` flag
 
 **All workflows feature**:
 
