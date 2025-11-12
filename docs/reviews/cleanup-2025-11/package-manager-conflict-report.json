@@ -1,0 +1,215 @@
+{
+  "analysis_date": "2025-11-11",
+  "system": {
+    "os": "macOS 25.1.0 (darwin)",
+    "shell": "/bin/zsh",
+    "workspace": "/Users/andrejs/Projects/personal/easypost-mcp-project"
+  },
+  "installed_managers": {
+    "version_managers": {
+      "mise": {
+        "version": "2025.11.3 macos-arm64",
+        "status": "active",
+        "manages": ["node", "python", "npm", "pnpm"],
+        "installed_versions": {
+          "node": ["22.21.1", "25.1.0"],
+          "python": ["3.12.12", "3.14.0"],
+          "npm": ["11.6.2"],
+          "pnpm": ["10.20.0 (binary reports 9.0.0)"]
+        },
+        "active_versions": {
+          "node": "25.1.0",
+          "python": "3.14.0",
+          "npm": "11.6.2",
+          "pnpm": "9.0.0 (mismatch!)"
+        },
+        "config_file": "~/.config/mise/config.toml"
+      },
+      "pyenv": {
+        "status": "installed_but_inactive",
+        "manages": ["python"],
+        "installed_versions": {
+          "python": ["3.13.0"]
+        },
+        "active_version": "system",
+        "note": "Conflicts with mise for Python management"
+      },
+      "nvm": {
+        "status": "not_installed"
+      },
+      "rbenv": {
+        "status": "not_installed"
+      }
+    },
+    "package_managers": {
+      "homebrew": {
+        "version": "latest",
+        "status": "active",
+        "total_packages": 202,
+        "python_versions": [
+          "python@3.12: 3.12.12",
+          "python@3.13: 3.13.9_1",
+          "python@3.14: 3.14.0_1"
+        ],
+        "node_versions": ["node: 25.1.0_1"],
+        "note": "Overlaps with mise for Python and Node management"
+      },
+      "pip": {
+        "version": "25.3",
+        "python_source": "mise python 3.14",
+        "total_packages": 88,
+        "status": "active"
+      },
+      "npm": {
+        "version": "11.6.2",
+        "source": "mise",
+        "global_packages": 3,
+        "status": "active"
+      },
+      "pnpm": {
+        "expected_version": "10.20.0",
+        "actual_version": "9.0.0",
+        "source": "mise",
+        "status": "version_mismatch"
+      }
+    }
+  },
+  "path_analysis": {
+    "total_entries": 25,
+    "duplicates": [
+      {
+        "path": "/Users/andrejs/.lmstudio/bin",
+        "occurrences": 2,
+        "positions": [4, 25],
+        "severity": "low",
+        "impact": "Wastes PATH lookup time, no functional issue"
+      }
+    ],
+    "order_issues": [],
+    "priority_order": [
+      "mise (node, python, npm, pnpm) - positions 5-8",
+      "homebrew (brew, system packages) - positions 9-11",
+      "system paths - positions 13-23"
+    ],
+    "good_patterns": [
+      "mise paths come before homebrew (correct priority)",
+      "User bin directories (~/.local/bin) come before system paths",
+      "PostgreSQL@17 explicitly prioritised"
+    ]
+  },
+  "version_conflicts": [
+    {
+      "tool": "python",
+      "severity": "high",
+      "issue": "Multiple Python version managers competing",
+      "details": {
+        "active_manager": "mise",
+        "active_version": "3.14.0",
+        "active_path": "/Users/andrejs/.local/share/mise/installs/python/3.14.0/bin/python",
+        "competing_installations": [
+          {
+            "manager": "pyenv",
+            "version": "3.13.0",
+            "path": "/Users/andrejs/.pyenv/versions/3.13.0/bin/python",
+            "status": "installed_but_shadowed"
+          },
+          {
+            "manager": "homebrew",
+            "versions": ["3.12.12", "3.13.9_1", "3.14.0_1"],
+            "paths": [
+              "/opt/homebrew/bin/python3.12",
+              "/opt/homebrew/bin/python3.13",
+              "/opt/homebrew/bin/python3.14"
+            ],
+            "status": "installed_but_shadowed"
+          }
+        ]
+      },
+      "recommendation": "Choose ONE Python version manager (mise recommended), uninstall others"
+    },
+    {
+      "tool": "node",
+      "severity": "medium",
+      "issue": "Duplicate Node.js installations",
+      "details": {
+        "active_manager": "mise",
+        "active_version": "25.1.0",
+        "active_path": "/Users/andrejs/.local/share/mise/installs/node/25.1.0/bin/node",
+        "competing_installations": [
+          {
+            "manager": "homebrew",
+            "version": "25.1.0_1",
+            "path": "/opt/homebrew/bin/node",
+            "status": "installed_but_shadowed"
+          }
+        ]
+      },
+      "recommendation": "Uninstall homebrew node, use mise exclusively"
+    },
+    {
+      "tool": "pnpm",
+      "severity": "high",
+      "issue": "Version mismatch between mise config and actual binary",
+      "details": {
+        "expected_version": "10.20.0",
+        "actual_version": "9.0.0",
+        "path": "/Users/andrejs/.local/share/mise/installs/pnpm/10.20.0/pnpm",
+        "config": "~/.config/mise/config.toml specifies 'latest'",
+        "cause": "Mise may have failed to update or binary is corrupted"
+      },
+      "recommendation": "Reinstall pnpm via mise: mise uninstall pnpm && mise install pnpm@latest"
+    }
+  ],
+  "shell_config_analysis": {
+    "files_checked": [".zshenv", ".zprofile", ".zshrc"],
+    "zshenv": {
+      "path_modifications": ["$HOME/Bin", "$HOME/.local/bin"],
+      "note": "Minimal PATH setup for scripts"
+    },
+    "zprofile": {
+      "path_modifications": [
+        "$HOME/.local/bin (prepend)",
+        "/opt/homebrew/opt/postgresql@17/bin (prepend)",
+        "Homebrew shellenv (adds /opt/homebrew/bin)",
+        "mise activation (adds shim paths)",
+        "$HOME/.lmstudio/bin (append)"
+      ],
+      "evaluation_order": ["PostgreSQL", "Homebrew", "mise"],
+      "note": "Primary PATH configuration file"
+    },
+    "zshrc": {
+      "path_modifications": [
+        "$BUN_INSTALL/bin (prepend)",
+        "$HOME/.console-ninja/.bin (prepend)",
+        "$HOME/.lmstudio/bin (append - DUPLICATE)"
+      ],
+      "issues": [
+        "LMStudio bin added twice (once in .zprofile, once in .zshrc)",
+        "Redundant mise activation check"
+      ]
+    },
+    "pyenv_references": "None found (pyenv not in shell configs but installed via Homebrew)"
+  },
+  "security_concerns": [],
+  "performance_impact": {
+    "severity": "low",
+    "issues": [
+      "PATH contains 25 entries (optimal: <15)",
+      "Duplicate /Users/andrejs/.lmstudio/bin causes redundant lookups",
+      "Multiple Python installations increase disk usage (~500MB+)",
+      "Shadowed homebrew installations waste disk space"
+    ]
+  },
+  "summary": {
+    "critical_issues": 2,
+    "warnings": 2,
+    "total_conflicts": 4,
+    "primary_recommendations": [
+      "Remove pyenv (conflicting Python manager)",
+      "Reinstall pnpm via mise to fix version mismatch",
+      "Remove duplicate LMStudio PATH entry from .zshrc",
+      "Uninstall homebrew node (use mise instead)",
+      "Consider removing unused homebrew Python versions"
+    ]
+  }
+}

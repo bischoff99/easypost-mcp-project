@@ -1,5 +1,11 @@
 ---
+<<<<<<< HEAD
 description: 'Essential optimization patterns for personal use'
+||||||| 7a576da
+description: "Hardware-specific optimizations for M3 Max (16 cores, 128GB RAM)"
+=======
+description: "Essential optimization patterns for personal use"
+>>>>>>> 99314e0f7fef772f5a4f4779d02c1c7df730f0d8
 globs: []
 alwaysApply: false
 version: '1.0.0'

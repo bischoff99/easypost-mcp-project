@@ -95,6 +95,7 @@ These comprehensive rules were curated from [cursor.directory](https://cursor.di
 - Testing optimizations
 - Common pitfalls to avoid
 
+<<<<<<< HEAD
 ### 06-quick-reference.mdc ⭐
 
 **Quick Reference & Templates** _(Always Applied)_
@@ -114,6 +115,63 @@ These comprehensive rules were curated from [cursor.directory](https://cursor.di
 - Technical decisions and their rationale
 - Recurring issues and solutions
 - Domain-specific knowledge storage
+||||||| 7a576da
+---
+
+## 📚 Legacy Rules (Still Valid)
+
+These rules are still relevant but covered more comprehensively in the Essential Rules above.
+
+### 01-code-standards.mdc
+**Basic coding conventions** *(See 01-fastapi-python.mdc & 02-react-vite-frontend.mdc for comprehensive coverage)*
+
+### 02-file-structure.mdc
+**Project organization** *(Structure documented in Essential Rules)*
+
+### 03-naming-conventions.mdc
+**Naming rules** *(Covered in 01 & 02)*
+
+### 04-error-handling.mdc
+**Error patterns** *(Comprehensive coverage in 01-fastapi-python.mdc)*
+
+### 05-logging.mdc
+**Logging standards** *(Covered in 01-fastapi-python.mdc with structured logging)*
+
+### 06-testing.mdc
+**Testing basics** *(See 03-testing-best-practices.mdc for comprehensive guide)*
+
+### 07-git-version-control.mdc
+**Git workflow** *(Still relevant)*
+
+### 08-security.mdc
+**Security practices** *(Covered in Essential Rules + still valuable)*
+
+### 09-api-format.mdc
+**API standards** *(Comprehensive coverage in 01-fastapi-python.mdc)*
+
+### 10-documentation.mdc
+**Documentation requirements** *(Covered across Essential Rules)*
+
+### 11-performance.mdc
+**Performance basics** *(See 05-m3-max-optimizations.mdc for comprehensive guide)*
+
+### 12-deployment.mdc
+**Deployment procedures** *(Still relevant)*
+
+### 13-code-review.mdc
+**Code review checklist** *(Still relevant)*
+
+### 14-quick-reference.mdc
+**Common patterns** *(See Essential Rules for comprehensive examples)*
+=======
+### 06-quick-reference.mdc ⭐
+**Quick Reference & Templates** *(Always Applied)*
+- Naming conventions table (Python & React)
+- Essential rules checklist
+- Code templates (Python async, React components)
+- Common commands & workflows
+- API response format standards
+>>>>>>> 99314e0f7fef772f5a4f4779d02c1c7df730f0d8
 
 ---
 
@@ -122,6 +180,7 @@ These comprehensive rules were curated from [cursor.directory](https://cursor.di
 ### For New Developers
 
 **Start here (in order):**
+<<<<<<< HEAD
 
 1. Read `06-quick-reference.mdc` - Quick patterns and conventions
 2. Read `07-learned-memories.mdc` - Project-specific knowledge
@@ -130,11 +189,30 @@ These comprehensive rules were curated from [cursor.directory](https://cursor.di
 5. Skim `03-testing-best-practices.mdc` - Testing overview
 6. Reference `04-mcp-development.mdc` when working with MCP tools
 7. Reference `05-m3-max-optimizations.mdc` for performance work
+||||||| 7a576da
+1. Read `01-fastapi-python.mdc` - Backend fundamentals
+2. Read `02-react-vite-frontend.mdc` - Frontend fundamentals
+3. Skim `03-testing-best-practices.mdc` - Testing overview
+4. Reference `04-mcp-development.mdc` when working with MCP tools
+5. Reference `05-m3-max-optimizations.mdc` for performance work
+=======
+1. Read `06-quick-reference.mdc` - Quick patterns and conventions
+2. Read `01-fastapi-python.mdc` - Backend fundamentals
+3. Read `02-react-vite-frontend.mdc` - Frontend fundamentals
+4. Skim `03-testing-best-practices.mdc` - Testing overview
+5. Reference `04-mcp-development.mdc` when working with MCP tools
+6. Reference `05-m3-max-optimizations.mdc` for performance work
+>>>>>>> 99314e0f7fef772f5a4f4779d02c1c7df730f0d8
 
 ### For Specific Tasks
+<<<<<<< HEAD
 
 - **Quick reference**: `06-quick-reference.mdc` (always applied)
 - **Project knowledge**: `07-learned-memories.mdc` (always applied)
+||||||| 7a576da
+=======
+- **Quick reference**: `06-quick-reference.mdc` (always applied)
+>>>>>>> 99314e0f7fef772f5a4f4779d02c1c7df730f0d8
 - **Backend API work**: `01-fastapi-python.mdc`
 - **Frontend UI work**: `02-react-vite-frontend.mdc`
 - **Writing tests**: `03-testing-best-practices.mdc`
@@ -142,24 +220,48 @@ These comprehensive rules were curated from [cursor.directory](https://cursor.di
 - **Performance optimization**: `05-m3-max-optimizations.mdc`
 
 ### Quick Patterns Reference
+<<<<<<< HEAD
 
 All Essential Rules (01-07) include comprehensive, copy-paste-ready examples.
+||||||| 7a576da
+All Essential Rules (01-05) include comprehensive, copy-paste-ready examples.
+=======
+All Essential Rules (01-06) include comprehensive, copy-paste-ready examples.
+>>>>>>> 99314e0f7fef772f5a4f4779d02c1c7df730f0d8
 
 ---
 
 ## 🎯 Rule Priority
 
+<<<<<<< HEAD
 | Priority           | Rules      | When to Use                                     |
 | ------------------ | ---------- | ----------------------------------------------- |
 | **Always Applied** | 06, 07     | Quick reference & project knowledge (automatic) |
 | **Must Read**      | 01, 02, 03 | All development work                            |
 | **MCP Work**       | 04         | When building/testing MCP tools                 |
 | **Performance**    | 05         | Optimisation, bulk operations                   |
+||||||| 7a576da
+| Priority | Rules | When to Use |
+|----------|-------|-------------|
+| **Must Read** | 01, 02, 03 | All development work |
+| **MCP Work** | 04 | When building/testing MCP tools |
+| **Performance** | 05 | Optimization, bulk operations |
+| **Reference** | 07, 08, 12, 13 | As needed for workflow |
+| **Legacy** | Older rules | When Essential Rules don't cover specifics |
+=======
+| Priority | Rules | When to Use |
+|----------|-------|-------------|
+| **Always Applied** | 06 | Quick reference (automatic) |
+| **Must Read** | 01, 02, 03 | All development work |
+| **MCP Work** | 04 | When building/testing MCP tools |
+| **Performance** | 05 | Optimisation, bulk operations |
+>>>>>>> 99314e0f7fef772f5a4f4779d02c1c7df730f0d8
 
 ---
 
 ## 📊 Coverage Map
 
+<<<<<<< HEAD
 | Topic                 | Primary Rule                  | Additional Context             |
 | --------------------- | ----------------------------- | ------------------------------ |
 | **Quick Reference**   | 06-quick-reference.mdc        | Always applied                 |
@@ -172,6 +274,31 @@ All Essential Rules (01-07) include comprehensive, copy-paste-ready examples.
 | **Error Handling**    | 01-fastapi-python.mdc         | Early returns, guard clauses   |
 | **Security**          | 01, 02                        | Env vars, input validation     |
 | **Deployment**        | 05-m3-max-optimizations.mdc   | Production configuration       |
+||||||| 7a576da
+| Topic | Primary Rule | Additional References |
+|-------|--------------|----------------------|
+| **FastAPI** | 01-fastapi-python.mdc | 01-code-standards.mdc |
+| **React** | 02-react-vite-frontend.mdc | 01-code-standards.mdc |
+| **Testing** | 03-testing-best-practices.mdc | 06-testing.mdc |
+| **MCP** | 04-mcp-development.mdc | - |
+| **Performance** | 05-m3-max-optimizations.mdc | 11-performance.mdc |
+| **Error Handling** | 01-fastapi-python.mdc | 04-error-handling.mdc |
+| **Security** | 01, 02, 08 | - |
+| **Git** | 07-git-version-control.mdc | - |
+| **Deployment** | 12-deployment.mdc | 05-m3-max-optimizations.mdc |
+=======
+| Topic | Primary Rule | Additional Context |
+|-------|--------------|-------------------|
+| **Quick Reference** | 06-quick-reference.mdc | Always applied |
+| **FastAPI** | 01-fastapi-python.mdc | Comprehensive backend patterns |
+| **React** | 02-react-vite-frontend.mdc | Complete frontend guide |
+| **Testing** | 03-testing-best-practices.mdc | Backend & frontend testing |
+| **MCP** | 04-mcp-development.mdc | AI agent tool development |
+| **Performance** | 05-m3-max-optimizations.mdc | M3 Max hardware tuning |
+| **Error Handling** | 01-fastapi-python.mdc | Early returns, guard clauses |
+| **Security** | 01, 02 | Env vars, input validation |
+| **Deployment** | 05-m3-max-optimizations.mdc | Production configuration |
+>>>>>>> 99314e0f7fef772f5a4f4779d02c1c7df730f0d8
 
 ---
 
@@ -185,10 +312,26 @@ All Essential Rules (01-07) include comprehensive, copy-paste-ready examples.
 
 ---
 
+<<<<<<< HEAD
 **Total**: 8 rule files (7 Essential + this index)
 **Last updated**: 2025-11-18
 **Version**: 1.0.0
 **Source**: Optimised from cursor.directory + project-specific patterns
 **Compliance**: November 2025 best practices
+||||||| 7a576da
+**Total**: 19 rule files (5 Essential + 14 Legacy) + this index
+**Last updated**: 2025-11-07
+**Source**: Optimized from cursor.directory + project-specific patterns
+=======
+**Total**: 7 rule files (6 Essential + this index)
+**Last updated**: 2025-11-11
+**Source**: Optimised from cursor.directory + project-specific patterns
+>>>>>>> 99314e0f7fef772f5a4f4779d02c1c7df730f0d8
 
+<<<<<<< HEAD
 _For comprehensive project documentation, see `CLAUDE.md` in project root._
+||||||| 7a576da
+*For comprehensive project documentation, see `CLAUDE.md` and `POSTGRESQL_IMPLEMENTATION_REVIEW.md`.*
+=======
+*For comprehensive project documentation, see `CLAUDE.md` in project root.*
+>>>>>>> 99314e0f7fef772f5a4f4779d02c1c7df730f0d8

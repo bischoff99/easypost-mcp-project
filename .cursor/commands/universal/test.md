@@ -1,4 +1,10 @@
+<<<<<<< HEAD
 Run tests with auto-detected parallel execution, intelligent test selection, and comprehensive analysis.
+||||||| 7a576da
+Run tests with M3 Max parallel execution (16 workers).
+=======
+Run tests with auto-detected parallel execution.
+>>>>>>> 99314e0f7fef772f5a4f4779d02c1c7df730f0d8
 
 **Context-aware**: Uses `{{path}}` from arguments or defaults to project test directory. Automatically detects framework, selects relevant tests, and provides detailed analysis.
 
@@ -48,24 +54,60 @@ Automatically detects test framework from project:
 
 **Python Projects:**
 - Detects: `pytest.ini`, `import pytest`, `conftest.py`
+<<<<<<< HEAD
 - Runs: `pytest -n auto {{path}} -v --tb=short`
 - Workers: Auto-detected based on CPU cores (max 16)
+||||||| 7a576da
+- Runs: `pytest -n {{workers.pytest}} {{path}} -v --tb=short`
+- Workers: 16 on M3 Max (from .dev-config.json)
+=======
+- Runs: `pytest -n auto {{path}} -v --tb=short`
+- Workers: Auto-detected based on CPU cores (from .dev-config.json)
+>>>>>>> 99314e0f7fef772f5a4f4779d02c1c7df730f0d8
 
 **JavaScript/TypeScript Projects:**
 - Detects: `vitest.config.js`, `jest.config.js`
+<<<<<<< HEAD
 - Vitest: `vitest run --threads auto {{path}}`
 - Jest: `jest --maxWorkers=auto {{path}} --verbose`
 - Workers: Auto-detected based on system (max 16)
+||||||| 7a576da
+- Vitest: `vitest run --threads {{workers.vitest}} {{path}}`
+- Jest: `jest --maxWorkers={{workers.jest}} {{path}} --verbose`
+- Workers: 16-20 on M3 Max
+=======
+- Vitest: `vitest run --threads auto {{path}}`
+- Jest: `jest --maxWorkers=auto {{path}} --verbose`
+- Workers: Auto-detected based on system
+>>>>>>> 99314e0f7fef772f5a4f4779d02c1c7df730f0d8
 
 **Go Projects:**
+<<<<<<< HEAD
 - Detects: `*_test.go` files, `go.mod`
 - Runs: `go test -parallel auto -v {{path}}/...`
 - Workers: Auto-detected (max 16)
+||||||| 7a576da
+- Detects: `*_test.go` files
+- Runs: `go test -parallel {{workers.go}} -v {{path}}/...`
+- Workers: 16 on M3 Max
+=======
+- Detects: `*_test.go` files
+- Runs: `go test -parallel auto -v {{path}}/...`
+- Workers: Auto-detected
+>>>>>>> 99314e0f7fef772f5a4f4779d02c1c7df730f0d8
 
 **Rust Projects:**
 - Detects: `Cargo.toml`, `tests/` directory
+<<<<<<< HEAD
 - Runs: `cargo test --jobs auto {{path}}`
 - Workers: Auto-detected (max 16)
+||||||| 7a576da
+- Runs: `cargo test --jobs {{workers.rust}} {{path}}`
+- Workers: 16 on M3 Max
+=======
+- Runs: `cargo test --jobs auto {{path}}`
+- Workers: Auto-detected
+>>>>>>> 99314e0f7fef772f5a4f4779d02c1c7df730f0d8
 
 ## MCP Integration
 
@@ -337,13 +379,53 @@ Output includes:
 
 ```json
 {{paths.tests}}              // "backend/tests" or auto-detect
+<<<<<<< HEAD
 {{workers.pytest}}           // Auto-detected from CPU cores (max 16)
 {{workers.vitest}}           // Auto-detected from CPU cores (max 16)
 {{workers.jest}}             // Auto-detected from CPU cores (max 16)
 {{workers.go}}               // Auto-detected from CPU cores (max 16)
+||||||| 7a576da
+{{workers.pytest}}           // 16 (M3 Max)
+{{workers.vitest}}           // 20 (M3 Max)
+{{workers.jest}}             // 16 (M3 Max)
+{{workers.go}}               // 16 (M3 Max)
+=======
+{{workers.pytest}}           // Auto-detected from CPU cores
+{{workers.vitest}}           // Auto-detected from CPU cores
+{{workers.jest}}             // Auto-detected from CPU cores
+{{workers.go}}               // Auto-detected from CPU cores
+>>>>>>> 99314e0f7fef772f5a4f4779d02c1c7df730f0d8
 {{testing.backend.framework}} // "pytest", "vitest", etc.
 ```
 
+<<<<<<< HEAD
+||||||| 7a576da
+## Performance Expectations
+
+**M3 Max (16 cores, 128GB RAM):**
+- Full test suite: 4-6 seconds
+- Speedup: 15x vs sequential
+- Worker utilization: 90%+
+
+**Standard Hardware (4 cores):**
+- Full test suite: 30-60 seconds
+- Speedup: 4x vs sequential
+- Workers: Auto-scaled to 4
+
+=======
+## Performance Expectations
+
+**Auto-Detected Workers:**
+- Full test suite: Scales with CPU cores
+- Speedup: Proportional to available cores
+- Worker utilization: Optimized for your system
+
+**Example Performance:**
+- High-end systems (16+ cores): 4-6 seconds, 15x speedup
+- Standard systems (4 cores): 30-60 seconds, 4x speedup
+- Workers: Auto-scaled to match your hardware
+
+>>>>>>> 99314e0f7fef772f5a4f4779d02c1c7df730f0d8
 ## Usage Examples
 
 ```bash
@@ -374,8 +456,21 @@ Output includes:
 
 ## Output Format
 
+<<<<<<< HEAD
 ### Success Output
+||||||| 7a576da
+```
+🧪 Running tests with 16 parallel workers...
+Framework: pytest (auto-detected)
+Path: backend/tests/
+=======
+```
+🧪 Running tests with auto-detected parallel workers...
+Framework: pytest (auto-detected)
+Path: backend/tests/
+>>>>>>> 99314e0f7fef772f5a4f4779d02c1c7df730f0d8
 
+<<<<<<< HEAD
 ```
 🔍 Framework Detection:
 Detected: pytest (from pytest.ini)
@@ -397,6 +492,17 @@ Command: pytest -n auto backend/tests/ -v --tb=short
 45/45 tests passed in 4.2s
 Workers: Auto-detected (max 16)
 CPU Usage: Optimized
+||||||| 7a576da
+✅ 45/45 tests passed in 4.2s
+Workers: 16
+CPU Usage: 94%
+Speedup: 14.3x vs sequential
+=======
+✅ 45/45 tests passed in 4.2s
+Workers: Auto-detected
+CPU Usage: Optimized
+Speedup: Proportional to available cores
+>>>>>>> 99314e0f7fef772f5a4f4779d02c1c7df730f0d8
 
 Performance metrics:
 - Fastest test: 0.02s

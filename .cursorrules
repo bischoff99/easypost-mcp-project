@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # EasyPost MCP Project - Cursor AI Rules
 
 ## Project Principles (Always Apply)
@@ -86,3 +87,85 @@ For detailed rules, see:
 - **Tools:** Shipment creation, tracking, rate comparison
 
 For complete rules and conventions, see `.cursor/rules/` directory.
+||||||| 7a576da
+=======
+# EasyPost MCP Project - Cursor AI Rules
+
+## Project Principles (Always Apply)
+
+**This is a personal-use project, NOT an enterprise product.**
+
+### Core Values
+- **Simplicity**: Prefer simple solutions over complex ones
+- **YAGNI**: You Aren't Gonna Need It - don't build for hypothetical needs
+- **Maintainability**: Code should be understandable by one person
+- **Personal use**: Single user, no multi-tenancy
+
+### Hard Constraints
+- Max workers: 16 (not 32+)
+- Max DB connections: 20 (not 80+)
+- No enterprise features: webhooks, audit logs, multi-tenancy
+- No premature optimization: Measure first, optimize only if needed
+
+### AI Assistant Guidelines
+When suggesting features:
+- Default to simpler solutions
+- Question enterprise patterns (webhooks, microservices, etc.)
+- Prefer existing tools over custom solutions
+- Ask "Is this needed for personal use?" before suggesting
+
+### Red Flags - Reject These Patterns
+- Webhook systems → Use polling instead
+- Multi-tenancy → Single user only
+- Complex caching layers → Simple in-memory is fine
+- Microservices → Monolith is fine
+- Rate limiting middleware → Handle in business logic
+- Distributed systems → Direct calls are fine
+- Message queues → Direct function calls
+- Event sourcing → Direct database writes
+- CQRS → Simple CRUD
+
+### The 3-Question Test
+Before adding any feature, answer:
+1. **Do I need this now?** (Not "might need")
+2. **Can I build it simpler?** (Always yes)
+3. **Will this make maintenance harder?** (If yes, reject)
+
+If any answer suggests complexity → Simplify or reject
+
+---
+
+This project uses a comprehensive rules system located in `.cursor/rules/` directory.
+
+## Quick Reference
+
+For detailed rules, see:
+- `.cursor/rules/00-INDEX.mdc` - Complete rules index
+- `.cursor/rules/01-fastapi-python.mdc` - Backend best practices
+- `.cursor/rules/02-react-vite-frontend.mdc` - Frontend best practices
+- `.cursor/rules/03-testing-best-practices.mdc` - Testing strategy
+- `.cursor/rules/04-mcp-development.mdc` - MCP tool development
+- `.cursor/rules/05-m3-max-optimizations.mdc` - Performance optimization
+- `.cursor/rules/06-quick-reference.mdc` - Quick reference for naming conventions and patterns
+
+## Project Structure
+
+- **Backend:** `apps/backend/` - FastAPI + FastMCP server
+- **Frontend:** `apps/frontend/` - React + Vite
+- **Deploy:** `deploy/` - Docker configurations
+
+## Key Conventions
+
+- **Python:** snake_case functions, PascalCase classes, type hints required
+- **JavaScript:** camelCase functions, PascalCase components, strict TypeScript
+- **Testing:** pytest (backend), vitest (frontend), parallel execution
+- **Performance:** Optimized for M3 Max (16 cores, 128GB RAM)
+
+## MCP Server
+
+- **Entry Point:** `apps/backend/src/mcp_server/server.py`
+- **Configuration:** `.cursor/mcp.json`
+- **Tools:** Shipment creation, tracking, rate comparison
+
+For complete rules and conventions, see `.cursor/rules/` directory.
+>>>>>>> 99314e0f7fef772f5a4f4779d02c1c7df730f0d8

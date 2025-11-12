@@ -1475,6 +1475,7 @@ def parse_human_readable_shipment(text: str) -> dict | None:
                         f"{dim_match.group(1)} x {dim_match.group(2)} x {dim_match.group(3)}"
                     )
 
+<<<<<<< HEAD
             # Extract weight (flexible: "Weight 5.26lb" or "5.26lb")
             if result["weight"] is None:
                 weight_match = re.search(
@@ -1536,6 +1537,23 @@ def parse_human_readable_shipment(text: str) -> dict | None:
             # Skip lines that are only phone/email
             if "@" in line or re.match(r"^\+?[\d\s\-()]+$", line):
                 continue
+||||||| 7a576da
+    # Parse address lines (first non-metadata lines)
+    address_lines = []
+    for line in lines:
+        if not any(
+            kw in line.lower() for kw in ["email", "phone", "dimension", "weight", "@"]
+        ) and not re.search(r"\+?\d{10,}", line):  # Skip phone-only lines
+=======
+    # Parse address lines (first non-metadata lines)
+    address_lines = []
+    for line in lines:
+        if not any(
+            kw in line.lower() for kw in ["email", "phone", "dimension", "weight", "@"]
+        ) and not re.search(
+            r"\+?\d{10,}", line
+        ):  # Skip phone-only lines
+>>>>>>> 99314e0f7fef772f5a4f4779d02c1c7df730f0d8
             address_lines.append(line)
 
         if len(address_lines) >= 3:  # Minimum for a valid address
@@ -1560,6 +1578,7 @@ def parse_human_readable_shipment(text: str) -> dict | None:
         if not lines:
             return addr
 
+<<<<<<< HEAD
         # Common country names for detection
         common_countries = [
             "usa",
@@ -1596,6 +1615,31 @@ def parse_human_readable_shipment(text: str) -> dict | None:
             addr["company"] = lines[0]
             addr["name"] = lines[1]
             idx = 2
+||||||| 7a576da
+        # Country (normalize common variations)
+        country_line = (
+            address_lines[4]
+            if has_company and len(address_lines) > 4
+            else address_lines[3]
+            if len(address_lines) > 3
+            else "US"
+        )
+        if country_line.lower() in ["usa", "united states", "us"]:
+            result["country"] = "US"
+        elif country_line.lower() in ["canada", "ca"]:
+            result["country"] = "CA"
+=======
+        # Country (normalize common variations)
+        country_line = (
+            address_lines[4]
+            if has_company and len(address_lines) > 4
+            else address_lines[3] if len(address_lines) > 3 else "US"
+        )
+        if country_line.lower() in ["usa", "united states", "us"]:
+            result["country"] = "US"
+        elif country_line.lower() in ["canada", "ca"]:
+            result["country"] = "CA"
+>>>>>>> 99314e0f7fef772f5a4f4779d02c1c7df730f0d8
         else:
             addr["name"] = lines[0]
             idx = 1

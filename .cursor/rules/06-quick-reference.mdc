@@ -1,6 +1,12 @@
 ---
+<<<<<<< HEAD
 description: 'Quick reference for naming conventions, code patterns, and common standards'
 globs: []
+||||||| 7a576da
+=======
+description: "Quick reference for naming conventions, code patterns, and common standards"
+globs: []
+>>>>>>> 99314e0f7fef772f5a4f4779d02c1c7df730f0d8
 alwaysApply: true
 version: '1.0.0'
 lastUpdated: '2025-11-18'

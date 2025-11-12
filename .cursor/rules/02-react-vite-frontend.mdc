@@ -1,4 +1,5 @@
 ---
+<<<<<<< HEAD
 description: 'Complete React, Vite, and TailwindCSS frontend development guide'
 globs:
   [
@@ -7,6 +8,13 @@ globs:
     'apps/frontend/**/*.ts',
     'apps/frontend/**/*.tsx',
   ]
+||||||| 7a576da
+description: "Complete React, Vite, and TailwindCSS frontend development guide"
+globs: ["frontend/**/*.jsx", "frontend/**/*.js", "**/*.jsx"]
+=======
+description: "Complete React, Vite, and TailwindCSS frontend development guide"
+globs: ["apps/frontend/**/*.jsx", "apps/frontend/**/*.js", "apps/frontend/**/*.ts", "apps/frontend/**/*.tsx"]
+>>>>>>> 99314e0f7fef772f5a4f4779d02c1c7df730f0d8
 alwaysApply: false
 version: '1.0.0'
 lastUpdated: '2025-11-18'

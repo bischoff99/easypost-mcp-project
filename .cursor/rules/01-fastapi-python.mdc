@@ -1,6 +1,14 @@
 ---
+<<<<<<< HEAD
 description: 'Comprehensive FastAPI and Python best practices for backend development'
 globs: ['apps/backend/**/*.py']
+||||||| 7a576da
+description: "Comprehensive FastAPI and Python best practices for backend development"
+globs: ["backend/**/*.py", "**/*.py"]
+=======
+description: "Comprehensive FastAPI and Python best practices for backend development"
+globs: ["apps/backend/**/*.py"]
+>>>>>>> 99314e0f7fef772f5a4f4779d02c1c7df730f0d8
 alwaysApply: false
 version: '1.0.0'
 lastUpdated: '2025-11-18'

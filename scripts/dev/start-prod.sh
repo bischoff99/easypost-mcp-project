@@ -5,11 +5,25 @@
 set -euo pipefail
 
 # Get the directory where this script is located
+<<<<<<< HEAD:scripts/dev/start-prod.sh
 SCRIPT_DIR="$(cd "$(dirname "${(%):-%x}")" && pwd)"
 # Project root is two levels up from scripts/dev/
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 BACKEND_DIR="${PROJECT_ROOT}/apps/backend"
 FRONTEND_DIR="${PROJECT_ROOT}/apps/frontend"
+||||||| 7a576da:scripts/start-prod.sh
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Project root is one level up from scripts directory
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+BACKEND_DIR="${PROJECT_ROOT}/backend"
+FRONTEND_DIR="${PROJECT_ROOT}/frontend"
+=======
+SCRIPT_DIR="$(cd "$(dirname "${(%):-%x}")" && pwd)"
+# Project root is one level up from scripts directory
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+BACKEND_DIR="${PROJECT_ROOT}/backend"
+FRONTEND_DIR="${PROJECT_ROOT}/frontend"
+>>>>>>> 99314e0f7fef772f5a4f4779d02c1c7df730f0d8:scripts/start-prod.sh
 
 # Colours for output
 RED='\033[0;31m'

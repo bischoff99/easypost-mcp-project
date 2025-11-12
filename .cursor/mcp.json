@@ -1,6 +1,33 @@
 {
+<<<<<<< HEAD
   "version": "2.1.0",
   "lastModified": "2025-11-11",
   "description": "MCP server configuration for EasyPost shipping integration",
   "mcpServers": {}
+||||||| 7a576da
+  "mcpServers": {
+    "easypost-shipping": {
+      "command": "/Users/andrejs/Developer/github/andrejs/easypost-mcp-project/backend/venv/bin/python",
+      "args": ["/Users/andrejs/Developer/github/andrejs/easypost-mcp-project/backend/run_mcp.py"],
+      "env": {
+        "EASYPOST_API_KEY": "your_easypost_api_key_here",
+        "DATABASE_URL": "postgresql://localhost/easypost_mcp"
+      }
+    }
+  }
+=======
+  "version": "2.1.0",
+  "lastModified": "2025-11-11",
+  "description": "MCP server configuration for EasyPost shipping integration",
+  "mcpServers": {
+    "easypost-mcp": {
+      "command": "python3",
+      "args": ["-m", "src.mcp_server.server"],
+      "cwd": "apps/backend",
+      "env": {
+        "EASYPOST_API_KEY": "${env:EASYPOST_API_KEY}"
+      }
+    }
+  }
+>>>>>>> 99314e0f7fef772f5a4f4779d02c1c7df730f0d8
 }

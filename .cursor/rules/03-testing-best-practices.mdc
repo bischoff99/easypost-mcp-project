@@ -1,4 +1,5 @@
 ---
+<<<<<<< HEAD
 description: 'Comprehensive testing strategy for pytest and vitest'
 globs:
   [
@@ -11,6 +12,13 @@ globs:
     '**/*.test.ts',
     '**/*.test.tsx',
   ]
+||||||| 7a576da
+description: "Comprehensive testing strategy for pytest and vitest"
+globs: ["**/test_*.py", "**/tests/**/*.py", "**/*.test.js", "**/*.test.jsx"]
+=======
+description: "Comprehensive testing strategy for pytest and vitest"
+globs: ["**/test_*.py", "**/tests/**/*.py", "**/*.test.js", "**/*.test.jsx", "**/*.test.ts", "**/*.test.tsx", "**/*.spec.js", "**/*.spec.jsx"]
+>>>>>>> 99314e0f7fef772f5a4f4779d02c1c7df730f0d8
 alwaysApply: false
 version: '1.0.0'
 lastUpdated: '2025-11-18'
@@ -411,6 +419,7 @@ async def test_bulk_shipment_creation_performance(client, mock_easypost):
 
 ## Test Coverage Goals
 
+<<<<<<< HEAD
 ### Current Enforced Thresholds
 
 - **Backend**: 36% overall (pytest.ini --cov-fail-under=36)
@@ -437,6 +446,38 @@ async def test_bulk_shipment_creation_performance(client, mock_easypost):
 - Integration tests validate external API contracts
 - Unit tests focus on business logic and edge cases
 - Coverage thresholds increased gradually to avoid blocking development
+||||||| 7a576da
+- **Minimum**: 80% overall coverage
+- **Critical paths**: 95%+ coverage
+  - Shipment creation/buying
+  - Tracking
+  - Rate retrieval
+  - Database operations
+- **MCP tools**: 100% coverage
+=======
+### Current Enforced Thresholds
+- **Backend**: 36% overall (pytest.ini --cov-fail-under=36)
+- **Frontend**: 70% overall (vitest.config.js coverage thresholds)
+- **MCP tools**: 100% coverage (strictly enforced)
+
+### Progressive Improvement Plan
+- **Phase 1 (Current)**: 36% backend, 70% frontend
+- **Phase 2 (Next milestone)**: 50% backend, 75% frontend
+- **Phase 3 (Target)**: 80% backend, 85% frontend
+
+### Critical Path Requirements (Always 95%+)
+- Shipment creation/buying workflows
+- Tracking and status updates
+- Rate retrieval and comparison
+- Database operations (CRUD)
+- Authentication and authorisation (when implemented)
+
+### Notes
+- MCP tools require 100% coverage due to AI agent reliability requirements
+- Integration tests validate external API contracts
+- Unit tests focus on business logic and edge cases
+- Coverage thresholds increased gradually to avoid blocking development
+>>>>>>> 99314e0f7fef772f5a4f4779d02c1c7df730f0d8
 
 ## Common Patterns
 

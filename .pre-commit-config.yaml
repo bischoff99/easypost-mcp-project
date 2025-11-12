@@ -34,6 +34,7 @@ repos:
         args: [--line-length=100]
         files: ^apps/backend/
 
+<<<<<<< HEAD
   # Python linting
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.1.15
@@ -114,3 +115,82 @@ exclude: |
     docs/.*|
     \.git/.*
   )
+||||||| 7a576da
+# Parallel execution (M3 Max optimized)
+default_stages: [pre-commit]
+fail_fast: false  # Run all hooks even if one fails
+=======
+  # Python linting
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.15
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+        files: ^apps/backend/
+      - id: ruff-format
+        files: ^apps/backend/
+
+  # JavaScript/TypeScript linting
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v9.0.0
+    hooks:
+      - id: eslint
+        files: ^apps/frontend/.*\.(js|jsx)$
+        additional_dependencies:
+          - eslint@9.39.1
+          - '@eslint/js@9.39.1'
+          - 'eslint-plugin-react@7.37.5'
+          - 'eslint-plugin-react-hooks@7.0.1'
+          - 'globals@16.5.0'
+
+  # Secret detection (Yelp detect-secrets)
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+        exclude: |
+          (?x)^(
+            .*\.lock$|
+            .*\.min\.js$|
+            .*\.min\.css$|
+            .*package-lock\.json$|
+            .*requirements-lock\.txt$|
+            .*pnpm-lock\.yaml$|
+            docs/.*|
+            node_modules/.*|
+            venv/.*|
+            \.venv/.*|
+            apps/backend/htmlcov/.*|
+            apps/frontend/coverage/.*
+          )
+
+  # YAML formatting
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v4.0.0-alpha.8
+    hooks:
+      - id: prettier
+        files: \.(yaml|yml)$
+        exclude: |
+          (?x)^(
+            .*\.lock$|
+            node_modules/.*|
+            venv/.*|
+            \.venv/.*
+          )
+
+# Global exclude patterns
+exclude: |
+  (?x)^(
+    .*\.lock$|
+    .*\.min\.js$|
+    .*\.min\.css$|
+    node_modules/.*|
+    venv/.*|
+    \.venv/.*|
+    apps/backend/htmlcov/.*|
+    apps/frontend/coverage/.*|
+    docs/.*|
+    \.git/.*
+  )
+>>>>>>> 99314e0f7fef772f5a4f4779d02c1c7df730f0d8
