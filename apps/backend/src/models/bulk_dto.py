@@ -17,7 +17,7 @@ class AddressDTO(BaseModel):
     street1: str
     street2: str | None = None
     city: str
-    state: str
+    state: str | None = None  # Optional for international addresses
     zip: str
     country: str
     phone: str | None = None

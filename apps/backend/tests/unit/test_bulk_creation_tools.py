@@ -21,27 +21,6 @@ class TestShipmentCreationToolsRegistration:
         assert mock_mcp.tool.call_count == 2
 
 
-class TestBulkCreationToolsDatabaseIntegration:
-    """Test database integration in bulk creation tools."""
-
-    def test_database_service_import(self):
-        """Test that database service can be imported and initialized."""
-        from src.services.database_service import DatabaseService
-
-        # Should be able to create service instance
-        mock_session = MagicMock()
-        service = DatabaseService(mock_session)
-        assert service is not None
-        assert service.session == mock_session
-
-    def test_database_integration_imports(self):
-        """Test that all database integration imports work."""
-        # These imports should work without errors
-
-        # All imports successful
-        assert True
-
-
 # Note: Direct testing of MCP-decorated functions is complex due to decorator registration.
 # The registration test above verifies that tools are properly registered with MCP.
 # Integration tests in test_server_endpoints.py cover the actual functionality.

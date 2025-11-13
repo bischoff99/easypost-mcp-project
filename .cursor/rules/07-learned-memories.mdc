@@ -74,10 +74,10 @@ When the AI learns something new about the project or user preferences, it shoul
 
 ### Database Strategy
 
-- Single SQLAlchemy async pool
-- Connection pooling: pool_size=10, max_overflow=10 (max 20 total)
-- Use DatabaseService abstraction for business logic
-- Direct asyncpg pool removed for simplicity
+- **Database removed for personal use (YAGNI principle)**
+- All data retrieved directly from EasyPost API on-demand
+- No local persistence or caching needed
+- Simpler architecture with fewer dependencies
 
 ### Performance Optimizations
 

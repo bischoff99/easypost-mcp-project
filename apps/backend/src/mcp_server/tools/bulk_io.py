@@ -145,10 +145,7 @@ async def prepare_customs_if_international(
     if customs_obj:
         # Always extract attributes directly from CustomsInfo object
         # (EasyPost objects may have to_dict() but it might return another object)
-        if isinstance(customs_obj, dict):
-            customs_dict = customs_obj.copy()
-        else:
-            customs_dict = {}
+        customs_dict = customs_obj.copy() if isinstance(customs_obj, dict) else {}
 
         # Extract customs_items and convert to CustomsItemDTO
         customs_items = []
@@ -281,20 +278,16 @@ async def create_shipment_with_rates(
                     "DHL": ["DHL", "DHLExpress"],
                 }
                 matching_carriers = carrier_variants.get(carrier_upper, [carrier_upper])
-                
+
                 # Find rate matching any variant
                 selected_rate = next(
                     (r for r in rates if r.get("carrier") in matching_carriers), None
                 )
-                
+
                 # If still not found, try partial match
                 if not selected_rate:
                     selected_rate = next(
-                        (
-                            r
-                            for r in rates
-                            if carrier_upper in r.get("carrier", "").upper()
-                        ),
+                        (r for r in rates if carrier_upper in r.get("carrier", "").upper()),
                         None,
                     )
             else:

@@ -38,27 +38,6 @@ class Settings:
     # EasyPost
     EASYPOST_API_KEY: str = os.getenv("EASYPOST_API_KEY", "")
 
-    # Database - NO default credentials for security
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "")
-
-    # Connection pool settings (prevents connection storms and long stalls)
-    # Default: 10 base + 5 overflow = 15 total connections per worker
-    # With 2 workers: 2 × 10 + 5 = 25 connections (safe for development)
-    # Configure in .env: DATABASE_POOL_SIZE=10, DATABASE_MAX_OVERFLOW=5
-    DATABASE_POOL_SIZE: int = int(os.getenv("DATABASE_POOL_SIZE", "10"))
-    DATABASE_MAX_OVERFLOW: int = int(os.getenv("DATABASE_MAX_OVERFLOW", "5"))
-    DATABASE_POOL_RECYCLE: int = int(os.getenv("DATABASE_POOL_RECYCLE", "1800"))  # 30 min
-    DATABASE_POOL_TIMEOUT: int = int(os.getenv("DATABASE_POOL_TIMEOUT", "10"))  # 10s wait
-    DATABASE_COMMAND_TIMEOUT: int = int(
-        os.getenv("DATABASE_COMMAND_TIMEOUT", "60")
-    )  # 60s query timeout
-    DATABASE_CONNECT_TIMEOUT: int = int(
-        os.getenv("DATABASE_CONNECT_TIMEOUT", "10")
-    )  # 10s connection timeout
-    DATABASE_STATEMENT_TIMEOUT_MS: int = int(
-        os.getenv("DATABASE_STATEMENT_TIMEOUT_MS", "15000")
-    )  # 15s statement timeout
-
     # Server
     MCP_HOST: str = os.getenv("MCP_HOST", "0.0.0.0")  # noqa: S104 - Required for Docker
     MCP_PORT: int = int(os.getenv("MCP_PORT", "8000"))
@@ -94,10 +73,6 @@ class Settings:
 
         if not self.EASYPOST_API_KEY:
             errors.append("EASYPOST_API_KEY is required")
-
-        # DATABASE_URL is optional for development/testing - database features will be disabled
-        if not self.DATABASE_URL:
-            logger.warning("DATABASE_URL not configured. Database features disabled.")
 
         if errors:
             raise ValueError(f"Configuration errors: {'; '.join(errors)}")

@@ -21,7 +21,23 @@ import src.models  # noqa: F401
 from alembic import context
 
 # Import our models and database configuration
-from src.database import Base
+try:
+    from src.database import Base
+except ImportError:
+    # Database module removed for personal use
+    # Alembic migrations not available - use direct SQL if database is restored
+    import sys
+
+    print(
+        "ERROR: Database module not available. Alembic migrations require database.py",
+        file=sys.stderr,
+    )
+    print(
+        "If you need database migrations, restore src/database.py from git history.",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+
 from src.utils.config import settings
 
 # this is the Alembic Config object, which provides
@@ -33,8 +49,21 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Set the database URL from our settings
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+# Set the database URL from our settings (if available)
+try:
+    database_url = getattr(settings, "DATABASE_URL", None)
+    if not database_url:
+        import sys
+
+        print("ERROR: DATABASE_URL not configured in settings.", file=sys.stderr)
+        print("Alembic migrations require a database connection.", file=sys.stderr)
+        sys.exit(1)
+    config.set_main_option("sqlalchemy.url", database_url)
+except AttributeError:
+    import sys
+
+    print("ERROR: DATABASE_URL not available in settings.", file=sys.stderr)
+    sys.exit(1)
 
 # add your model's MetaData object here
 # for 'autogenerate' support

@@ -31,9 +31,7 @@ def _build_carrier_metrics(
 ) -> list[CarrierMetrics]:
     """Build carrier metrics list from statistics."""
     by_carrier = []
-    for carrier, stats in sorted(
-        carrier_stats.items(), key=lambda x: x[1]["count"], reverse=True
-    ):
+    for carrier, stats in sorted(carrier_stats.items(), key=lambda x: x[1]["count"], reverse=True):
         shipment_count = stats["count"]
         total_cost_for_carrier = stats["cost"]
         delivered = stats.get("delivered", 0)

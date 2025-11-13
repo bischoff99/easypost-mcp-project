@@ -5,6 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 
 EasyPost MCP is a **personal-use** shipping integration with:
+
 - **Backend**: FastAPI + FastMCP server for EasyPost API integration
 - **Frontend**: React 19 + Vite 7.2 + TailwindCSS 4
 - **Database**: PostgreSQL with SQLAlchemy ORM (simplified from dual-pool)
@@ -15,6 +16,7 @@ EasyPost MCP is a **personal-use** shipping integration with:
 ## Development Commands
 
 ### Quick Start
+
 ```bash
 # Start both servers
 make dev
@@ -27,6 +29,7 @@ cd apps/frontend && pnpm run dev
 ```
 
 ### Testing
+
 ```bash
 # All tests (16 parallel workers for backend, vitest for frontend)
 make test
@@ -45,6 +48,7 @@ cd apps/frontend && npm test -- src/path/to/test.test.jsx
 ```
 
 ### Code Quality
+
 ```bash
 # Lint
 make lint
@@ -57,18 +61,11 @@ make check
 ```
 
 ### Database
-```bash
-# Reset database
-make db-reset
 
-# Create migration
-cd apps/backend && alembic revision --autogenerate -m "description"
-
-# Apply migrations
-make db-upgrade
-```
+**Note:** Database has been removed for personal use (YAGNI principle). All data is ephemeral and fetched directly from EasyPost API when needed.
 
 ### Production
+
 ```bash
 # Build production bundles
 make build
@@ -83,22 +80,23 @@ make prod-docker
 ## Architecture
 
 ### Backend Structure
+
 ```
 apps/backend/src/
 ├── server.py           # FastAPI app with MCP integration
 ├── routers/            # API endpoints (shipments, tracking, analytics - simplified)
-├── services/           # Business logic (easypost_service, database_service)
-├── models/             # Pydantic request/response & SQLAlchemy ORM models
+├── services/           # Business logic (easypost_service only - database removed)
+├── models/             # Pydantic request/response models
 ├── mcp_server/         # FastMCP tools, prompts, and resources (core product)
 │   ├── tools/          # MCP tools for AI agents
 │   ├── prompts/        # Prompt templates
 │   └── resources/      # Resource providers
-├── database.py         # SQLAlchemy setup & session management
 ├── lifespan.py         # App startup/shutdown lifecycle
 └── utils/              # Config, monitoring, helpers
 ```
 
 ### Frontend Structure
+
 ```
 apps/frontend/src/
 ├── App.jsx             # Main app with routing
@@ -112,20 +110,16 @@ apps/frontend/src/
 └── tests/              # Unit and E2E tests
 ```
 
-### Database Strategy (Simplified for Personal Use)
+### Data Strategy (Personal Use - No Database)
 
-**SQLAlchemy ORM Pool** (`Depends(get_db)`):
-- Single CRUD operations
-- Type-safe queries with relationships
-- Pydantic serialization
-- Example: `async def get_shipment(id: UUID, db: AsyncSession = Depends(get_db))`
+**Direct EasyPost API Integration:**
 
-**DatabaseService** (recommended abstraction):
-- Business logic layer wrapping SQLAlchemy
-- Consistent error handling
-- Example: `service = DatabaseService(db); await service.create_shipment(data)`
+- All shipment data fetched directly from EasyPost API
+- No local persistence or caching (YAGNI principle)
+- Simpler architecture with fewer dependencies
+- Example: `service = EasyPostService(api_key); shipment = await service.create_shipment(data)`
 
-> **Note**: Dual-pool strategy (asyncpg direct pool) has been removed for personal use. Database is used primarily for MCP tool context storage.
+> **Note**: Database (PostgreSQL, SQLAlchemy, Alembic) has been completely removed for personal use. All data is ephemeral and retrieved from EasyPost API on-demand.
 
 ### MCP Tools Architecture
 
@@ -148,6 +142,7 @@ MCP (Model Context Protocol) tools are designed for AI agents to interact with t
 ### Backend
 
 **FastAPI Patterns:**
+
 - Async/await for all I/O operations
 - Pydantic v2 for validation
 - Dependency injection with `Depends()`
@@ -155,17 +150,20 @@ MCP (Model Context Protocol) tools are designed for AI agents to interact with t
 - Structured logging with context
 
 **Database Patterns:**
-- SQLAlchemy 2.0 async style: `select(Model).where()`
-- Connection pooling: 50 (SQLAlchemy) + 32 (asyncpg) = 82 total
-- Alembic migrations in `apps/backend/alembic/`
+
+- **Removed for personal use (YAGNI)** - All data retrieved directly from EasyPost API
+- No local persistence, migrations, or connection pooling needed
+- Simplified architecture with fewer dependencies
 
 **MCP Patterns:**
+
 - FastMCP for tool registration
 - Return `{"status": "success/error", "data": ..., "message": "..."}` format
 - Parallel processing with `asyncio.gather()` for batch operations
 - Structured error responses for AI consumption
 
 **Testing:**
+
 - pytest with 16 parallel workers (`-n 16`)
 - Mock EasyPost API calls
 - AAA pattern (Arrange, Act, Assert)
@@ -174,6 +172,7 @@ MCP (Model Context Protocol) tools are designed for AI agents to interact with t
 ### Frontend
 
 **React Patterns:**
+
 - Functional components with hooks
 - React Query for server state
 - Zustand for client state
@@ -181,17 +180,20 @@ MCP (Model Context Protocol) tools are designed for AI agents to interact with t
 - Error boundaries for graceful error handling
 
 **UI Components:**
+
 - Radix UI primitives + TailwindCSS 4
 - Custom components in `components/ui/`
 - Framer Motion for animations
 - Recharts for analytics
 
 **API Integration:**
+
 - Axios with automatic retry (3 attempts, exponential backoff)
 - API client in `services/api.js`
 - Error handling with toast notifications
 
 **Testing:**
+
 - Vitest with React Testing Library
 - E2E tests with Puppeteer (see `src/tests/e2e/`)
 
@@ -217,10 +219,10 @@ MCP (Model Context Protocol) tools are designed for AI agents to interact with t
 
 This project uses simple, effective optimizations:
 
-- **Backend**: Auto-detected pytest workers, async I/O, reasonable connection pooling
+- **Backend**: Auto-detected pytest workers, async I/O, direct API integration
 - **Frontend**: Code splitting, lazy loading, esbuild minification
-- **Database**: Connection pooling appropriate for personal use
 - **Testing**: Parallel execution with auto-detected workers
+- **Architecture**: Database removed (YAGNI) - simpler, fewer dependencies
 
 ## Common Workflows
 
@@ -240,14 +242,6 @@ This project uses simple, effective optimizations:
 4. Add tests with 100% coverage requirement
 5. Document in `docs/guides/MCP_TOOLS_USAGE.md`
 
-### Adding Database Models
-
-1. Create SQLAlchemy model in `apps/backend/src/models/`
-2. Export from `apps/backend/src/models/__init__.py`
-3. Generate migration: `cd apps/backend && alembic revision --autogenerate -m "add model"`
-4. Review and edit migration in `apps/backend/alembic/versions/`
-5. Apply: `alembic upgrade head`
-
 ## Coding Standards
 
 **Critical rules** (see `.cursor/rules/` for comprehensive details):
@@ -259,13 +253,15 @@ This project uses simple, effective optimizations:
 5. **Security**: No hardcoded secrets, parameterized queries, input validation
 
 **Import Sorting** (handled by Ruff):
+
 - Future imports
 - Standard library
-- Third-party (fastapi, pydantic, sqlalchemy, easypost)
-- First-party (src.*)
+- Third-party (fastapi, pydantic, easypost)
+- First-party (src.\*)
 - Local folder
 
 **Commit Format**:
+
 ```
 type(scope): description
 
@@ -289,8 +285,8 @@ The backend can run as a standalone MCP server for AI agents:
       "command": "/path/to/backend/venv/bin/python",
       "args": ["-m", "src.mcp_server"],
       "env": {
-        "EASYPOST_API_KEY": "your_key_here",
-        "DATABASE_URL": "postgresql+asyncpg://..."
+        "EASYPOST_API_KEY": "your_key_here",  # pragma: allowlist secret
+        "DATABASE_URL": "postgresql+asyncpg://..."  # pragma: allowlist secret
       }
     }
   }
@@ -319,24 +315,20 @@ The backend can run as a standalone MCP server for AI agents:
 ## Environment Setup
 
 **Backend**:
+
 ```bash
 cd backend
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env  # Add EASYPOST_API_KEY
-alembic upgrade head  # Initialize database
 ```
 
 **Frontend**:
+
 ```bash
 cd frontend
 npm install
-```
-
-**Database** (using Docker):
-```bash
-docker-compose -f docker-compose.prod.yml up postgres -d
 ```
 
 ## URLs
@@ -349,21 +341,18 @@ docker-compose -f docker-compose.prod.yml up postgres -d
 ## Troubleshooting
 
 **Backend issues:**
+
 - Check logs: Backend logs to stdout with structured logging
-- Database connection: Verify `DATABASE_URL` in `.env`
 - EasyPost API: Ensure `EASYPOST_API_KEY` is valid (test/production)
 
 **Frontend issues:**
+
 - Check console for errors
 - Verify backend is running on port 8000
 - Clear Vite cache: `rm -rf frontend/node_modules/.vite`
 
-**Database issues:**
-- Reset: `make db-reset`
-- Check migrations: `cd backend && alembic current`
-- View logs: `docker-compose -f docker-compose.prod.yml logs postgres`
-
 **Test failures:**
+
 - Run serially for debugging: `pytest tests/file.py -v` (without `-n 16`)
 - Check mocks: Ensure EasyPost API calls are mocked
 - View coverage: `make test-cov` then open `backend/htmlcov/index.html`

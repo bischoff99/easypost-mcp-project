@@ -7,6 +7,7 @@
 ## Quick Start
 
 ### 1. Clone and Setup Environment
+
 ```bash
 git clone <repository-url>
 cd easypost-mcp-project
@@ -15,6 +16,7 @@ cp .env.example .env
 ```
 
 ### 2. Install Dependencies
+
 ```bash
 make install
 # Or manually:
@@ -23,6 +25,7 @@ make install
 ```
 
 ### 3. Start Development Servers
+
 ```bash
 make dev
 # Or separately:
@@ -31,6 +34,7 @@ make dev
 ```
 
 ## URLs
+
 - Frontend: http://localhost:5173
 - Backend: http://localhost:8000
 - Health: http://localhost:8000/health
@@ -45,9 +49,8 @@ easypost-mcp-project/
 │   │   ├── src/      # Source code
 │   │   │   ├── mcp_server/  # MCP tools (core product)
 │   │   │   ├── routers/     # API endpoints (simplified)
-│   │   │   └── services/     # Business logic
-│   │   ├── tests/    # Test suite (unit + integration)
-│   │   └── alembic/  # Database migrations
+│   │   │   └── services/     # Business logic (EasyPost only)
+│   │   └── tests/    # Test suite (unit + integration)
 │   └── frontend/     # React/Vite frontend service
 │       ├── src/      # Source code
 │       └── tests/    # Tests
@@ -59,46 +62,55 @@ easypost-mcp-project/
 ## Features
 
 ### Core Features (Personal Use)
-✅ **MCP Server** - AI agent tools for shipment management (core product)  
-✅ **Basic API** - Simple FastAPI endpoints for frontend  
-✅ **React Frontend** - Management interface  
-✅ **Simplified Analytics** - Basic shipping statistics  
-✅ **Error handling** - Comprehensive error handling  
-✅ **Input validation** - Pydantic validation  
-✅ **Logging** - Structured logging  
+
+✅ **MCP Server** - AI agent tools for shipment management (core product)
+✅ **Basic API** - Simple FastAPI endpoints for frontend
+✅ **React Frontend** - Management interface
+✅ **Simplified Analytics** - Basic shipping statistics
+✅ **Error handling** - Comprehensive error handling
+✅ **Input validation** - Pydantic validation
+✅ **Logging** - Structured logging
 
 ### Removed (Enterprise Features)
-❌ Webhook system  
-❌ Database-backed endpoints (`/api/db/*`)  
-❌ Bulk operations endpoints (use MCP tools instead)  
-❌ Complex parallel analytics processing  
-❌ Request ID middleware (disabled by default)  
+
+❌ Webhook system
+❌ Database persistence (all data from EasyPost API)
+❌ Database-backed endpoints (`/api/db/*`)
+❌ Bulk operations endpoints (use MCP tools instead)
+❌ Complex parallel analytics processing
+❌ Request ID middleware (disabled by default)
 
 ## Architecture
 
 ### MCP Server (Core Product)
+
 The MCP server provides AI agent tools for:
+
 - Creating shipments
 - Getting rates
 - Tracking shipments
 - Bulk operations (via MCP tools, not API endpoints)
 
-**Location**: `apps/backend/src/mcp_server/`  
+**Location**: `apps/backend/src/mcp_server/`
 **Endpoint**: `/mcp` (HTTP transport)
 
 ### FastAPI Backend (Management Interface)
+
 Simplified API for the React frontend:
+
 - `/api/rates` - Get shipping rates
 - `/api/shipments` - Create and manage shipments
 - `/api/tracking` - Track shipments
 - `/api/analytics` - Basic shipping statistics
 
-### Database
-- **SQLAlchemy ORM** - Single pool for CRUD operations
-- **PostgreSQL** - Stores shipment data for MCP tool context
-- Database models remain for MCP tools that need context
+### Data Architecture
+
+- **No database** - Removed for personal use (YAGNI principle)
+- **Direct EasyPost API** - All data fetched on-demand
+- **Simpler architecture** - Fewer dependencies, easier maintenance
 
 ### Frontend
+
 - **React 19** + **Vite 7.2** + **TailwindCSS 4**
 - Pages: Dashboard, Shipments, Analytics, Tracking
 - Simplified UI focused on core functionality
@@ -113,6 +125,7 @@ Simplified API for the React frontend:
 ## Development
 
 ### Testing
+
 ```bash
 make test             # Run all tests
 make test-fast        # Fast tests (changed files only)
@@ -120,6 +133,7 @@ make test-cov         # Coverage report
 ```
 
 ### Code Quality
+
 ```bash
 make lint             # Lint code
 make format           # Auto-format
@@ -127,6 +141,7 @@ make check            # Lint + test
 ```
 
 ### Database
+
 ```bash
 make db-reset         # Reset database
 make db-upgrade       # Apply migrations
@@ -143,8 +158,8 @@ The MCP server can be used with Claude Desktop or other MCP clients:
       "command": "/path/to/backend/venv/bin/python",
       "args": ["-m", "src.mcp_server"],
       "env": {
-        "EASYPOST_API_KEY": "your_key_here",
-        "DATABASE_URL": "postgresql+asyncpg://..."
+        "EASYPOST_API_KEY": "your_key_here",  # pragma: allowlist secret
+        "DATABASE_URL": "postgresql+asyncpg://..."  # pragma: allowlist secret
       }
     }
   }
@@ -154,6 +169,7 @@ The MCP server can be used with Claude Desktop or other MCP clients:
 ## Simplifications for Personal Use
 
 This project has been optimized for personal use by removing:
+
 1. **Webhook system** - Not needed for personal use
 2. **Database-backed endpoints** - Use EasyPost API directly
 3. **Bulk operations API** - Use MCP tools instead

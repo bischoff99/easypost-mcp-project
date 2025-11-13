@@ -17,9 +17,6 @@ from typing import Any
 
 from fastmcp import Context
 
-from src.database import get_db, is_database_available
-from src.services.database_service import DatabaseService
-
 from .bulk_tools import parse_spreadsheet_line
 
 logger = logging.getLogger(__name__)
@@ -28,7 +25,7 @@ logger = logging.getLogger(__name__)
 CPU_COUNT = multiprocessing.cpu_count()  # 16 cores on M3 Max
 MAX_WORKERS = min(32, CPU_COUNT * 2)  # 32 workers for I/O-bound operations
 CHUNK_SIZE = 8  # Process 8 shipments per chunk for optimal throughput
-MAX_CONCURRENT = 16  # API concurrency limit (prevents rate limiting)
+MAX_CONCURRENT = 2  # API concurrency limit - reduced to avoid rate limiting (was 16)
 
 # Note: Customs caching handled by smart_customs module
 # Use get_or_create_customs from src.services.smart_customs for customs info
@@ -82,22 +79,6 @@ def register_shipment_creation_tools(mcp, easypost_service=None):
             if ctx:
                 await ctx.info("🚀 Starting bulk shipment creation (16 parallel workers)...")
 
-            # Database tracking setup (optional - tool works without it)
-            db_service = None
-            db_session = None
-
-            if is_database_available():
-                try:
-                    # Get database session and keep it alive for the operation
-                    db_gen = get_db()
-                    db_session = await db_gen.__anext__()
-                    db_service = DatabaseService(db_session)
-                except Exception as e:
-                    logger.warning(f"Database tracking unavailable: {e}")
-                    if db_session:
-                        await db_session.close()
-                    db_session = None
-
             # Auto-detect format: tab-separated spreadsheet or natural text
             # If first line has no tabs, assume natural text format
             from src.mcp_server.tools.bulk_tools import convert_natural_to_spreadsheet
@@ -129,11 +110,7 @@ def register_shipment_creation_tools(mcp, easypost_service=None):
                     await ctx.info("✅ Successfully converted natural text to spreadsheet format")
             else:
                 # Parse lines (standard tab-separated format)
-                lines = [
-                    line.strip()
-                    for line in spreadsheet_data.split("\n")
-                    if line.strip()
-                ]
+                lines = [line.strip() for line in spreadsheet_data.split("\n") if line.strip()]
 
             if not lines:
                 return {
@@ -429,10 +406,8 @@ def register_shipment_creation_tools(mcp, easypost_service=None):
             carrier_stats = aggregated["carrier_stats"]
             duration = aggregated["duration"]
 
-            # Store successful shipments in database
-            # (temporarily disabled - requires database refactoring)
-            # TODO: Fix indentation and refactor database storage logic
-            pass
+            # Note: Database storage removed for personal use (YAGNI principle)
+            # All shipment data is retrieved directly from EasyPost API
 
             if ctx:
                 throughput = len(valid_shipments) / duration if duration > 0 else 0.0
@@ -440,8 +415,6 @@ def register_shipment_creation_tools(mcp, easypost_service=None):
                 await ctx.info(f"⏱️ Total time: {duration:.1f}s")
                 await ctx.info(f"⚡ Throughput: {throughput:.2f} shipments/second")
                 await ctx.info(f"🔧 M3 Max: {MAX_WORKERS} workers, {MAX_CONCURRENT} concurrent")
-                if db_service:
-                    await ctx.info("💾 Shipment data persisted to database")
 
             return {
                 "status": "success",
@@ -482,27 +455,12 @@ def register_shipment_creation_tools(mcp, easypost_service=None):
             error_msg = str(e)
             logger.error(f"Bulk creation error: {error_msg}", exc_info=True)
 
-            # Cleanup database session
-            if db_session:
-                try:
-                    await db_session.close()
-                except Exception as close_error:
-                    logger.warning(f"Error closing database session: {close_error}")
-
             return {
                 "status": "error",
                 "data": None,
                 "message": f"Bulk creation failed: {error_msg}",
                 "timestamp": datetime.now(UTC).isoformat(),
             }
-
-        finally:
-            # Cleanup database session
-            if db_session:
-                try:
-                    await db_session.close()
-                except Exception as close_error:
-                    logger.warning(f"Error closing database session: {close_error}")
 
     @mcp.tool(tags=["shipment", "purchase", "shipping", "m3-optimized"])
     async def buy_shipment_label(

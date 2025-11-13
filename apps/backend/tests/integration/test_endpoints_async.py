@@ -82,7 +82,9 @@ class TestEndpointsAsync:
         """Test successful shipment creation."""
         mock_easypost_service.create_shipment.return_value = EasyPostFactory.shipment()
 
-        response = await async_client.post("/api/shipments", json=EasyPostFactory.shipment_request())
+        response = await async_client.post(
+            "/api/shipments", json=EasyPostFactory.shipment_request()
+        )
 
         assert response.status_code == 200
         data = response.json()
@@ -133,7 +135,10 @@ class TestEndpointsAsync:
         assert data["status"] == "success"
         assert data["data"] is not None
         # Check for status_detail (service format) or status (factory format)
-        assert data["data"].get("status_detail") == "delivered" or data["data"].get("status") == "delivered"
+        assert (
+            data["data"].get("status_detail") == "delivered"
+            or data["data"].get("status") == "delivered"
+        )
 
     # ========== Analytics Endpoints ==========
 
@@ -174,7 +179,9 @@ class TestEndpointsAsync:
 
         assert response.status_code == 200
 
-    @pytest.mark.skip(reason="/stats endpoint removed for personal use - use /api/analytics instead")
+    @pytest.mark.skip(
+        reason="/stats endpoint removed for personal use - use /api/analytics instead"
+    )
     @pytest.mark.asyncio
     async def test_stats_endpoint(self, async_client, mock_easypost_service):
         """Test dashboard stats endpoint."""
@@ -196,7 +203,9 @@ class TestEndpointsAsync:
         assert "total_shipments" in data["data"]
         assert data["data"]["total_shipments"]["value"] == 3
 
-    @pytest.mark.skip(reason="/carrier-performance endpoint removed for personal use - use /api/analytics instead")
+    @pytest.mark.skip(
+        reason="/carrier-performance endpoint removed for personal use - use /api/analytics instead"
+    )
     @pytest.mark.asyncio
     async def test_carrier_performance(self, async_client, mock_easypost_service):
         """Test carrier performance metrics."""

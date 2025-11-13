@@ -253,9 +253,7 @@ def register_download_tools(mcp, easypost_service=None):
                 api_key_str: str = easypost_api_key
 
                 # Capture API key in closure with default parameter
-                def retrieve_shipment_sync(
-                    shipment_id: str, api_key: str = api_key_str
-                ) -> Any:
+                def retrieve_shipment_sync(shipment_id: str, api_key: str = api_key_str) -> Any:
                     """Synchronous shipment retrieval."""
                     easypost.api_key = api_key  # type: ignore[attr-defined]
                     client = easypost.EasyPostClient(api_key=api_key)
@@ -337,8 +335,7 @@ def register_download_tools(mcp, easypost_service=None):
 
                         # Determine if this is an invoice
                         is_invoice = (
-                            "invoice" in form_type.lower()
-                            or "commercial" in form_type.lower()
+                            "invoice" in form_type.lower() or "commercial" in form_type.lower()
                         )
 
                         # Download if it matches request

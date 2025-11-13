@@ -1,36 +1,17 @@
 """FastAPI server with analytics endpoint."""
 
-import asyncio
 import logging
 import os
 import uuid
-from collections import defaultdict
-from datetime import UTC, datetime, timedelta
-from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from pydantic import ValidationError
-from starlette import status
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.cors import CORSMiddleware
 
 from src.dependencies import EasyPostDep
 from src.lifespan import app_lifespan
-from src.models.analytics import (
-    AnalyticsData,
-    AnalyticsResponse,
-    CarrierMetrics,
-    RouteMetrics,
-    ShipmentMetricsResponse,
-    VolumeMetrics,
-)
-from src.models.requests import (
-    BuyShipmentRequest,
-    RatesRequest,
-    ShipmentRequest,
-)
 from src.utils.config import settings
 from src.utils.monitoring import metrics
 
@@ -122,6 +103,7 @@ else:
             request.state.request_id = "disabled"
             return await call_next(request)
 
+
 app.add_middleware(RequestIDMiddleware)
 
 
@@ -201,23 +183,7 @@ async def health_check():
 
 @app.get("/readyz")
 async def readiness_check(service: EasyPostDep):
-    """Readiness check - verifies DB and EasyPost connectivity."""
-    from sqlalchemy import text
-
-    from src.database import async_session
-
-    # DB check
-    try:
-        if async_session is None:
-            raise HTTPException(status_code=503, detail="Database not configured")
-        async with async_session() as db:
-            await db.execute(text("SELECT 1"))
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Database readiness check failed: {e}")
-        raise HTTPException(status_code=503, detail="Database not ready") from e
-
+    """Readiness check - verifies EasyPost connectivity."""
     # EasyPost check (optional - can be disabled if API key not set)
     try:
         if service.api_key:

@@ -70,7 +70,9 @@ class TestServerEndpoints:
         """Test successful shipment creation."""
         mock_easypost_service.create_shipment.return_value = EasyPostFactory.shipment()
 
-        response = await async_client.post("/api/shipments", json=EasyPostFactory.shipment_request())
+        response = await async_client.post(
+            "/api/shipments", json=EasyPostFactory.shipment_request()
+        )
 
         assert response.status_code == 200
         data = response.json()
@@ -117,7 +119,10 @@ class TestServerEndpoints:
         assert data["status"] == "success"
         assert data["data"] is not None
         # Check for status_detail (service format) or status (factory format)
-        assert data["data"].get("status_detail") == "delivered" or data["data"].get("status") == "delivered"
+        assert (
+            data["data"].get("status_detail") == "delivered"
+            or data["data"].get("status") == "delivered"
+        )
 
     @pytest.mark.asyncio
     async def test_analytics_endpoint_success(self, async_client, mock_easypost_service):
@@ -155,7 +160,9 @@ class TestServerEndpoints:
 
         assert response.status_code == 200
 
-    @pytest.mark.skip(reason="/stats endpoint removed for personal use - use /api/analytics instead")
+    @pytest.mark.skip(
+        reason="/stats endpoint removed for personal use - use /api/analytics instead"
+    )
     @pytest.mark.asyncio
     async def test_stats_endpoint_success(self, async_client, mock_easypost_service):
         """Test successful dashboard stats endpoint."""
@@ -176,7 +183,9 @@ class TestServerEndpoints:
         assert data["status"] == "success"
         assert "total_shipments" in data["data"]
 
-    @pytest.mark.skip(reason="/carrier-performance endpoint removed for personal use - use /api/analytics instead")
+    @pytest.mark.skip(
+        reason="/carrier-performance endpoint removed for personal use - use /api/analytics instead"
+    )
     @pytest.mark.asyncio
     async def test_carrier_performance_endpoint_success(self, async_client, mock_easypost_service):
         """Test successful carrier performance endpoint."""

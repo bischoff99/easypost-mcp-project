@@ -288,6 +288,10 @@ class EasyPostService:
     Do not remove the sync methods or ThreadPoolExecutor.
     """
 
+    # Carrier accounts: Use default (None = all enabled accounts for this API key)
+    # Production accounts are automatically linked to production API key
+    CARRIER_ACCOUNTS = None
+
     def __init__(self, api_key: str):
         self.api_key = api_key
         self.logger = logging.getLogger(__name__)
@@ -393,16 +397,11 @@ class EasyPostService:
                 "to_address": to_address_param,
                 "from_address": from_address_param,
                 "parcel": parcel,
-                # Use configured wallet carrier accounts for full rate access
-                "carrier_accounts": [
-                    "ca_39ef64ac3d674f2b9e332efe5bec379e",  # UPS Wallet Account
-                    "ca_4dd19ccfd9cf425bbe90fb6e13ebbf6c",  # FedEx Wallet Account
-                    "ca_d5671c42018c4754b8e9eb06e47d6e66",  # DHL eCommerce Account
-                    "ca_4a4c551b17824ee694a210823f477349",  # DHL Express Account
-                    "ca_5e187e0f2e2f419fb347822000e141b8",  # USA Export/Asendia Account
-                    "ca_66de37160a9b4377b37a75c513ab8ba0",  # USPS Account
-                ],
             }
+
+            # Add carrier_accounts only if specified (None = use all enabled accounts)
+            if self.CARRIER_ACCOUNTS is not None:
+                shipment_params["carrier_accounts"] = self.CARRIER_ACCOUNTS
 
             if customs_info:
                 # Create CustomsInfo object using EasyPost SDK
@@ -964,16 +963,11 @@ class EasyPostService:
                 "to_address": to_address,
                 "from_address": from_address,
                 "parcel": parcel,
-                # Use configured wallet carrier accounts for full rate access
-                "carrier_accounts": [
-                    "ca_39ef64ac3d674f2b9e332efe5bec379e",  # UPS Wallet Account
-                    "ca_4dd19ccfd9cf425bbe90fb6e13ebbf6c",  # FedEx Wallet Account
-                    "ca_d5671c42018c4754b8e9eb06e47d6e66",  # DHL eCommerce Account
-                    "ca_4a4c551b17824ee694a210823f477349",  # DHL Express Account
-                    "ca_5e187e0f2e2f419fb347822000e141b8",  # USA Export/Asendia Account
-                    "ca_66de37160a9b4377b37a75c513ab8ba0",  # USPS Account
-                ],
             }
+
+            # Add carrier_accounts only if specified (None = use all enabled accounts)
+            if self.CARRIER_ACCOUNTS is not None:
+                shipment_params["carrier_accounts"] = self.CARRIER_ACCOUNTS
 
             # Add customs_info if provided (for international shipments)
             if customs_info:

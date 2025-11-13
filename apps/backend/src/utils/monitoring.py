@@ -30,10 +30,10 @@ class HealthCheck:
             database_health = await self.check_database()
 
             # Determine overall status
-            is_healthy = (
-                easypost_health["status"] == "healthy"
-                and database_health["status"] in ["healthy", "disabled"]
-            )
+            is_healthy = easypost_health["status"] == "healthy" and database_health["status"] in [
+                "healthy",
+                "disabled",
+            ]
 
             return {
                 "status": "healthy" if is_healthy else "unhealthy",
@@ -52,45 +52,16 @@ class HealthCheck:
     @staticmethod
     async def check_database() -> dict[str, Any]:
         """
-        Check database connectivity using SQLAlchemy ORM pool.
+        Database health check - always returns disabled for personal use.
 
         Returns:
             Dict with database health status
         """
-        # Check if ORM database is available
-        try:
-            from src.database import is_database_available, async_session
-        except ImportError:
-            return {"status": "disabled", "reason": "database module not available"}
-
-        if not is_database_available():
-            return {
-                "status": "disabled",
-                "orm_available": False,
-                "reason": "DATABASE_URL not configured",
-            }
-
-        # Test SQLAlchemy connection
-        try:
-            from sqlalchemy import text
-
-            async with async_session() as session:
-                result = await session.execute(text("SELECT 1"))
-                if result.scalar() != 1:
-                    raise Exception("Database query test failed")
-
-            return {
-                "status": "healthy",
-                "orm_available": True,
-                "connectivity": "connected",
-            }
-        except Exception as e:
-            logger.error(f"Database check failed: {str(e)}")
-            return {
-                "status": "unhealthy",
-                "orm_available": True,
-                "error": str(e)[:100],
-            }
+        # Database removed for personal use (YAGNI)
+        return {
+            "status": "disabled",
+            "reason": "database not required for personal use",
+        }
 
     @staticmethod
     async def check_easypost(api_key: str) -> dict[str, Any]:

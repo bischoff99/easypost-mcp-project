@@ -1,7 +1,6 @@
 """Shipment management endpoints."""
 
 import logging
-from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
@@ -172,7 +171,6 @@ async def buy_shipment(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error buying shipment: {error_msg}",
         ) from e
-
 
 
 @router.post("/shipments/{shipment_id}/buy", response_model=BuyShipmentResponse)

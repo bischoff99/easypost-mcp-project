@@ -1,15 +1,6 @@
 {
   "version": "2.1.0",
-  "lastModified": "2025-11-11",
+  "lastModified": "2025-11-12",
   "description": "MCP server configuration for EasyPost shipping integration",
-  "mcpServers": {
-    "easypost-mcp": {
-      "command": "python3",
-      "args": ["-m", "src.mcp_server.server"],
-      "cwd": "apps/backend",
-      "env": {
-        "EASYPOST_API_KEY": "${env:EASYPOST_API_KEY}"
-      }
-    }
-  }
+  "mcpServers": {}
 }
