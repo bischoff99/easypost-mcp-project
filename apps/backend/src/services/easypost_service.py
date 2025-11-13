@@ -23,6 +23,7 @@ COUNTRY_CODE_MAP = {
     "FRANCE": "FR",
     "ITALY": "IT",
     "NETHERLANDS": "NL",
+    "THE NETHERLANDS": "NL",
     "BELGIUM": "BE",
     "AUSTRIA": "AT",
     "SWITZERLAND": "CH",
@@ -77,6 +78,7 @@ COUNTRY_CODE_MAP = {
     "UNITED ARAB EMIRATES": "AE",
     "USA": "US",
     "UNITED STATES": "US",
+    "UNITED STATES OF AMERICA": "US",
     "US": "US",
 }
 
@@ -288,9 +290,16 @@ class EasyPostService:
     Do not remove the sync methods or ThreadPoolExecutor.
     """
 
-    # Carrier accounts: Use default (None = all enabled accounts for this API key)
-    # Production accounts are automatically linked to production API key
-    CARRIER_ACCOUNTS = None
+    # Carrier accounts: Specific carrier account IDs for this API key
+    # These accounts are linked to the production API key
+    CARRIER_ACCOUNTS = [
+        "ca_8d3eea38c88c408c8d351859d1ed3a1a",  # DHL eCommerce
+        "ca_cc276f79f2c04640bcc2623f6790cde7",  # DHL Express
+        "ca_4dd19ccfd9cf425bbe90fb6e13ebbf6c",  # FedEx Wallet
+        "ca_39ef64ac3d674f2b9e332efe5bec379e",  # UPS (UPSDAP: 09E1D3)
+        "ca_5e187e0f2e2f419fb347822000e141b8",  # USA Export - Powered by Asendia
+        "ca_058c52faac6144a3bbc5f653364cb981",  # USPS
+    ]
 
     def __init__(self, api_key: str):
         self.api_key = api_key
@@ -306,9 +315,9 @@ class EasyPostService:
         self.logger.info(f"Initializing EasyPost client with key: {api_key[:10]}...")
         self.client = easypost.EasyPostClient(api_key)
 
-        # Simplified for personal use: 8-16 workers (still plenty for API concurrency)
+        # Simplified for personal use: 4 workers (plenty for API concurrency)
         cpu_count = multiprocessing.cpu_count()
-        max_workers = min(16, cpu_count)  # 8-16 workers for I/O-bound tasks
+        max_workers = 4  # Fixed 4 workers for I/O-bound tasks
         self.executor = ThreadPoolExecutor(max_workers=max_workers)
         self.logger.info(
             f"ThreadPoolExecutor initialized: {max_workers} workers on {cpu_count} cores"
@@ -409,6 +418,7 @@ class EasyPostService:
                 # customs_signer, etc.
                 # Note: EasyPost API requires 'weight' for each customs_item
                 customs_items = []
+                total_value = 0.0
                 for item in customs_info.get("customs_items", customs_info.get("contents", [])):
                     # Weight is REQUIRED by EasyPost API - use item weight or parcel weight
                     item_weight = item.get("weight")
@@ -416,15 +426,32 @@ class EasyPostService:
                         # Fallback: use parcel weight if item weight not specified
                         item_weight = parcel.get("weight", 16.0)  # Default 1 lb if missing
 
+                    # Calculate total value for EEL/PFC validation
+                    quantity = item.get("quantity", 1)
+                    value = item.get("value", 50.0)
+                    total_value += quantity * value
+
                     customs_item = self.client.customs_item.create(
                         description=item.get("description", "General Merchandise"),
-                        quantity=item.get("quantity", 1),
-                        value=item.get("value", 50.0),
+                        quantity=quantity,
+                        value=value,
                         weight=item_weight,  # REQUIRED by EasyPost API
                         hs_tariff_number=item.get("hs_tariff_number"),
                         origin_country=item.get("origin_country", "US"),
                     )
                     customs_items.append(customs_item)
+
+                # Validate EEL/PFC requirement (per EasyPost customs guide)
+                eel_pfc = customs_info.get("eel_pfc")
+                if eel_pfc is None:
+                    if total_value >= 2500:
+                        raise ValueError(
+                            f"Shipment value ${total_value:.2f} ≥ $2,500 requires AES ITN. "
+                            "Get ITN from https://aesdirect.census.gov or use "
+                            "smart_customs.extract_customs_smart() for automatic validation. "
+                            "Example: 'AES X20120502123456'"
+                        )
+                    eel_pfc = "NOEEI 30.37(a)"
 
                 customs_info_obj = self.client.customs_info.create(
                     customs_items=customs_items,
@@ -433,7 +460,7 @@ class EasyPostService:
                     contents_type=customs_info.get("contents_type", "merchandise"),
                     restriction_type=customs_info.get("restriction_type", "none"),
                     restriction_comments=customs_info.get("restriction_comments", ""),
-                    eel_pfc=customs_info.get("eel_pfc", "NOEEI 30.37(a)"),
+                    eel_pfc=eel_pfc,
                     non_delivery_option=customs_info.get("non_delivery_option", "return"),
                 )
                 shipment_params["customs_info"] = customs_info_obj
