@@ -268,6 +268,50 @@ class TestIsPreferredCarrier:
         assert is_preferred_carrier(easypost_carrier, preferred) == expected
 
 
+class TestParseCarrierPreference:
+    """Tests for parse_carrier_preference()."""
+
+    def test_parses_carrier_with_first_class_service(self):
+        """Test parses 'USPS- First Class Mail' correctly."""
+        from src.mcp_server.tools.bulk_helpers import parse_carrier_preference
+
+        carrier, service = parse_carrier_preference("USPS- First Class Mail")
+        assert carrier == "USPS"
+        assert service == "FIRSTCLASS"
+
+    def test_parses_carrier_with_priority_service(self):
+        """Test parses 'FedEx- Priority' correctly."""
+        from src.mcp_server.tools.bulk_helpers import parse_carrier_preference
+
+        carrier, service = parse_carrier_preference("FedEx- Priority")
+        assert carrier == "FEDEX"
+        assert service == "PRIORITY"
+
+    def test_parses_carrier_only(self):
+        """Test parses carrier-only preference."""
+        from src.mcp_server.tools.bulk_helpers import parse_carrier_preference
+
+        carrier, service = parse_carrier_preference("USPS")
+        assert carrier == "USPS"
+        assert service is None
+
+    def test_handles_none(self):
+        """Test handles None preference."""
+        from src.mcp_server.tools.bulk_helpers import parse_carrier_preference
+
+        carrier, service = parse_carrier_preference(None)
+        assert carrier is None
+        assert service is None
+
+    def test_parses_express_service(self):
+        """Test parses Express service."""
+        from src.mcp_server.tools.bulk_helpers import parse_carrier_preference
+
+        carrier, service = parse_carrier_preference("USPS- Express Mail")
+        assert carrier == "USPS"
+        assert service == "EXPRESS"
+
+
 class TestMarkPreferredRates:
     """Tests for mark_preferred_rates()."""
 
@@ -314,3 +358,102 @@ class TestSelectBestRate:
     def test_returns_none_for_empty_rates(self):
         """Test returns None for empty rates."""
         assert select_best_rate([], purchase_labels=True) is None
+
+    def test_selects_cheapest_usps_when_multiple_services(self):
+        """
+        BUG FIX TEST: When multiple USPS rates exist, select cheapest (First Class),
+        not first (which could be Priority/Express).
+
+        This tests the fix for the issue where Express Mail ($93.60) or
+        Priority Mail ($80.35) were selected instead of First Class ($46.33).
+        """
+        rates = [
+            {
+                "carrier": "USPS",
+                "service": "PriorityMailInternational",
+                "rate": "74.66",
+                "preferred": True,
+            },
+            {
+                "carrier": "USPS",
+                "service": "ExpressMailInternational",
+                "rate": "93.60",
+                "preferred": True,
+            },
+            {
+                "carrier": "USPS",
+                "service": "FirstClassPackageInternationalService",
+                "rate": "46.33",
+                "preferred": True,
+            },
+            {"carrier": "FedEx", "service": "International", "rate": "55.00", "preferred": False},
+        ]
+        selected = select_best_rate(rates, purchase_labels=True, preferred_carrier="USPS")
+
+        # Should select cheapest USPS rate (First Class $46.33), not first USPS rate
+        assert selected["carrier"] == "USPS"
+        assert selected["service"] == "FirstClassPackageInternationalService"
+        assert selected["rate"] == "46.33"
+
+    def test_selects_specific_service_when_requested(self):
+        """
+        Test that when specific service is requested (e.g., "USPS- First Class Mail"),
+        it selects that exact service, not just cheapest USPS.
+        """
+        rates = [
+            {"carrier": "USPS", "service": "PriorityMailInternational", "rate": "74.66"},
+            {"carrier": "USPS", "service": "ExpressMailInternational", "rate": "93.60"},
+            {
+                "carrier": "USPS",
+                "service": "FirstClassPackageInternationalService",
+                "rate": "46.33",
+            },
+        ]
+
+        # Request specific service
+        selected = select_best_rate(
+            rates, purchase_labels=True, preferred_carrier="USPS- First Class Mail"
+        )
+
+        # Should select First Class service (matched by keyword)
+        assert selected["carrier"] == "USPS"
+        assert "FirstClass" in selected["service"]
+        assert selected["rate"] == "46.33"
+
+    def test_selects_priority_when_explicitly_requested(self):
+        """Test that Priority is selected when explicitly requested, even if more expensive."""
+        rates = [
+            {
+                "carrier": "USPS",
+                "service": "FirstClassPackageInternationalService",
+                "rate": "46.33",
+            },
+            {"carrier": "USPS", "service": "PriorityMailInternational", "rate": "74.66"},
+            {"carrier": "USPS", "service": "ExpressMailInternational", "rate": "93.60"},
+        ]
+
+        # Request Priority specifically
+        selected = select_best_rate(rates, purchase_labels=True, preferred_carrier="USPS- Priority")
+
+        # Should select Priority (more expensive but explicitly requested)
+        assert selected["carrier"] == "USPS"
+        assert "Priority" in selected["service"]
+        assert selected["rate"] == "74.66"
+
+    def test_fallback_to_cheapest_when_service_not_available(self):
+        """Test fallback to cheapest USPS when requested service not available."""
+        rates = [
+            {
+                "carrier": "USPS",
+                "service": "FirstClassPackageInternationalService",
+                "rate": "46.33",
+            },
+            {"carrier": "USPS", "service": "PriorityMailInternational", "rate": "74.66"},
+        ]
+
+        # Request service that doesn't exist (Ground)
+        selected = select_best_rate(rates, purchase_labels=True, preferred_carrier="USPS- Ground")
+
+        # Should fallback to cheapest USPS
+        assert selected["carrier"] == "USPS"
+        assert selected["rate"] == "46.33"
