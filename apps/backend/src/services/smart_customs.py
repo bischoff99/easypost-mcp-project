@@ -143,6 +143,9 @@ def extract_customs_smart(
     default_value: float | None = None,
     customs_signer: str = "Sender",
     _incoterm: str = "DDP",
+    eel_pfc: str | None = None,
+    contents_explanation: str = "",
+    restriction_comments: str = "",
 ) -> Any | None:
     """
     Smart customs extraction with auto-fill for missing data.
@@ -157,14 +160,27 @@ def extract_customs_smart(
     SMART WEIGHT: Uses actual parcel weight provided
     DEFAULT: Jeans (HTS 6203.42.4011, $25)
 
+    EEL/PFC REQUIREMENTS (per EasyPost guide):
+    - < $2,500: Uses "NOEEI 30.37(a)" (automatic)
+    - ≥ $2,500: Requires AES ITN from https://aesdirect.census.gov
+
+    UPS LIMIT: Maximum 100 items per customs_info (enforced)
+
     Args:
         contents: Item description (any format)
         weight_oz: Package weight in ounces (from actual parcel)
         easypost_client: EasyPost client instance
         default_value: Override value estimation
+        customs_signer: Name of person certifying customs (required)
+        eel_pfc: Exemption Legend or Proof of Filing (auto-set if None)
+        contents_explanation: Required if contents_type='other'
+        restriction_comments: Required if restriction_type != 'none'
 
     Returns:
         CustomsInfo object or None
+
+    Raises:
+        ValueError: If shipment value ≥ $2,500 and no eel_pfc provided
     """
     customs_items = []
 
@@ -232,17 +248,45 @@ def extract_customs_smart(
                 )
             )
 
+        # Enforce UPS 100-item limit
+        if len(customs_items) > 100:
+            logger.warning(
+                f"UPS limits customs to 100 items, got {len(customs_items)}. Truncating."
+            )
+            customs_items = customs_items[:100]
+
+        # Calculate total value for EEL/PFC determination
+        total_value = sum(
+            float(item_data["total_value"]) for item_data in items_data[: len(customs_items)]
+        )
+
+        # Determine EEL/PFC based on value (per EasyPost guide)
+        if eel_pfc is None:
+            if total_value >= 2500:
+                raise ValueError(
+                    f"Shipment value ${total_value:.2f} ≥ $2,500 requires AES ITN. "
+                    "Get ITN from https://aesdirect.census.gov and pass as eel_pfc parameter. "
+                    "Example: 'AES X20120502123456'"
+                )
+            eel_pfc = "NOEEI 30.37(a)"
+
         # Create customs_info with all items
         try:
-            return easypost_client.customs_info.create(
-                customs_items=customs_items,
-                customs_certify=True,
-                customs_signer=customs_signer,
-                contents_type="merchandise",
-                restriction_type="none",
-                eel_pfc="NOEEI 30.37(a)",
-                non_delivery_option="return",
-            )
+            customs_params = {
+                "customs_items": customs_items,
+                "customs_certify": True,
+                "customs_signer": customs_signer,
+                "contents_type": "merchandise",
+                "restriction_type": "none",
+                "eel_pfc": eel_pfc,
+                "non_delivery_option": "return",
+            }
+
+            # Always include optional fields for consistency (even if empty)
+            customs_params["contents_explanation"] = contents_explanation or ""
+            customs_params["restriction_comments"] = restriction_comments or ""
+
+            return easypost_client.customs_info.create(**customs_params)
         except Exception as e:
             logger.error(f"Failed to create multi-item customs: {str(e)}")
             return None
@@ -358,6 +402,20 @@ def extract_customs_smart(
             f"${value}, item {item_weight}oz (parcel {weight_oz}oz)"
         )
 
+    # Calculate total value for EEL/PFC determination
+    total_value = float(quantity) * float(value)
+
+    # Determine EEL/PFC based on value (per EasyPost guide)
+    # Raise ValueError if requirements not met (don't catch it)
+    if eel_pfc is None:
+        if total_value >= 2500:
+            raise ValueError(
+                f"Shipment value ${total_value:.2f} ≥ $2,500 requires AES ITN. "
+                "Get ITN from https://aesdirect.census.gov and pass as eel_pfc parameter. "
+                "Example: 'AES X20120502123456'"
+            )
+        eel_pfc = "NOEEI 30.37(a)"
+
     try:
         customs_item = easypost_client.customs_item.create(
             description=description,
@@ -375,9 +433,13 @@ def extract_customs_smart(
             "customs_signer": customs_signer,
             "contents_type": "merchandise",
             "restriction_type": "none",
-            "eel_pfc": "NOEEI 30.37(a)",
+            "eel_pfc": eel_pfc,
             "non_delivery_option": "return",
         }
+
+        # Always include optional fields for consistency (even if empty)
+        customs_params["contents_explanation"] = contents_explanation or ""
+        customs_params["restriction_comments"] = restriction_comments or ""
 
         # Note: DDP/DDU is handled at shipment options level, not customs_info
         # incoterm field doesn't exist in EasyPost customs_info API
@@ -400,6 +462,9 @@ def get_or_create_customs(
     value: float | None = None,
     customs_signer: str = "Sender",
     incoterm: str = "DDP",
+    eel_pfc: str | None = None,
+    contents_explanation: str = "",
+    restriction_comments: str = "",
 ) -> Any | None:
     """
     Get cached customs or create new with smart defaults.
@@ -413,15 +478,26 @@ def get_or_create_customs(
         value: Optional declared value (auto-detected if None)
         customs_signer: Name of person signing customs (required for all international)
         incoterm: Trade terms - "DDP" (seller pays duties) or "DDU" (buyer pays)
+        eel_pfc: Exemption Legend or Proof of Filing (auto-set if None)
+        contents_explanation: Required if contents_type='other'
+        restriction_comments: Required if restriction_type != 'none'
     """
-    cache_key = f"{contents}:{weight_oz}:{value}:{incoterm}"
+    cache_key = f"{contents}:{weight_oz}:{value}:{incoterm}:{eel_pfc}"
 
     if cache_key in _smart_customs_cache:
         logger.debug(f"Customs cache hit: {contents[:30]}...")
         return _smart_customs_cache[cache_key]
 
     customs = extract_customs_smart(
-        contents, weight_oz, easypost_client, value, customs_signer, incoterm
+        contents,
+        weight_oz,
+        easypost_client,
+        value,
+        customs_signer,
+        incoterm,
+        eel_pfc,
+        contents_explanation,
+        restriction_comments,
     )
 
     if customs:

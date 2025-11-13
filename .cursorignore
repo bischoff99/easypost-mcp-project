@@ -27,3 +27,26 @@ reviews/**
 !.vscode/extensions.json
 !.vscode/snippets.code-snippets
 !.vscode/keybindings.json
+
+# Test files (noise, not source code)
+tests/
+**/*.test.js
+**/*.test.jsx
+**/*.test.ts
+**/*.test.tsx
+**/test_*.py
+**/__tests__/
+
+# CI/CD (not relevant for code context)
+.github/workflows/
+
+# Verbose review docs (low signal)
+docs/reviews/
+
+# Database migrations (DB removed)
+alembic/versions/
+
+# Data directories
+apps/data/
+data/
+**/shipping-labels/
