@@ -100,6 +100,8 @@ build/
 .env
 .env.local
 .env.*.local
+.env.test
+apps/backend/.env.test
 apps/frontend/.env
 apps/frontend/.env.production
 apps/frontend/.env.local
@@ -119,6 +121,10 @@ downloads/
 apps/backend/logs/
 apps/frontend/logs/
 ssl/
+
+# CSV files with shipment data (may contain sensitive information)
+*_shipments.csv
+easypost_shipments.csv
 
 # Script backups
 scripts/*.backup-*
