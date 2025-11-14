@@ -16,8 +16,8 @@ BACKEND_DIR := apps/backend
 FRONTEND_DIR := apps/frontend
 SCRIPTS_DIR := scripts
 
-# Detect venv location (prefers .venv, then venv)
-VENV_BIN := $(shell if [ -d $(BACKEND_DIR)/.venv ]; then echo $(BACKEND_DIR)/.venv/bin; elif [ -d $(BACKEND_DIR)/venv ]; then echo $(BACKEND_DIR)/venv/bin; else echo "venv not found"; fi)
+# Detect venv location (uses venv only)
+VENV_BIN := $(shell if [ -d $(BACKEND_DIR)/venv ]; then echo $(BACKEND_DIR)/venv/bin; else echo "venv not found"; fi)
 
 # ============================================================================
 # Macros
@@ -94,9 +94,9 @@ setup:
 	@echo "🔧 Setting up development environment..."
 	@echo ""
 	@echo "📦 Backend setup..."
-	@if [ ! -d $(BACKEND_DIR)/.venv ] && [ ! -d $(BACKEND_DIR)/venv ]; then \
+	@if [ ! -d $(BACKEND_DIR)/venv ]; then \
 		echo "  Creating Python virtual environment..."; \
-		cd $(BACKEND_DIR) && python3 -m venv .venv; \
+		cd $(BACKEND_DIR) && python3 -m venv venv; \
 	fi
 	@echo "  Installing backend dependencies..."
 	@cd $(BACKEND_DIR) && $(VENV_BIN)/pip install -U pip setuptools wheel
