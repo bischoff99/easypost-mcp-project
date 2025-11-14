@@ -10,6 +10,13 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
+
+class CustomsCreationError(Exception):
+    """Raised when customs info creation fails."""
+
+    pass
+
+
 # HTS Code Database - Common items with tariff codes
 HTS_CODE_PATTERNS = {
     # Bedding & Home
@@ -289,7 +296,7 @@ def extract_customs_smart(
             return easypost_client.customs_info.create(**customs_params)
         except Exception as e:
             logger.error(f"Failed to create multi-item customs: {str(e)}")
-            return None
+            raise CustomsCreationError(f"Failed to create multi-item customs: {str(e)}") from e
 
     # Single item - use original logic
     quantity = 1
@@ -371,7 +378,7 @@ def extract_customs_smart(
         item_weight = calculate_item_weight(weight_oz)
     else:
         # Try to extract value from anywhere in text ($XX or $XX.XX)
-        value_match = re.search(r"\$(\d+(?:\.\d{2})?)", contents)
+        value_match = re.search(r"\$(\d+(?:\.\d+)?)", contents)
         extracted_value = float(value_match.group(1)) if value_match else None
 
         # Auto-detect HTS code from description
@@ -448,7 +455,7 @@ def extract_customs_smart(
 
     except Exception as e:
         logger.error(f"Failed to create customs: {str(e)}")
-        return None
+        raise CustomsCreationError(f"Failed to create customs: {str(e)}") from e
 
 
 # Customs cache for performance (M3 Max: 128GB RAM)
@@ -482,7 +489,7 @@ def get_or_create_customs(
         contents_explanation: Required if contents_type='other'
         restriction_comments: Required if restriction_type != 'none'
     """
-    cache_key = f"{contents}:{weight_oz}:{value}:{incoterm}:{eel_pfc}"
+    cache_key = f"{contents}:{weight_oz}:{value}:{customs_signer}:{incoterm}:{eel_pfc}"
 
     if cache_key in _smart_customs_cache:
         logger.debug(f"Customs cache hit: {contents[:30]}...")

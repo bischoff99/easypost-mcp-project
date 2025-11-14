@@ -34,7 +34,7 @@ def sample_address():
 def mock_easypost_service():
     """Mock EasyPost service."""
     service = MagicMock()
-    service.api_key = "test_key"
+    service.api_key = "test_key"  # pragma: allowlist secret
     service.client = MagicMock()
     return service
 
@@ -252,8 +252,6 @@ class TestCreateShipmentWithRates:
         result = await create_shipment_with_rates(
             sample_shipment_request,
             mock_easypost_service,
-            purchase_labels=False,
-            carrier=None,
         )
 
         assert result.shipment_id == "shp_123"
@@ -264,7 +262,7 @@ class TestCreateShipmentWithRates:
     async def test_purchases_label_when_requested(
         self, sample_shipment_request, mock_easypost_service
     ):
-        """Test purchases label when purchase_labels=True."""
+        """Test that create_shipment_with_rates never purchases labels (Phase 1 only)."""
         mock_easypost_service.create_shipment = AsyncMock(
             return_value={
                 "status": "success",
@@ -276,25 +274,16 @@ class TestCreateShipmentWithRates:
                 },
             }
         )
-        mock_easypost_service.buy_shipment = AsyncMock(
-            return_value={
-                "status": "success",
-                "data": {
-                    "tracking_code": "TRACK123",
-                    "postage_label_url": "https://label.url",
-                },
-            }
-        )
 
         result = await create_shipment_with_rates(
             sample_shipment_request,
             mock_easypost_service,
-            purchase_labels=True,
-            carrier="USPS",
         )
 
-        assert result.tracking_code == "TRACK123"
-        assert result.label_url == "https://label.url"
+        # Phase 1: Should have shipment ID and rates, but NO tracking or label
+        assert result.shipment_id == "shp_123"
+        assert len(result.rates) > 0
+        # Note: tracking_code and label_url come from buy_shipment_label (Phase 2)
 
     @pytest.mark.asyncio
     async def test_handles_creation_error(self, sample_shipment_request, mock_easypost_service):
@@ -309,8 +298,6 @@ class TestCreateShipmentWithRates:
         result = await create_shipment_with_rates(
             sample_shipment_request,
             mock_easypost_service,
-            purchase_labels=False,
-            carrier=None,
         )
 
         assert result.shipment_id is None
@@ -324,8 +311,6 @@ class TestCreateShipmentWithRates:
         result = await create_shipment_with_rates(
             sample_shipment_request,
             mock_easypost_service,
-            purchase_labels=False,
-            carrier=None,
         )
 
         assert result.shipment_id is None

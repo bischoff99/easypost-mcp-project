@@ -678,6 +678,7 @@ COUNTRY_CODE_MAP = {
     "FRANCE": "FR",
     "ITALY": "IT",
     "NETHERLANDS": "NL",
+    "THE NETHERLANDS": "NL",
     "BELGIUM": "BE",
     "AUSTRIA": "AT",
     "SWITZERLAND": "CH",
@@ -732,6 +733,7 @@ COUNTRY_CODE_MAP = {
     "UNITED ARAB EMIRATES": "AE",
     "USA": "US",
     "UNITED STATES": "US",
+    "UNITED STATES OF AMERICA": "US",
     "US": "US",
 }
 
@@ -750,22 +752,28 @@ def normalize_country_code(country: str) -> str:
         return "US"  # Default to US
 
     country_upper = country.strip().upper()
+    logger.debug(f"normalize_country_code: input='{country}' -> upper='{country_upper}'")
 
     # If already a 2-letter code, return as-is
     if len(country_upper) == 2:
+        logger.debug(f"normalize_country_code: already 2-letter code -> '{country_upper}'")
         return country_upper
 
     # Check for exact match first
     if country_upper in COUNTRY_CODE_MAP:
-        return COUNTRY_CODE_MAP[country_upper]
+        result = COUNTRY_CODE_MAP[country_upper]
+        logger.debug(f"normalize_country_code: exact match -> '{result}'")
+        return result
 
     # Handle compound country names (e.g., "NORTHERN IRELAND UNITED KINGDOM")
     # Check if any mapped country name appears in the input
     for country_name, code in COUNTRY_CODE_MAP.items():
         if country_name in country_upper:
+            logger.debug(f"normalize_country_code: partial match '{country_name}' -> '{code}'")
             return code
 
     # If no match found, return original (will trigger API validation error)
+    logger.warning(f"normalize_country_code: no match found for '{country_upper}'")
     return country_upper
 
 
@@ -1426,7 +1434,7 @@ def parse_spreadsheet_line(line: str) -> dict[str, Any]:
                 "city": parts[8],
                 "state": parts[9],
                 "zip": parts[10],
-                "country": parts[11],
+                "country": normalize_country_code(parts[11]),
                 "dimensions": parts[13] if len(parts) > 13 else "",
                 "weight": parts[14] if len(parts) > 14 else "",
                 "contents": " ".join(contents_parts) if contents_parts else "",
@@ -2188,15 +2196,15 @@ def register_shipment_tools(mcp, easypost_service=None):
         ctx: Context | None = None,
     ) -> dict:
         """
-        Get shipping rates for single or multiple shipments - M3 Max Optimized.
+        Get shipping rates for single or multiple shipments - Personal use configuration.
 
         Handles both single shipments (1 line) and bulk operations (multiple lines).
         Uses spreadsheet format: tab-separated columns (paste from spreadsheet).
 
-        M3 MAX OPTIMIZATION (16 cores, 128GB RAM):
-        - Parallel rate calculations: 16 concurrent API calls
-        - Formula: cpu_count × 1 = 16 workers for rate limiting compliance
-        - Performance: ~10× faster than sequential (50 items: 5s vs 50s)
+        PERSONAL USE CONFIGURATION:
+        - Sequential rate calculations: 1 concurrent API call
+        - Performance: Optimized for reliability over speed
+        - Rate limit compliance: Production API safe
 
         SENDER ADDRESS PRIORITY:
         1. Custom sender (columns 16-24): If provided, ALWAYS used (ignores warehouse)
@@ -2249,7 +2257,7 @@ def register_shipment_tools(mcp, easypost_service=None):
                 }
 
             if ctx:
-                await ctx.info("🚀 M3 Max: Starting parallel rate calculation (16 workers)...")
+                await ctx.info("🚀 Starting rate calculation (sequential, production-safe)...")
 
             # Auto-detect format: tab-separated spreadsheet or natural text
             # If first line has no tabs, assume natural text format
@@ -2519,9 +2527,9 @@ def register_shipment_tools(mcp, easypost_service=None):
                             "error": f"Failed to process: {str(e)}",
                         }
 
-            # M3 Max: Process all shipments in parallel with asyncio.gather()
+            # Process all shipments sequentially (production API safe)
             if ctx:
-                await ctx.info(f"📊 Processing {total_lines} shipments in parallel...")
+                await ctx.info(f"📊 Processing {total_lines} shipments...")
 
             tasks = [process_one_line(idx, line) for idx, line in enumerate(lines)]
             results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -2552,7 +2560,6 @@ def register_shipment_tools(mcp, easypost_service=None):
                 await ctx.info(
                     f"⏱️  Duration: {duration:.2f}s | Throughput: {throughput:.1f} shipments/s"
                 )
-                await ctx.info("⚡ M3 Max: 16 parallel workers utilized")
 
             # Calculate summary
             successful = len([r for r in processed_results if not r.get("error")])
@@ -2575,8 +2582,8 @@ def register_shipment_tools(mcp, easypost_service=None):
                     "performance": {
                         "duration_seconds": round(duration, 2),
                         "throughput": round(throughput, 2),
-                        "workers": 16,
-                        "hardware": "M3 Max (16 cores)",
+                        "workers": 1,
+                        "mode": "sequential",
                     },
                     "formatted_table": formatted_table,
                 },

@@ -1,11 +1,11 @@
 """
-Bulk shipment creation MCP tool - M3 MAX OPTIMIZED
+Bulk shipment creation MCP tool - Personal use configuration
 
-M3 MAX OPTIMIZATION (16 cores, 128GB RAM):
-- Formula: cpu_count × 2 = 16 × 2 = 32 workers for I/O-bound operations
-- Concurrent API limit: 16 (prevents EasyPost rate limiting)
-- Chunk processing: 8 shipments per chunk for optimal CPU utilization
-- Performance: ~3-4 shipments/second (100 shipments in 30-40s)
+PERSONAL USE CONFIGURATION:
+- Fixed 4 workers for I/O-bound operations (not CPU-based)
+- Concurrent API limit: 2 (prevents EasyPost rate limiting)
+- Chunk processing: 4 shipments per chunk
+- Performance: ~1-2 shipments/second (adequate for personal use)
 """
 
 import asyncio
@@ -21,11 +21,11 @@ from .bulk_tools import parse_spreadsheet_line
 
 logger = logging.getLogger(__name__)
 
-# M3 Max Hardware Optimization Constants
+# Personal use: simplified worker configuration
 CPU_COUNT = multiprocessing.cpu_count()  # 16 cores on M3 Max
-MAX_WORKERS = min(32, CPU_COUNT * 2)  # 32 workers for I/O-bound operations
-CHUNK_SIZE = 8  # Process 8 shipments per chunk for optimal throughput
-MAX_CONCURRENT = 2  # API concurrency limit - reduced to avoid rate limiting (was 16)
+MAX_WORKERS = 4  # Fixed 4 workers for personal use (matches easypost_service.py)
+CHUNK_SIZE = 4  # Process 4 shipments per chunk for personal use
+MAX_CONCURRENT = 2  # API concurrency limit - reduced to avoid rate limiting
 
 # Note: Customs caching handled by smart_customs module
 # Use get_or_create_customs from src.services.smart_customs for customs info
@@ -38,42 +38,53 @@ def register_shipment_creation_tools(mcp, easypost_service=None):
     async def create_shipment(
         spreadsheet_data: str,
         _from_city: str | None = None,
-        purchase_labels: bool = False,
-        carrier: str | None = None,
         dry_run: bool = False,
         ctx: Context | None = None,
     ) -> dict[str, Any]:
         """
-        Create single or multiple shipments in parallel - M3 Max optimized (16 workers).
+        Create shipments and get rates - Phase 1 of two-phase workflow.
 
         Handles both single shipments (1 line) and bulk operations (multiple lines).
         Uses spreadsheet format: tab-separated columns (paste from spreadsheet).
 
-        TWO-PHASE WORKFLOW (Recommended):
-        1. Get rates first: create_shipment(data, purchase_labels=False)
-           - Creates shipments with customs info
-           - Returns all available rates for each shipment
-           - No charges yet
+        TWO-PHASE WORKFLOW (Required):
+        1. create_shipment(data) → Creates shipments, returns ALL rates with rate IDs
+           - Creates EasyPost shipment objects
+           - Returns all available carriers and services
+           - No charges applied
+           - Each rate includes: id, carrier, service, rate, delivery_days
 
-        2. Buy approved: buy_shipment_label(shipment_ids, carrier="USPS")
-           - Purchase labels for approved shipments only
+        2. buy_shipment_label(shipment_ids, rate_ids) → Purchase selected rates
+           - Use specific rate IDs from step 1
+           - Purchase only approved shipments
            - Charges applied
+
+        This tool NEVER purchases labels - only creates shipments and returns rates.
+        Always returns ALL available carriers to allow comparison and selection.
 
         Args:
             spreadsheet_data: Tab-separated shipment data (1+ lines, 16+ columns)
             from_city: Override origin city (e.g., "Los Angeles", "Las Vegas")
                       If None, auto-detects from origin_state column or uses sender address
-            purchase_labels: Whether to purchase labels immediately (default: False)
-                            Set False for two-phase workflow (recommended)
-            carrier: Force specific carrier (e.g., "USPS", "FedEx", "UPS")
-                    If None, returns all available rates
             dry_run: If True, validates data without creating shipments
             ctx: MCP context for progress reporting
 
         Returns:
-            Dictionary with created shipments, rates, and shipment IDs for approval
+            Dictionary with:
+            - shipments: List of created shipments with all available rates
+            - Each shipment includes: shipment_id, recipient, destination, all_rates
+            - Each rate includes: id, carrier, service, rate, delivery_days
+            - Use rate IDs in buy_shipment_label() to purchase specific services
         """
+        from src.utils.config import settings
+
         start_time = datetime.now(UTC)
+
+        # Environment warning
+        if settings.ENVIRONMENT == "production" and not dry_run:
+            logger.warning("⚠️  PRODUCTION MODE: Creating real shipments with actual charges!")
+        elif dry_run:
+            logger.info("✓ Dry run mode: No shipments will be created")
 
         try:
             if ctx:
@@ -192,7 +203,7 @@ def register_shipment_creation_tools(mcp, easypost_service=None):
                     "timestamp": datetime.now(UTC).isoformat(),
                 }
 
-            # Phase 2: Create shipments in parallel - M3 Max: 32 workers with semaphore
+            # Phase 2: Create shipments with limited concurrency (personal use)
             if ctx:
                 await ctx.info(
                     f"🚀 Creating {len(valid_shipments)} shipments "
@@ -262,13 +273,13 @@ def register_shipment_creation_tools(mcp, easypost_service=None):
                             ctx,
                         )
 
-                    # Build shipment request
+                    # Build shipment request (no carrier filter - get all rates)
                     shipment_request = build_shipment_request(
                         to_address=to_address,
                         from_address=from_address,
                         parcel=parcel,
                         customs_info=customs_info,
-                        carrier=carrier,
+                        carrier=None,  # Get rates from ALL carriers
                         reference=f"bulk_line_{line_number}",
                     )
 
@@ -284,13 +295,11 @@ def register_shipment_creation_tools(mcp, easypost_service=None):
                             "destination": f"{shipment_data.city}, {shipment_data.state}",
                         }
 
-                    # Create shipment via helper
+                    # Create shipment via helper (Phase 1: get rates only)
                     shipment_result = await asyncio.wait_for(
                         create_shipment_with_rates(
                             shipment_request,
                             easypost_service,
-                            purchase_labels,
-                            carrier,
                             ctx,
                         ),
                         timeout=30.0,
@@ -306,38 +315,17 @@ def register_shipment_creation_tools(mcp, easypost_service=None):
                             "destination": f"{shipment_data.city}, {shipment_data.state}",
                         }
 
-                    # Process rates using helpers
-                    from src.mcp_server.tools.bulk_helpers import (
-                        mark_preferred_rates,
-                        select_best_rate,
-                    )
-
-                    preferred_carrier = (shipment_data.carrier_preference or "").upper()
-                    marked_rates = mark_preferred_rates(shipment_result.rates, preferred_carrier)
-                    selected_rate = select_best_rate(
-                        marked_rates, purchase_labels, preferred_carrier
-                    )
-
-                    # Build result dict
-                    result_dict = {
+                    # Return ALL rates - no filtering or selection (Phase 1 only)
+                    # User will select specific rate IDs in Phase 2 (buy_shipment_label)
+                    return {
                         "line": line_number,
                         "status": "success",
                         "shipment_id": shipment_result.shipment_id,
-                        "tracking_code": shipment_result.tracking_code,
-                        "label_url": shipment_result.label_url,
-                        "carrier": selected_rate.get("carrier") if selected_rate else None,
-                        "service": selected_rate.get("service") if selected_rate else None,
-                        "all_rates": marked_rates if not purchase_labels else None,
-                        "preferred_carrier": preferred_carrier if preferred_carrier else None,
+                        "all_rates": shipment_result.rates,  # Return ALL rates unfiltered
                         "recipient": to_address.name,
                         "destination": f"{shipment_data.city}, {shipment_data.state}",
                         "warehouse_info": warehouse_info,
                     }
-
-                    if selected_rate and purchase_labels:
-                        result_dict["cost"] = selected_rate.get("rate")
-
-                    return result_dict
 
                 except TimeoutError:
                     return {
@@ -353,7 +341,7 @@ def register_shipment_creation_tools(mcp, easypost_service=None):
                         "error": str(e),
                     }
 
-            # M3 Max Optimization: Chunked processing with semaphore control
+            # Chunked processing with semaphore control (personal use)
             async def create_with_semaphore(
                 validation_result: dict[str, Any],
             ) -> dict[str, Any]:
@@ -364,13 +352,13 @@ def register_shipment_creation_tools(mcp, easypost_service=None):
             # Create all tasks
             tasks = [create_with_semaphore(v) for v in valid_shipments]
 
-            # Execute with progress reporting - OPTIMIZED for M3 Max
+            # Execute with progress reporting
             results = []
             completed = 0
             total = len(valid_shipments)
             progress_interval = max(1, total // 20)  # Report every 5%
 
-            # Process in optimized chunks (8 items per chunk for better CPU utilization)
+            # Process in small chunks (4 items per chunk for personal use)
             for i in range(0, len(tasks), CHUNK_SIZE):
                 chunk = tasks[i : i + CHUNK_SIZE]
                 chunk_results = await asyncio.gather(*chunk, return_exceptions=True)
@@ -414,7 +402,6 @@ def register_shipment_creation_tools(mcp, easypost_service=None):
                 await ctx.info(f"✅ Complete! {len(successful)}/{len(valid_shipments)} successful")
                 await ctx.info(f"⏱️ Total time: {duration:.1f}s")
                 await ctx.info(f"⚡ Throughput: {throughput:.2f} shipments/second")
-                await ctx.info(f"🔧 M3 Max: {MAX_WORKERS} workers, {MAX_CONCURRENT} concurrent")
 
             return {
                 "status": "success",
@@ -487,7 +474,17 @@ def register_shipment_creation_tools(mcp, easypost_service=None):
         Returns:
             Purchased labels with tracking numbers
         """
+        from src.utils.config import settings
+
         start_time = datetime.now(UTC)
+
+        # Environment warning - purchasing labels incurs charges!
+        if settings.ENVIRONMENT == "production":
+            logger.warning(
+                "⚠️  PRODUCTION MODE: Purchasing real shipping labels with actual charges!"
+            )
+        else:
+            logger.info(f"✓ {settings.ENVIRONMENT.upper()} mode: Purchasing labels")
 
         try:
             if ctx:

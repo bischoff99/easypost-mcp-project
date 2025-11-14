@@ -315,6 +315,10 @@ class EasyPostService:
         self.logger.info(f"Initializing EasyPost client with key: {api_key[:10]}...")
         self.client = easypost.EasyPostClient(api_key)
 
+        # Add HTTP hooks for monitoring
+        self.client.subscribe_to_request_hook(self._log_api_request)
+        self.client.subscribe_to_response_hook(self._log_api_response)
+
         # Simplified for personal use: 4 workers (plenty for API concurrency)
         cpu_count = multiprocessing.cpu_count()
         max_workers = 4  # Fixed 4 workers for I/O-bound tasks
@@ -322,6 +326,82 @@ class EasyPostService:
         self.logger.info(
             f"ThreadPoolExecutor initialized: {max_workers} workers on {cpu_count} cores"
         )
+
+    def shutdown(self):
+        """Shutdown ThreadPoolExecutor gracefully."""
+        if hasattr(self, "executor"):
+            self.logger.info("Shutting down EasyPost service ThreadPoolExecutor...")
+            self.executor.shutdown(wait=True, cancel_futures=False)
+            self.logger.info("ThreadPoolExecutor shutdown complete")
+
+    async def _api_call_with_retry(self, func: callable, *args, max_retries: int = 3) -> Any:
+        """
+        Execute API call with exponential backoff on rate limits.
+
+        Handles 429 (rate limit) errors with progressive delays.
+
+        Args:
+            func: Sync function to execute in thread pool
+            *args: Positional arguments for func
+            max_retries: Maximum retry attempts (default: 3)
+
+        Returns:
+            Function result
+
+        Raises:
+            Exception: If max retries exceeded or non-retryable error
+        """
+        import random
+
+        for attempt in range(max_retries):
+            try:
+                loop = asyncio.get_running_loop()
+                return await loop.run_in_executor(self.executor, func, *args)
+            except Exception as e:
+                # Check if it's a rate limit error (429)
+                is_rate_limit = (
+                    hasattr(e, "http_status") and e.http_status == 429
+                ) or "429" in str(e).lower()
+
+                if is_rate_limit and attempt < max_retries - 1:
+                    # Exponential backoff: 2^attempt + random jitter
+                    wait_time = (2**attempt) + random.uniform(0, 1)  # noqa: S311
+                    self.logger.warning(
+                        f"Rate limit hit (attempt {attempt + 1}/{max_retries}), "
+                        f"waiting {wait_time:.1f}s..."
+                    )
+                    await asyncio.sleep(wait_time)
+                    continue
+
+                # Non-retryable error or max retries exceeded
+                raise
+
+        raise Exception(f"Max retries ({max_retries}) exceeded")
+
+    def _log_api_request(self, **kwargs):
+        """Log outgoing API requests for debugging."""
+        try:
+            method = kwargs.get("method", "UNKNOWN")
+            url = kwargs.get("url", "UNKNOWN")
+            self.logger.debug(f"EasyPost API Request: {method} {url}")
+        except Exception as e:
+            self.logger.error(f"Error in request hook: {e}")
+
+    def _log_api_response(self, **kwargs):
+        """Log API responses and track errors."""
+        try:
+            status = kwargs.get("http_status", 0)
+            url = kwargs.get("url", "UNKNOWN")
+
+            if status >= 400:
+                response_body = kwargs.get("response_body", "N/A")
+                self.logger.error(
+                    f"EasyPost API Error: {status} - {url}\nResponse: {response_body}"
+                )
+            elif 200 <= status < 300:
+                self.logger.debug(f"EasyPost API Success: {status} - {url}")
+        except Exception as e:
+            self.logger.error(f"Error in response hook: {e}")
 
     async def create_shipment(
         self,
@@ -544,10 +624,7 @@ class EasyPostService:
             Dict with status and refund information
         """
         try:
-            loop = asyncio.get_running_loop()
-            return await loop.run_in_executor(
-                self.executor, self._refund_shipment_sync, shipment_id
-            )
+            return await self._api_call_with_retry(self._refund_shipment_sync, shipment_id)
         except Exception as e:
             self.logger.error(f"Error refunding shipment: {self._sanitize_error(e)}")
             return {
@@ -599,10 +676,7 @@ class EasyPostService:
             Dict with status and label information
         """
         try:
-            loop = asyncio.get_running_loop()
-            return await loop.run_in_executor(
-                self.executor, self._buy_shipment_sync, shipment_id, rate_id
-            )
+            return await self._api_call_with_retry(self._buy_shipment_sync, shipment_id, rate_id)
         except Exception as e:
             self.logger.error(f"Error buying shipment: {self._sanitize_error(e)}")
             return {

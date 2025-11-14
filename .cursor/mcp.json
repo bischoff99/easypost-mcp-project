@@ -1,6 +1,23 @@
 {
   "version": "2.1.0",
-  "lastModified": "2025-11-12",
-  "description": "MCP server configuration for EasyPost shipping integration",
-  "mcpServers": {}
+  "lastModified": "2025-11-13",
+  "description": "MCP server configuration for EasyPost shipping integration with test/production environments",
+  "mcpServers": {
+    "easypost-test": {
+      "command": "/Users/andrejs/Projects/personal/easypost-mcp-project/apps/backend/venv/bin/python",
+      "args": ["/Users/andrejs/Projects/personal/easypost-mcp-project/apps/backend/run_mcp.py"],
+      "cwd": "/Users/andrejs/Projects/personal/easypost-mcp-project/apps/backend",
+      "env": {
+        "ENVIRONMENT": "test"
+      }
+    },
+    "easypost-prod": {
+      "command": "/Users/andrejs/Projects/personal/easypost-mcp-project/apps/backend/venv/bin/python",
+      "args": ["/Users/andrejs/Projects/personal/easypost-mcp-project/apps/backend/run_mcp.py"],
+      "cwd": "/Users/andrejs/Projects/personal/easypost-mcp-project/apps/backend",
+      "env": {
+        "ENVIRONMENT": "production"
+      }
+    }
+  }
 }

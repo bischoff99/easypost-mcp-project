@@ -56,4 +56,5 @@ async def app_lifespan(server):  # noqa: ARG001 - FastAPI lifespan interface
     finally:
         # Cleanup
         logger.info("Shutting down EasyPost MCP Server...")
+        resources.easypost_service.shutdown()
         logger.info("Shutdown complete")

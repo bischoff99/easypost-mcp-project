@@ -151,7 +151,7 @@ class TestBulkToolsParsing:
         assert data["city"] == "Valenzuela City"
         assert data["state"] == "Metro Manila"
         assert data["zip"] == "1440"
-        assert data["country"] == "Philippines"
+        assert data["country"] == "PH"  # Returns ISO country code, not full name
         assert data["dimensions"] == "13 x 12 x 2"
         assert data["weight"] == "1.8 lbs"
         assert "Dead Sea Mineral Bath Salts" in data["contents"]

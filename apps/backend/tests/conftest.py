@@ -1,9 +1,17 @@
 """Pytest configuration and shared fixtures."""
 
 import os
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
-# Set test environment variables before importing app
+from dotenv import load_dotenv
+
+# Load .env.test before setting any defaults
+env_test_file = Path(__file__).parent.parent / ".env.test"
+if env_test_file.exists():
+    load_dotenv(env_test_file, override=True)
+
+# Set test environment variables (only as fallback)
 os.environ.setdefault("EASYPOST_API_KEY", "test_key_for_pytest")
 os.environ.setdefault("DATABASE_URL", "")
 

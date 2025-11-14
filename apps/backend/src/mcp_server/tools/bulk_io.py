@@ -214,15 +214,16 @@ async def prepare_customs_if_international(
 async def create_shipment_with_rates(
     request: ShipmentRequestDTO,
     easypost_service: EasyPostService,
-    purchase_labels: bool,
-    carrier: str | None,
     ctx: Context | None = None,  # noqa: ARG001
 ) -> ShipmentResultDTO:
     """
-    Create shipment via EasyPost API and optionally purchase label.
+    Create shipment via EasyPost API and return all rates.
+
+    Phase 1 of two-phase workflow - NEVER purchases labels.
+    Returns all available rates for user to review and select.
 
     I/O operation - calls EasyPost API.
-    Complexity: 7
+    Complexity: 4 (simplified)
     """
     try:
         # Convert DTOs to dicts for API
@@ -233,13 +234,13 @@ async def create_shipment_with_rates(
             request.customs_info.model_dump(exclude_none=True) if request.customs_info else None
         )
 
-        # Create shipment
+        # Create shipment (never purchase in this phase)
         result = await easypost_service.create_shipment(
             to_address=to_dict,
             from_address=from_dict,
             parcel=parcel_dict,
             customs_info=customs_dict,
-            buy_label=False,  # Always create first, then purchase separately if needed
+            buy_label=False,
         )
 
         if result.get("status") != "success":
@@ -261,56 +262,10 @@ async def create_shipment_with_rates(
             shipment_id = result.get("id", "")
             rates = result.get("rates", [])
 
-        # Purchase label if requested
-        selected_rate = None
-        tracking_code = None
-        label_url = None
-
-        if purchase_labels:
-            if carrier:
-                # Find rate for specific carrier (flexible matching)
-                carrier_upper = carrier.upper()
-                # Map common carrier names to possible API names
-                carrier_variants = {
-                    "UPS": ["UPS", "UPSDAP"],
-                    "FEDEX": ["FedEx", "FEDEX", "FedExDefault"],
-                    "USPS": ["USPS"],
-                    "DHL": ["DHL", "DHLExpress"],
-                }
-                matching_carriers = carrier_variants.get(carrier_upper, [carrier_upper])
-
-                # Find rate matching any variant
-                selected_rate = next(
-                    (r for r in rates if r.get("carrier") in matching_carriers), None
-                )
-
-                # If still not found, try partial match
-                if not selected_rate:
-                    selected_rate = next(
-                        (r for r in rates if carrier_upper in r.get("carrier", "").upper()),
-                        None,
-                    )
-            else:
-                # Use cheapest rate
-                selected_rate = (
-                    min(rates, key=lambda r: r.get("rate", float("inf"))) if rates else None
-                )
-
-            if selected_rate:
-                buy_result = await easypost_service.buy_shipment(
-                    shipment_id, selected_rate.get("id")
-                )
-                if buy_result.get("status") == "success":
-                    buy_data = buy_result.get("data", {})
-                    tracking_code = buy_data.get("tracking_code")
-                    label_url = buy_data.get("postage_label_url")
-
+        # Return ALL rates - let user choose in Phase 2 (buy_shipment_label)
         return ShipmentResultDTO(
             shipment_id=shipment_id,
             rates=rates,
-            selected_rate=selected_rate,
-            tracking_code=tracking_code,
-            label_url=label_url,
             errors=[],
             line_number=0,
         )
