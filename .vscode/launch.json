@@ -4,8 +4,9 @@
   "$schema": "https://raw.githubusercontent.com/microsoft/vscode/main/src/schemas/json/launch.schema.json",
   "version": "0.2.0",
   "configurations": [
+
     {
-      "name": "Python: Start Backend Server",
+      "name": "Python: Backend Server (Test)",
       "type": "debugpy",
       "request": "launch",
       "module": "uvicorn",
@@ -22,17 +23,59 @@
       "cwd": "${workspaceFolder}/apps/backend",
       "envFile": "${workspaceFolder}/apps/backend/.env",
       "console": "integratedTerminal",
-      "justMyCode": true
+      "justMyCode": true,
+      "env": {
+        "ENVIRONMENT": "test"
+      }
     },
     {
-      "name": "Python: Start MCP Server",
+      "name": "Python: Backend Server (Production)",
       "type": "debugpy",
       "request": "launch",
-      "module": "src.mcp_server.server",
+      "module": "uvicorn",
+      "args": [
+        "src.server:app",
+        "--reload",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000",
+        "--log-level",
+        "info"
+      ],
       "cwd": "${workspaceFolder}/apps/backend",
       "envFile": "${workspaceFolder}/apps/backend/.env",
       "console": "integratedTerminal",
-      "justMyCode": true
+      "justMyCode": true,
+      "env": {
+        "ENVIRONMENT": "production"
+      }
+    },
+    {
+      "name": "Python: MCP Server (Test)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/apps/backend/run_mcp.py",
+      "cwd": "${workspaceFolder}/apps/backend",
+      "envFile": "${workspaceFolder}/apps/backend/.env.test",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "env": {
+        "ENVIRONMENT": "test"
+      }
+    },
+    {
+      "name": "Python: MCP Server (Production)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/apps/backend/run_mcp.py",
+      "cwd": "${workspaceFolder}/apps/backend",
+      "envFile": "${workspaceFolder}/apps/backend/.env.production",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "env": {
+        "ENVIRONMENT": "production"
+      }
     },
     {
       "name": "Python: Debug Current File",
@@ -83,7 +126,7 @@
       "name": "Node: Start Frontend Dev Server",
       "type": "node",
       "request": "launch",
-      "runtimeExecutable": "npm",
+      "runtimeExecutable": "pnpm",
       "runtimeArgs": ["run", "dev"],
       "cwd": "${workspaceFolder}/apps/frontend",
       "console": "integratedTerminal",
@@ -176,16 +219,47 @@
       "cwd": "${workspaceFolder}/apps/backend",
       "console": "integratedTerminal",
       "justMyCode": true
+    },
+    {
+      "name": "Python: Debug MCP Tool CLI",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/python/mcp_tool.py",
+      "args": ["${input:toolName}", "${input:toolArgs}"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "envFile": "${workspaceFolder}/apps/backend/.env.test"
+    },
+    {
+      "name": "Python: Run Performance Benchmarks",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["tests/integration/test_bulk_performance.py", "-v", "-s", "--no-cov"],
+      "cwd": "${workspaceFolder}/apps/backend",
+      "console": "integratedTerminal",
+      "justMyCode": true
     }
   ],
   "compounds": [
     {
-      "name": "Full Stack Debug",
-      "configurations": ["Python: Start Backend Server", "Node: Start Frontend Dev Server"],
+      "name": "Full Stack Debug (Test)",
+      "configurations": ["Python: Backend Server (Test)", "Node: Start Frontend Dev Server"],
       "presentation": {
         "hidden": false,
         "group": "debug",
         "order": 1
+      },
+      "stopAll": true
+    },
+    {
+      "name": "Full Stack Debug (Production)",
+      "configurations": ["Python: Backend Server (Production)", "Node: Start Frontend Dev Server"],
+      "presentation": {
+        "hidden": false,
+        "group": "debug",
+        "order": 2
       },
       "stopAll": true
     },
@@ -211,6 +285,18 @@
       "id": "testPattern",
       "type": "promptString",
       "description": "Test pattern to match (pytest -k syntax)",
+      "default": ""
+    },
+    {
+      "id": "toolName",
+      "type": "promptString",
+      "description": "MCP tool name (e.g., get_tracking, create_shipment)",
+      "default": "get_tracking"
+    },
+    {
+      "id": "toolArgs",
+      "type": "promptString",
+      "description": "Tool arguments (JSON or positional)",
       "default": ""
     }
   ]

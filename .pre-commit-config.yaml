@@ -5,7 +5,7 @@
 
 # Parallel execution (M3 Max optimized)
 default_stages: [pre-commit]
-fail_fast: false  # Run all hooks even if one fails
+fail_fast: false # Run all hooks even if one fails
 
 repos:
   # Standard pre-commit hooks
@@ -18,7 +18,7 @@ repos:
       - id: check-yaml
         args: [--unsafe]
       - id: check-json
-        exclude: ^\.vscode/settings\.json$  # JSONC format (comments allowed)
+        exclude: ^\.vscode/(settings|launch)\.json$ # JSONC format (comments allowed)
       - id: check-toml
       - id: check-added-large-files
         args: [--maxkb=1000]
