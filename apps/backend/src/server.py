@@ -33,19 +33,9 @@ except ValueError as e:
     raise
 
 # Initialize FastMCP server with lifespan
-from fastmcp import FastMCP
+from src.mcp_server import build_mcp_server
 
-from src.mcp_server.prompts import register_prompts
-from src.mcp_server.resources import register_resources
-from src.mcp_server.tools import register_tools
-
-mcp = FastMCP(
-    name="EasyPost Shipping Server",
-    instructions="MCP server for managing shipments and tracking with EasyPost API",
-    lifespan=app_lifespan,
-)
-
-# Register MCP components (will be registered after app init)
+mcp, mcp_service = build_mcp_server(lifespan=app_lifespan)
 
 # Initialize FastAPI app with MCP lifespan
 app = FastAPI(
@@ -54,6 +44,8 @@ app = FastAPI(
     version="1.0.0",
     lifespan=app_lifespan,
 )
+
+app.state.easypost_service = mcp_service
 
 # CORS middleware (production-safe configuration)
 app.add_middleware(
@@ -150,15 +142,6 @@ app.include_router(analytics.router, prefix="/api")
 app.include_router(tracking.router, prefix="/api/tracking")
 
 logger.info("Routers registered: shipments, analytics, tracking")
-
-# Note: FastMCP middleware would need to be implemented using the Middleware base class
-# For now, error handling is done at the tool level and via FastAPI exception handlers
-
-# Register MCP components after mounting
-# Pass None as service since tools will use Context
-register_tools(mcp, None)  # Updated to use Context in Phase 4
-register_resources(mcp, None)
-register_prompts(mcp)
 
 logger.info("MCP server mounted at /mcp (HTTP transport) with error handling and retry middleware")
 
