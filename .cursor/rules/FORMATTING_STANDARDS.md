@@ -15,11 +15,7 @@ All `.mdc` rule files in `.cursor/rules/` must follow this format:
 ```yaml
 ---
 description: 'Brief description of rule purpose (max 80 chars)'
-globs:
-  [
-    'pattern1',
-    'pattern2',
-  ]
+globs: ['pattern1', 'pattern2']
 alwaysApply: false
 version: '1.0.0'
 lastUpdated: '2025-11-18'
@@ -47,6 +43,7 @@ lastUpdated: "2025-11-18"
 ```
 
 **Applies To**:
+
 - `description` field
 - `version` field
 - `lastUpdated` field
@@ -69,13 +66,14 @@ globs:
   ]
 
 ✅ Acceptable (single item):
-globs: ['apps/backend/**/*.py']
+globs: ['src/**/*.py']
 
 ✅ Acceptable (empty):
 globs: []
 ```
 
 **Format Details**:
+
 - Opening bracket on same line as key
 - One item per line
 - 2-space indentation
@@ -103,6 +101,7 @@ alwaysApply: "true"
 ### 4. Field Order
 
 **Standard Order**:
+
 1. `description`
 2. `globs`
 3. `alwaysApply`
@@ -145,7 +144,7 @@ lastUpdated: '2025-11-18'
 ```yaml
 ---
 description: 'Comprehensive FastAPI and Python best practices for backend development'
-globs: ['apps/backend/**/*.py']
+globs: ['src/**/*.py']
 alwaysApply: false
 version: '1.0.0'
 lastUpdated: '2025-11-18'
@@ -161,11 +160,7 @@ lastUpdated: '2025-11-18'
 ```yaml
 ---
 description: 'MCP (Model Context Protocol) development patterns and best practices'
-globs:
-  [
-    '**/mcp_server/**/*.py',
-    '**/mcp/**/*.py',
-  ]
+globs: ['**/mcp_server/**/*.py', '**/mcp/**/*.py']
 alwaysApply: false
 version: '1.0.0'
 lastUpdated: '2025-11-18'
@@ -208,7 +203,7 @@ lastUpdated: '2025-11-18'
 
 ```yaml
 ✅ Correct (specific):
-globs: ['apps/backend/**/*.py']
+globs: ['src/**/*.py']
 
 ❌ Incorrect (too broad):
 globs: ['**/*.py']
@@ -220,8 +215,7 @@ Group related patterns together:
 
 ```yaml
 ✅ Correct (grouped and alphabetical):
-globs:
-  [
+globs: [
     # Python patterns
     '**/test_*.py',
     '**/tests/**/*.py',
@@ -321,6 +315,7 @@ Before committing changes to rule files:
 ### Prettier Compatibility
 
 This format is fully compatible with Prettier:
+
 - 2-space indentation
 - Trailing commas
 - Single quotes
@@ -329,6 +324,7 @@ This format is fully compatible with Prettier:
 ### YAML Linter
 
 Validate files with:
+
 ```bash
 # Check YAML syntax
 yamllint .cursor/rules/*.mdc
@@ -342,22 +338,21 @@ yamllint .cursor/rules/*.mdc
 
 ```yaml
 description: 'Mixed quotes'
-version: "1.0.0"  # ❌ Should be single quotes
+version: '1.0.0' # ❌ Should be single quotes
 ```
 
 ### ❌ Inline Complex Arrays
 
 ```yaml
-globs: ['pattern1', 'pattern2', 'pattern3', 'pattern4']  # ❌ Hard to read
+globs: ['pattern1', 'pattern2', 'pattern3', 'pattern4'] # ❌ Hard to read
 ```
 
 ### ❌ Missing Trailing Commas
 
 ```yaml
-globs:
-  [
+globs: [
     'pattern1',
-    'pattern2'  # ❌ Missing trailing comma
+    'pattern2', # ❌ Missing trailing comma
   ]
 ```
 

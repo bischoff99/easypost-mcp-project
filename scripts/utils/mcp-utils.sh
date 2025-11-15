@@ -6,11 +6,11 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-VENV_BIN="${PROJECT_ROOT}/apps/backend/.venv/bin"
+VENV_BIN="${PROJECT_ROOT}/venv/bin"
 
-# Detect venv location
 if [ ! -d "$VENV_BIN" ]; then
-    VENV_BIN="${PROJECT_ROOT}/apps/backend/venv/bin"
+    echo "❌ Virtual environment not found. Run 'make setup' first." >&2
+    exit 1
 fi
 
 # MCP Tool Helper
@@ -24,7 +24,6 @@ mcp_tool() {
 check_mcp_health() {
     echo "🔍 Checking MCP server health..."
 
-    # Try to call a simple MCP tool
     if mcp_tool get_tracking "TEST" 2>/dev/null | grep -q "status"; then
         echo "✅ MCP server is accessible"
         return 0
@@ -53,7 +52,6 @@ verify_mcp_tools() {
 test_mcp_tools() {
     echo "🧪 Testing MCP tools..."
 
-    # Test get_tracking (will fail with invalid tracking number, but shows tool works)
     echo "  Testing get_tracking..."
     mcp_tool get_tracking "TEST123" 2>/dev/null | jq -r '.status' || echo "    (expected failure with test data)"
 

@@ -3,17 +3,20 @@
 ## Quick Start
 
 1. **Fork and clone**
+
 ```bash
 git clone https://github.com/andrejs/easypost-mcp-project.git
 cd easypost-mcp-project
 ```
 
 2. **Install dependencies**
+
 ```bash
 make install
 ```
 
 3. **Run tests**
+
 ```bash
 /test  # or: make test
 ```
@@ -21,31 +24,37 @@ make install
 ## Development Workflow
 
 ### 1. Create a branch
+
 ```bash
 git checkout -b feature/your-feature-name
 ```
 
 ### 2. Make changes
+
 Follow coding standards in `.cursor/rules/`
 
 ### 3. Test
+
 ```bash
 /test                # Run all tests
 make test-cov        # With coverage
 ```
 
 ### 4. Format and lint
+
 ```bash
 make format          # Auto-format code
 make lint            # Check linting
 ```
 
 ### 5. Commit
+
 ```bash
 git commit -m "feat: your feature description"
 ```
 
 Use conventional commits:
+
 - `feat:` New feature
 - `fix:` Bug fix
 - `docs:` Documentation
@@ -54,6 +63,7 @@ Use conventional commits:
 - `chore:` Maintenance
 
 ### 6. Push and create PR
+
 ```bash
 git push origin feature/your-feature-name
 ```
@@ -61,6 +71,7 @@ git push origin feature/your-feature-name
 ## Code Standards
 
 ### Python
+
 - snake_case functions
 - PascalCase classes
 - Type hints required
@@ -68,18 +79,10 @@ git push origin feature/your-feature-name
 - 100 char line length
 - Google-style docstrings
 
-### JavaScript/React
-- camelCase functions
-- PascalCase components
-- ESLint + Prettier
-- Functional components with hooks
-- 100 char line length
-
 ## Testing
 
 - Write tests for new features
 - Maintain 80%+ coverage (backend)
-- Maintain 70%+ coverage (frontend)
 - Use mocks for external APIs (EasyPost)
 - Run `/test` before committing
 
@@ -93,6 +96,7 @@ git push origin feature/your-feature-name
 ## M3 Max Optimizations
 
 When adding bulk operations:
+
 - Use 16-32 parallel workers
 - Use asyncio.gather for concurrency
 - Test with `/ep-benchmark`
@@ -109,6 +113,7 @@ When adding bulk operations:
 ## Questions?
 
 See:
+
 - `.cursor/START_HERE.md` - Quick start guide
 - `.cursor/COMMANDS.md` - Command reference
 - `docs/reviews/CLAUDE.md` - Comprehensive guide

@@ -7,6 +7,7 @@ Auto-fix visible errors using AI reasoning and MCP tools with comprehensive retr
 **Complete MCP Workflow (7 Stages):**
 
 **Stage 1 - Error Detection** (ENHANCED):
+
 - Scans terminal output for errors
 - Reads linter errors from editor
 - Checks recent command failures
@@ -14,35 +15,41 @@ Auto-fix visible errors using AI reasoning and MCP tools with comprehensive retr
 - Extracts precise error location and context
 
 **Stage 2 - Root Cause Analysis** (ENHANCED):
+
 - Deep Sequential-thinking analysis (10-15 thoughts)
 - Step-by-step diagnosis
 - Identifies prerequisites and side effects
 - Determines fix strategy
 
 **Stage 3 - Get Fix Patterns** (ENHANCED):
+
 - Context7 framework-specific patterns
 - Real-world examples and best practices
 - Cached for 24 hours
 - Graceful degradation if unavailable
 
 **Stage 4 - Prepare Fix** (NEW):
+
 - Generates exact old_string and new_string
 - Validates fix won't break other code
 - Ranks multiple fixes by safety
 - Prepares surgical edits
 
 **Stage 5 - Backup** (NEW):
+
 - Creates backup snapshot before changes
 - Stores complete file content
 - Enables rollback if fix fails
 
 **Stage 6 - Apply Fix** (ENHANCED):
+
 - Surgical code editing with edit_block
 - Character-level diff on close matches
 - Handles multiple edits sequentially
 - Comprehensive error handling
 
 **Stage 7 - Verify + Retry** (ENHANCED):
+
 - Runs tests to verify fix
 - Automatic rollback on failure
 - Tries alternative fixes if available
@@ -51,6 +58,7 @@ Auto-fix visible errors using AI reasoning and MCP tools with comprehensive retr
 ## Error Types Handled
 
 **Python:**
+
 - Import errors (`ModuleNotFoundError`, `ImportError`)
 - Syntax errors (`SyntaxError`, `IndentationError`)
 - Type errors (`TypeError`, `AttributeError`)
@@ -59,6 +67,7 @@ Auto-fix visible errors using AI reasoning and MCP tools with comprehensive retr
 - Deprecation warnings
 
 **JavaScript/TypeScript:**
+
 - Module errors (`Cannot find module`)
 - Syntax errors (parsing failures)
 - Type errors (TypeScript)
@@ -67,6 +76,7 @@ Auto-fix visible errors using AI reasoning and MCP tools with comprehensive retr
 - Runtime errors
 
 **Go:**
+
 - Import errors (`undefined:`)
 - Compilation errors (`syntax error`)
 - Type errors (`cannot use`)
@@ -74,6 +84,7 @@ Auto-fix visible errors using AI reasoning and MCP tools with comprehensive retr
 - Package resolution errors
 
 **Rust:**
+
 - Compilation errors (`error[E`)
 - Type errors (`mismatched types`)
 - Borrow checker errors
@@ -81,6 +92,7 @@ Auto-fix visible errors using AI reasoning and MCP tools with comprehensive retr
 - Crate resolution errors
 
 **Universal:**
+
 - Missing dependencies
 - Configuration errors
 - Path resolution errors
@@ -336,7 +348,7 @@ Best practice: If multiple edits needed, make separate calls:
 ```yaml
 Tool: mcp_desktop-commander_start_process
 Command: Test command for affected file
-  Python: "cd apps/backend && pytest {test_file} -v"
+  Python: "pytest {test_file} -v"
   JS: "cd apps/frontend && vitest run {test_file}"
   Go: "go test {package} -run {test_function}"
   Rust: "cargo test {test_name}"
@@ -413,12 +425,13 @@ Progress: await ctx.report_progress(7, 7, "Complete")
 ## Smart Detection Examples
 
 **Example 1: Import Error**
+
 ```
 Terminal shows:
   ImportError: No module named 're'
 
 AI detects:
-  - File: apps/backend/src/services/easypost_service.py
+  - File: src/services/easypost_service.py
   - Line: 391
   - Missing: import re
   - Context: Function uses re.sub() but re not imported
@@ -435,12 +448,13 @@ AI fixes:
 ```
 
 **Example 2: Type Error**
+
 ```
 Editor shows:
   TypeError: 'datetime.utcnow()' is deprecated
 
 AI detects:
-  - File: apps/backend/src/utils.py
+  - File: src/utils.py
   - Line: 45
   - Issue: Deprecated method usage
   - Context: Python 3.12+ incompatibility
@@ -459,13 +473,14 @@ AI fixes:
 ```
 
 **Example 3: Test Failure**
+
 ```
 pytest output:
   FAILED tests/test_service.py::test_create - AssertionError
 
 AI detects:
   - Test: test_create
-  - File: apps/backend/tests/test_service.py
+  - File: tests/test_service.py
   - Line: 42
   - Error: AssertionError: expected 200, got 404
 
@@ -488,7 +503,7 @@ AI fixes:
 /fix
 
 # With specific file (if error not visible)
-/fix apps/backend/src/services/easypost_service.py
+/fix src/services/easypost_service.py
 
 # With error type hint
 /fix import-error
@@ -508,7 +523,7 @@ AI fixes:
 
 ```
 🔍 Error Detection:
-Found: ImportError in apps/backend/src/services/easypost_service.py:391
+Found: ImportError in src/services/easypost_service.py:391
 Message: No module named 're'
 Context: Function _sanitize_error uses re.sub() but re not imported
 
@@ -526,20 +541,20 @@ Python imports should be grouped:
 3. Local (from src.utils import)
 
 ✅ Fix Prepared:
-File: apps/backend/src/services/easypost_service.py
+File: src/services/easypost_service.py
 Line 11: Add 'import re'
 Safety score: 0.95 (high)
 
 💾 Backup Created:
-Backed up: apps/backend/src/services/easypost_service.py (1250 lines)
+Backed up: src/services/easypost_service.py (1250 lines)
 
 ✅ Fix Applied:
-File: apps/backend/src/services/easypost_service.py
+File: src/services/easypost_service.py
 Line 11: Added 'import re'
 Change: Inserted in standard library imports section
 
 🧪 Verification:
-Running: pytest apps/backend/tests/unit/test_easypost_service.py -v
+Running: pytest tests/unit/test_easypost_service.py -v
 Result: ✅ All tests passed (45/45)
 
 ✅ Fix complete and verified!
@@ -549,7 +564,7 @@ Result: ✅ All tests passed (45/45)
 
 ```
 🔍 Error Detection:
-Found: TypeError in apps/backend/src/utils.py:45
+Found: TypeError in src/utils.py:45
 Message: 'datetime.utcnow()' is deprecated
 
 🧠 AI Analysis:
@@ -557,23 +572,23 @@ Root cause: Using deprecated datetime.utcnow()
 Fix strategy: Replace with datetime.now(timezone.utc)
 
 ✅ Fix Applied:
-File: apps/backend/src/utils.py
+File: src/utils.py
 Line 45: Replaced datetime.utcnow() with datetime.now(timezone.utc)
 
 🧪 Verification:
-Running: pytest apps/backend/tests/unit/test_utils.py -v
+Running: pytest tests/unit/test_utils.py -v
 Result: ❌ 2 tests failed
 
 🔄 Rollback:
 Rolled back to backup
 
 🔄 Retrying with Alternative Fix:
-File: apps/backend/src/utils.py
+File: src/utils.py
 Line 1: Added 'from datetime import timezone'
 Line 45: Replaced datetime.utcnow() with datetime.now(timezone.utc)
 
 🧪 Verification:
-Running: pytest apps/backend/tests/unit/test_utils.py -v
+Running: pytest tests/unit/test_utils.py -v
 Result: ✅ All tests passed (45/45)
 
 ✅ Fix complete and verified!
@@ -593,6 +608,7 @@ Result: ✅ All tests passed (45/45)
 ## Desktop Commander Tools Used
 
 **Primary Tools:**
+
 - `mcp_desktop-commander_edit_block` - Surgical code replacement
 - `mcp_desktop-commander_read_process_output` - Detect errors from terminal
 - `mcp_desktop-commander_read_file` - Gather context, create backups
@@ -601,6 +617,7 @@ Result: ✅ All tests passed (45/45)
 - `mcp_desktop-commander_start_search` - Find error patterns
 
 **Supporting Tools:**
+
 - `mcp_sequential-thinking_sequentialthinking` - Root cause analysis, fix preparation
 - `mcp_Context7_resolve-library-id` - Framework detection
 - `mcp_Context7_get-library-docs` - Fix patterns and best practices
@@ -619,16 +636,19 @@ Result: ✅ All tests passed (45/45)
 ## Error Handling Patterns
 
 **Tool Unavailability:**
+
 - Context7 unavailable → Continue with analysis only
 - Sequential-thinking unavailable → Use simpler analysis
 - Desktop Commander unavailable → Report error, cannot proceed
 
 **Fix Application Failures:**
+
 - Multiple matches → Retry with more context
 - No match found → Show character-level diff
 - Permission errors → Report and suggest manual fix
 
 **Verification Failures:**
+
 - Tests fail → Rollback and try alternative
 - No alternatives → Report manual intervention needed
 - Test timeout → Report timeout, suggest manual verification
@@ -636,6 +656,7 @@ Result: ✅ All tests passed (45/45)
 ## Adapts To Any Language
 
 Uses .dev-config.json to determine:
+
 - Test command: `{{testing.backend.framework}}`
 - Linter: Python (ruff), JS (eslint), Go (golangci-lint)
 - File paths: `{{paths.backend}}`, `{{paths.tests}}`

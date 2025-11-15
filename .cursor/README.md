@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+
 # Cursor IDE Configuration
 
 This directory contains configuration files and rules for Cursor IDE integration with this project.
@@ -28,14 +29,16 @@ This directory contains configuration files and rules for Cursor IDE integration
 **File**: `.cursor/mcp.json`
 
 Configures the EasyPost MCP server for Cursor Desktop integration. The server provides AI agent tools for:
+
 - Creating shipments
 - Getting shipping rates
 - Tracking shipments
 - Bulk operations
 
-**Entry Point**: `apps/backend/src/mcp_server/server.py`
+**Entry Point**: `src/mcp_server/server.py`
 
 **Environment Variables Required**:
+
 - `EASYPOST_API_KEY` - Your EasyPost API key (test or production)
 
 ## Rules System
@@ -43,10 +46,13 @@ Configures the EasyPost MCP server for Cursor Desktop integration. The server pr
 The `.cursor/rules/` directory contains comprehensive coding standards:
 
 ### 00-INDEX.mdc
+
 Complete index of all rules with quick reference.
 
 ### 01-fastapi-python.mdc
+
 Backend development standards:
+
 - Functional programming patterns
 - Type hints & Pydantic v2 validation
 - Async/await patterns
@@ -55,7 +61,9 @@ Backend development standards:
 - Performance optimization
 
 ### 02-react-vite-frontend.mdc
+
 Frontend development standards:
+
 - Functional components with hooks
 - State management (Zustand, React Query)
 - TailwindCSS best practices
@@ -63,14 +71,18 @@ Frontend development standards:
 - Testing patterns
 
 ### 03-testing-best-practices.mdc
+
 Testing strategy:
+
 - Backend: pytest with parallel execution
 - Frontend: vitest + React Testing Library
 - AAA pattern (Arrange, Act, Assert)
 - Coverage requirements (36% backend, 70% frontend)
 
 ### 04-mcp-development.mdc
+
 MCP tool development:
+
 - FastMCP server patterns
 - Tool design for AI agents
 - Batch operations
@@ -78,17 +90,22 @@ MCP tool development:
 - 100% coverage requirement for tools
 
 ### 05-m3-max-optimizations.mdc
+
 Hardware-specific optimizations:
+
 - Leverage 16 CPU cores
 - Parallel processing patterns
 - Connection pooling
 - Build optimizations
 
 ### 06-quick-reference.mdc
+
 Quick templates and patterns (always applied).
 
 ### 07-learned-memories.mdc
+
 Project-specific knowledge and preferences (always applied):
+
 - Project-specific patterns and conventions
 - User preferences and coding style choices
 - Technical decisions and their rationale
@@ -97,6 +114,7 @@ Project-specific knowledge and preferences (always applied):
 ## Commands
 
 Custom Cursor commands are located in `.cursor/commands/`:
+
 - **Project-specific**: EasyPost-specific workflows
 - **Universal**: Reusable commands for any project
 
@@ -120,8 +138,9 @@ Cursor IDE automatically loads these configurations when opening the project. Th
 - `CLAUDE.md` - Comprehensive project overview for AI assistants
 - `docs/guides/` - Development guides
 - `README.md` - Project README
-||||||| 7a576da
-=======
+  ||||||| 7a576da
+  =======
+
 # Cursor IDE Configuration
 
 This directory contains configuration files and rules for Cursor IDE integration with this project.
@@ -150,14 +169,16 @@ This directory contains configuration files and rules for Cursor IDE integration
 **File**: `.cursor/mcp.json`
 
 Configures the EasyPost MCP server for Cursor Desktop integration. The server provides AI agent tools for:
+
 - Creating shipments
 - Getting shipping rates
 - Tracking shipments
 - Bulk operations
 
-**Entry Point**: `apps/backend/src/mcp_server/server.py`
+**Entry Point**: `src/mcp_server/server.py`
 
 **Environment Variables Required**:
+
 - `EASYPOST_API_KEY` - Your EasyPost API key (test or production)
 
 ## Rules System
@@ -165,10 +186,13 @@ Configures the EasyPost MCP server for Cursor Desktop integration. The server pr
 The `.cursor/rules/` directory contains comprehensive coding standards:
 
 ### 00-INDEX.mdc
+
 Complete index of all rules with quick reference.
 
 ### 01-fastapi-python.mdc
+
 Backend development standards:
+
 - Functional programming patterns
 - Type hints & Pydantic v2 validation
 - Async/await patterns
@@ -177,7 +201,9 @@ Backend development standards:
 - Performance optimization
 
 ### 02-react-vite-frontend.mdc
+
 Frontend development standards:
+
 - Functional components with hooks
 - State management (Zustand, React Query)
 - TailwindCSS best practices
@@ -185,14 +211,18 @@ Frontend development standards:
 - Testing patterns
 
 ### 03-testing-best-practices.mdc
+
 Testing strategy:
+
 - Backend: pytest with parallel execution
 - Frontend: vitest + React Testing Library
 - AAA pattern (Arrange, Act, Assert)
 - Coverage requirements (36% backend, 70% frontend)
 
 ### 04-mcp-development.mdc
+
 MCP tool development:
+
 - FastMCP server patterns
 - Tool design for AI agents
 - Batch operations
@@ -200,18 +230,22 @@ MCP tool development:
 - 100% coverage requirement for tools
 
 ### 05-m3-max-optimizations.mdc
+
 Hardware-specific optimizations:
+
 - Leverage 16 CPU cores
 - Parallel processing patterns
 - Connection pooling
 - Build optimizations
 
 ### 06-quick-reference.mdc
+
 Quick templates and patterns (always applied).
 
 ## Commands
 
 Custom Cursor commands are located in `.cursor/commands/`:
+
 - **Project-specific**: EasyPost-specific workflows
 - **Universal**: Reusable commands for any project
 
@@ -235,4 +269,4 @@ Cursor IDE automatically loads these configurations when opening the project. Th
 - `CLAUDE.md` - Comprehensive project overview for AI assistants
 - `docs/guides/` - Development guides
 - `README.md` - Project README
->>>>>>> 99314e0f7fef772f5a4f4779d02c1c7df730f0d8
+  > > > > > > > 99314e0f7fef772f5a4f4779d02c1c7df730f0d8

@@ -55,26 +55,36 @@
       "name": "Python: MCP Server (Test)",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/apps/backend/run_mcp.py",
-      "cwd": "${workspaceFolder}/apps/backend",
-      "envFile": "${workspaceFolder}/apps/backend/.env.test",
+      "program": "${workspaceFolder}/scripts/python/run_mcp.py",
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env",
       "console": "integratedTerminal",
-      "justMyCode": true,
+      "justMyCode": false,
       "env": {
-        "ENVIRONMENT": "test"
+        "ENVIRONMENT": "test",
+        "MCP_DEBUG": "true"
+      },
+      "presentation": {
+        "order": 1,
+        "group": "MCP"
       }
     },
     {
       "name": "Python: MCP Server (Production)",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/apps/backend/run_mcp.py",
-      "cwd": "${workspaceFolder}/apps/backend",
-      "envFile": "${workspaceFolder}/apps/backend/.env.production",
+      "program": "${workspaceFolder}/scripts/python/run_mcp.py",
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env",
       "console": "integratedTerminal",
-      "justMyCode": true,
+      "justMyCode": false,
       "env": {
-        "ENVIRONMENT": "production"
+        "ENVIRONMENT": "production",
+        "MCP_DEBUG": "true"
+      },
+      "presentation": {
+        "order": 2,
+        "group": "MCP"
       }
     },
     {
@@ -272,6 +282,24 @@
         "order": 2
       },
       "stopAll": true
+    },
+    {
+      "name": "MCP Server Only (Test)",
+      "configurations": ["Python: MCP Server (Test)"],
+      "presentation": {
+        "hidden": false,
+        "group": "MCP",
+        "order": 1
+      }
+    },
+    {
+      "name": "MCP Server Only (Production)",
+      "configurations": ["Python: MCP Server (Production)"],
+      "presentation": {
+        "hidden": false,
+        "group": "MCP",
+        "order": 2
+      }
     }
   ],
   "inputs": [

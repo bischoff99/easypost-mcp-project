@@ -7,13 +7,20 @@ from datetime import UTC, datetime
 from fastmcp import Context
 from fastmcp.exceptions import ToolError
 
+from src.utils.constants import STANDARD_TIMEOUT
+
 logger = logging.getLogger(__name__)
 
 
 def register_refund_tools(mcp, easypost_service=None):
     """Register refund-related tools with MCP server."""
 
-    @mcp.tool(tags=["refund", "shipping", "core"])
+    @mcp.tool(
+        tags=["refund", "shipping", "core"],
+        annotations={
+            "destructiveHint": True,
+        },
+    )
     async def refund_shipment(
         shipment_ids: str | list[str], ctx: Context | None = None
     ) -> dict:
@@ -82,7 +89,9 @@ def register_refund_tools(mcp, easypost_service=None):
             elif easypost_service:
                 service = easypost_service
             else:
-                raise ToolError("EasyPost service not available. Check server configuration.")
+                raise ToolError(
+                    "EasyPost service not available. Check server configuration."
+                )
 
             # Handle single shipment ID
             if isinstance(shipment_ids, str):
@@ -90,7 +99,9 @@ def register_refund_tools(mcp, easypost_service=None):
                     await ctx.info(f"Refunding shipment {shipment_ids}...")
 
                 # Add timeout to prevent SSE timeout errors
-                result = await asyncio.wait_for(service.refund_shipment(shipment_ids), timeout=20.0)
+                result = await asyncio.wait_for(
+                    service.refund_shipment(shipment_ids), timeout=STANDARD_TIMEOUT
+                )
 
                 if ctx:
                     await ctx.report_progress(1, 1)
@@ -114,7 +125,7 @@ def register_refund_tools(mcp, easypost_service=None):
             async def refund_one(shipment_id: str) -> dict:
                 try:
                     return await asyncio.wait_for(
-                        service.refund_shipment(shipment_id), timeout=20.0
+                        service.refund_shipment(shipment_id), timeout=STANDARD_TIMEOUT
                     )
                 except TimeoutError:
                     logger.error(f"Refund timed out for shipment {shipment_id}")

@@ -20,8 +20,8 @@ services:
 
   backend:
     build:
-      context: ../apps/backend
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: deploy/Dockerfile
     container_name: easypost-backend
     ports:
       - '8000:8000'
@@ -37,7 +37,7 @@ services:
       - MCP_HOST=0.0.0.0
       - MCP_PORT=8000
       - MCP_LOG_LEVEL=INFO
-      - CORS_ORIGINS=http://localhost,http://localhost:80,http://localhost:5173
+      - CORS_ORIGINS=http://localhost,http://localhost:8000
       - WORKERS=9 # (8 cores / 2) + 1 for personal use (max 16 per constraint)
       - PYTHONOPTIMIZE=2 # Enable Python optimizations
     restart: unless-stopped
@@ -50,29 +50,6 @@ services:
     networks:
       - easypost-network
 
-  frontend:
-    build:
-      context: ../apps/frontend
-      dockerfile: Dockerfile
-    container_name: easypost-frontend
-    ports:
-      - '80:80'
-    # Personal use: Moderate resource allocation for frontend builds
-    cpus: '4' # 4 cores sufficient for Vite builds (personal use)
-    mem_limit: 8g # 8GB RAM for frontend builds
-    depends_on:
-      backend:
-        condition: service_healthy
-    restart: unless-stopped
-    healthcheck:
-      test: ['CMD', 'wget', '--quiet', '--tries=1', '--spider', 'http://localhost/']
-      interval: 30s
-      timeout: 3s
-      retries: 3
-      start_period: 5s
-    networks:
-      - easypost-network
-
 networks:
   easypost-network:
     driver: bridge
@@ -82,6 +59,6 @@ volumes:
 # To run:
 # 1. Create .env file with EASYPOST_API_KEY=your_key_here
 # 2. Run: docker-compose up -d
-# 3. Access frontend at http://localhost
-# 4. Access backend API at http://localhost:8000
-# 5. View API docs at http://localhost:8000/docs
+# 3. Access backend API at http://localhost:8000
+# 4. View API docs at http://localhost:8000/docs
+# 5. MCP server available via stdio (run_mcp.py)

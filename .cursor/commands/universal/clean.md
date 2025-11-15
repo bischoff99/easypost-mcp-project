@@ -7,6 +7,7 @@ Clean up project by removing unnecessary files, build artifacts, temporary files
 **Complete MCP Workflow (13 Stages):**
 
 **Stage 1 - Scan for Cleanup Targets**:
+
 - Identifies temporary files (`.tmp`, `.log`, `.cache`, `.swp`, `.bak`)
 - Finds build artifacts (`dist/`, `build/`, `*.pyc`, `__pycache__/`, `.next/`, `target/`)
 - Detects unused files (orphaned files, dead code files)
@@ -17,6 +18,7 @@ Clean up project by removing unnecessary files, build artifacts, temporary files
 - Scans Git repository for cleanup opportunities
 
 **Stage 1.5 - Deep Code Analysis**:
+
 - AST parsing for unused imports (Python/JS/TS)
 - Dead code detection (unreachable code analysis)
 - Function/class usage analysis
@@ -25,6 +27,7 @@ Clean up project by removing unnecessary files, build artifacts, temporary files
 - Complexity metrics calculation
 
 **Stage 1.6 - Script Redundancy Analysis**:
+
 - Parses Makefile to extract all targets and commands
 - Compares scripts with Makefile targets
 - Identifies scripts that duplicate Makefile functionality
@@ -32,18 +35,21 @@ Clean up project by removing unnecessary files, build artifacts, temporary files
 - Flags scripts that are never referenced
 
 **Stage 1.7 - Root-Level Organization Analysis**:
+
 - Identifies files at root level that should be in `docs/`
 - Checks if root-level markdown files are referenced
 - Identifies root-level config files that could be organized
 - Flags files that belong in subdirectories
 
 **Stage 1.8 - Large File Analysis**:
+
 - Scans for files >1MB that aren't build artifacts
 - Identifies test data files (images, PDFs, large JSON)
 - Checks if large files are in `.gitignore`
 - Flags large files that could be moved to external storage or removed
 
 **Stage 2 - Analyze File Dependencies**:
+
 - Checks if files are imported/referenced
 - Verifies files aren't in `.gitignore` (should be ignored, not deleted)
 - Identifies safe-to-delete files
@@ -51,6 +57,7 @@ Clean up project by removing unnecessary files, build artifacts, temporary files
 - Builds import dependency graph
 
 **Stage 2.5 - Dependency Analysis**:
+
 - Parses package files (`package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod`)
 - Maps imports to packages (which packages are actually used)
 - Checks for outdated dependencies
@@ -59,11 +66,13 @@ Clean up project by removing unnecessary files, build artifacts, temporary files
 - Analyzes dev dependency usage
 
 **Stage 3 - Get Cleanup Patterns**:
+
 - Loads best practices via Context7
 - Gets cleanup patterns for project type
 - Caches patterns for reuse
 
 **Stage 4 - Classify Cleanup Targets**:
+
 - Categorizes (temporary, build artifacts, unused, duplicate, documentation, code quality, dependencies, configuration, tests, git, script redundancy, root organization, large files, README consolidation)
 - Calculates impact scores (1-10) for each cleanup action
 - Prioritizes by safety, impact, and effort
@@ -72,17 +81,20 @@ Clean up project by removing unnecessary files, build artifacts, temporary files
 - Identifies code improvement opportunities
 
 **Stage 5 - Generate Cleanup Plan**:
+
 - Creates prioritized cleanup plan
 - Estimates space savings
 - Suggests safe deletion order
 - Includes structure optimization
 
 **Stage 6 - Backup Critical Files**:
+
 - Backs up files before deletion
 - Stores metadata for rollback
 - Creates cleanup log
 
 **Stage 7 - Apply Cleanup** (Optional):
+
 - Deletes temporary files safely
 - Removes build artifacts
 - Deletes unused files
@@ -100,6 +112,7 @@ Clean up project by removing unnecessary files, build artifacts, temporary files
 - Optimizes project structure (Stage 7.5)
 
 **Stage 7.5 - Structure Optimization**:
+
 - Consolidates empty directories
 - Moves files to correct directories
 - Standardizes naming conventions
@@ -107,6 +120,7 @@ Clean up project by removing unnecessary files, build artifacts, temporary files
 - Organizes files by type/function
 
 **Stage 8 - Verify**:
+
 - Checks for broken imports/references
 - Verifies dependency integrity (no missing packages)
 - Verifies code quality (no syntax errors)
@@ -116,24 +130,28 @@ Clean up project by removing unnecessary files, build artifacts, temporary files
 ## Cleanup Categories
 
 **Temporary Files:**
+
 - `.tmp`, `.temp`, `.swp`, `.bak`, `.backup`
 - `*.log` (except important logs)
 - `.cache/`, `.vscode/`, `.idea/`
 - OS files (`.DS_Store`, `Thumbs.db`)
 
 **Build Artifacts:**
+
 - `dist/`, `build/`, `.next/`, `target/`
 - `*.pyc`, `__pycache__/`, `.pyo`
 - `node_modules/.cache/`
 - Coverage reports (`htmlcov/`, `coverage/`)
 
 **Unused Files:**
+
 - Orphaned files (not imported/referenced)
 - Dead code files
 - Old migration files (if safe)
 - Unused test fixtures
 
 **Duplicate Files (Enhanced):**
+
 - Identical files in different locations
 - Backup copies (`.bak`, `.old`)
 - Version duplicates
@@ -142,6 +160,7 @@ Clean up project by removing unnecessary files, build artifacts, temporary files
 - Files with same content but different names
 
 **Documentation Bloat (Enhanced):**
+
 - Temporary fix summaries
 - Redundant documentation
 - Old changelogs
@@ -152,6 +171,7 @@ Clean up project by removing unnecessary files, build artifacts, temporary files
 - Multiple cleanup summaries (consolidate into archive)
 
 **Code Quality Cleanup:**
+
 - Unused imports (detected via AST analysis)
 - Dead code within files (unreachable code, unused functions/classes)
 - Commented-out code blocks
@@ -160,6 +180,7 @@ Clean up project by removing unnecessary files, build artifacts, temporary files
 - Code duplication patterns
 
 **Dependency Cleanup:**
+
 - Unused packages (not imported anywhere)
 - Outdated dependencies (check for updates)
 - Duplicate dependencies (same package in multiple places)
@@ -167,6 +188,7 @@ Clean up project by removing unnecessary files, build artifacts, temporary files
 - Unused transitive dependencies
 
 **Configuration Cleanup:**
+
 - Unused config files
 - Redundant configuration settings
 - Environment-specific configs not in use
@@ -174,6 +196,7 @@ Clean up project by removing unnecessary files, build artifacts, temporary files
 - Unused environment variables
 
 **Test Cleanup:**
+
 - Dead test code (tests that never run)
 - Unused test fixtures
 - Duplicate test cases
@@ -181,24 +204,28 @@ Clean up project by removing unnecessary files, build artifacts, temporary files
 - Unused test utilities
 
 **Git Cleanup:**
+
 - Unused branches (merged, stale)
 - Large files in history (optional)
 - Unused remotes
 - Stale tags
 
 **Script Redundancy:**
+
 - Scripts that duplicate Makefile targets
 - Unused scripts (never referenced)
 - Scripts with no git history
 - Scripts that can be replaced by Makefile
 
 **Root Organization:**
+
 - Root-level documentation files that should be in `docs/`
 - Root-level analysis/review files
 - Root-level config files that could be organized
 - Temporary files at root level
 
 **Large Files:**
+
 - Test data files (images >500KB, PDFs >1MB)
 - Large JSON fixtures (>100KB)
 - Database dumps (>5MB)
@@ -206,6 +233,7 @@ Clean up project by removing unnecessary files, build artifacts, temporary files
 - Build artifacts not in .gitignore
 
 **README Consolidation:**
+
 - Redundant README files with duplicate content
 - Outdated README files
 - README files that can be consolidated
@@ -215,7 +243,7 @@ Clean up project by removing unnecessary files, build artifacts, temporary files
 
 ### Stage 1 - Scan for Cleanup Targets
 
-```yaml
+````yaml
 Tool: mcp_desktop-commander_list_directory
 Path: Project root (recursive, depth=3)
 Find:
@@ -339,7 +367,7 @@ Logging:
   await ctx.info(f"Found {len(unused_imports)} unused imports")
   await ctx.info(f"Found {len(dead_code)} dead code items")
   await ctx.info(f"Found {len(code_duplication)} code duplication patterns")
-```
+````
 
 ### Stage 1.6 - Script Redundancy Analysis
 
@@ -585,7 +613,7 @@ State: ctx.set_state("large_files", {
   ],
   "required": [
     {
-      "file": "apps/backend/tests/captured_responses/large_response.json",
+      "file": "tests/captured_responses/large_response.json",
       "size": 153600,
       "type": "test_fixture",
       "reason": "Required for tests",
@@ -604,7 +632,7 @@ Logging:
 
 ### Stage 2 - Analyze File Dependencies
 
-```yaml
+````yaml
 Tool: mcp_desktop-commander_start_search
 Pattern: Import/reference patterns for each file
 SearchType: "content"
@@ -736,7 +764,7 @@ Logging:
   await ctx.info(f"Found {len(unused_packages)} unused packages")
   await ctx.info(f"Found {len(outdated_packages)} outdated packages")
   await ctx.info(f"Found {len(duplicate_dependencies)} duplicate dependencies")
-```
+````
 
 ### Stage 3 - Get Cleanup Patterns
 
@@ -905,7 +933,7 @@ State: ctx.set_state("cleanup_plan", {
     {
       "step": 1,
       "action": "delete",
-      "target": "apps/backend/.cache/",
+      "target": ".cache/",
       "reason": "Temporary cache, can be regenerated",
       "space_savings": 1024000,
       "impact_score": 1,
@@ -1226,7 +1254,7 @@ State: ctx.set_state("structure_optimization", {
   ],
   "empty_directories": [
     {
-      "directory": "apps/backend/temp/",
+      "directory": "temp/",
       "action": "remove",
       "reason": "Empty directory",
       "safe": True
@@ -1306,6 +1334,7 @@ Failure path:
 **Workflow Options:**
 
 **Option 1: Simplify → Clean**
+
 ```bash
 # Step 1: Identify overbloat
 /simplify
@@ -1315,12 +1344,14 @@ Failure path:
 ```
 
 **Option 2: Clean → Code Improvement → Test → Commit**
+
 ```bash
 # Enhanced cleanup with code improvements
 /clean --with-code-improvement
 ```
 
 **Option 3: Full Workflow Chain**
+
 ```bash
 # Complete cleanup workflow
 /workflow:cleanup
@@ -1328,6 +1359,7 @@ Failure path:
 ```
 
 **Option 4: Enhanced Cleanup Workflow**
+
 ```bash
 # With code improvement integration
 /workflow:cleanup --with-code-improvement
@@ -1335,6 +1367,7 @@ Failure path:
 ```
 
 **Reading Simplify Output:**
+
 - Reads `.simplify-recommendations.json` if exists
 - Parses simplify recommendations for file deletions
 - Prioritizes files marked for removal by simplify
@@ -1393,7 +1426,7 @@ If --from-simplify flag:
 /clean --dry-run
 
 # Clean specific directory
-/clean apps/backend/
+/clean
 
 # Aggressive cleanup (removes more, less safe)
 /clean --aggressive
@@ -1446,13 +1479,13 @@ Checking file references...
 
 📋 Classifying Targets:
 Temporary Files (10):
-  1. apps/backend/.cache/ - 1.0 MB (safe, can regenerate)
+  1. .cache/ - 1.0 MB (safe, can regenerate)
   2. apps/frontend/.vite/ - 500 KB (safe, can regenerate)
   3. *.log files - 200 KB (safe, can regenerate)
 
 Build Artifacts (5):
   1. apps/frontend/dist/ - 50 MB (safe, can regenerate)
-  2. apps/backend/htmlcov/ - 2 MB (safe, can regenerate)
+  2. htmlcov/ - 2 MB (safe, can regenerate)
   3. __pycache__/ directories - 500 KB (safe, can regenerate)
 
 Code Quality Issues (12):
@@ -1521,7 +1554,7 @@ Found: 25 cleanup targets
 ✅ Applying Cleanup:
 
 Step 1/35: Deleting temporary cache...
-  ✅ Deleted: apps/backend/.cache/ (1.0 MB freed, impact: 1/10)
+  ✅ Deleted: .cache/ (1.0 MB freed, impact: 1/10)
 
 Step 2/35: Removing unused imports...
   ✅ Removed: from models.old import OldModel from src/services/user.py:5 (impact: 2/10)
@@ -1612,6 +1645,7 @@ Summary:
 - **Total: 85-225s** for analysis, **2-5 minutes** for full cleanup
 
 **Performance Optimizations:**
+
 - **Parallel Analysis**: AST parsing runs in parallel for multiple files
 - **Caching**: AST parsing results cached for 24h, dependency graphs cached
 - **Incremental Analysis**: Only analyzes changed files (uses Git diff)
@@ -1620,6 +1654,7 @@ Summary:
 ## Desktop Commander Tools Used
 
 **Primary Tools:**
+
 - `mcp_desktop-commander_list_directory` - Scan for cleanup targets
 - `mcp_desktop-commander_delete_file` - Delete files/directories
 - `mcp_desktop-commander_read_file` - Backup files, read .gitignore
@@ -1628,6 +1663,7 @@ Summary:
 - `mcp_desktop-commander_start_process` - Verify cleanup
 
 **Supporting Tools:**
+
 - `mcp_sequential-thinking_sequentialthinking` - Classification, plan generation, code analysis, refactoring
 - `mcp_Context7_resolve-library-id` - Project type detection
 - `mcp_Context7_get-library-docs` - Cleanup patterns, code improvement patterns
@@ -1653,15 +1689,18 @@ Summary:
 ## Error Handling
 
 **File Not Found:**
+
 - Report warning: "File already deleted or not found"
 - Continue with next file
 
 **Permission Errors:**
+
 - Report error: "Permission denied"
 - Suggest checking file permissions
 - Skip file, continue with others
 
 **Dependency Found:**
+
 - Report warning: "File is referenced, skipping"
 - Add to "keep" list
 - Continue with next file
@@ -1669,6 +1708,7 @@ Summary:
 ## Adapts To Any Project
 
 Works automatically with:
+
 - Python projects (detects `__pycache__/`, `.pyc`, `dist/`)
 - JavaScript projects (detects `node_modules/.cache/`, `dist/`, `.next/`)
 - Go projects (detects `target/`, build artifacts)
@@ -1681,6 +1721,7 @@ Works automatically with:
 ## Integration Example
 
 **Combined Workflow:**
+
 ```bash
 # Step 1: Identify overbloat and enterprise features
 /simplify

@@ -12,12 +12,15 @@
 # ============================================================================
 
 # Directories
-BACKEND_DIR := apps/backend
-FRONTEND_DIR := apps/frontend
+PROJECT_ROOT := .
+SRC_DIR := src
+TESTS_DIR := tests
+CONFIG_DIR := config
 SCRIPTS_DIR := scripts
+VENV_DIR := venv
 
 # Detect venv location (uses venv only)
-VENV_BIN := $(shell if [ -d $(BACKEND_DIR)/venv ]; then echo $(BACKEND_DIR)/venv/bin; else echo "venv not found"; fi)
+VENV_BIN := $(VENV_DIR)/bin
 
 # ============================================================================
 # Macros
@@ -25,7 +28,7 @@ VENV_BIN := $(shell if [ -d $(BACKEND_DIR)/venv ]; then echo $(BACKEND_DIR)/venv
 
 # Check venv exists, exit if not found
 define check_venv
-	@if [ "$(VENV_BIN)" = "venv not found" ]; then \
+	@if [ ! -d "$(VENV_BIN)" ]; then \
 		echo "❌ Error: Virtual environment not found. Run 'make setup' first."; \
 		exit 1; \
 	fi
@@ -35,7 +38,7 @@ endef
 # Phony Targets
 # ============================================================================
 
-.PHONY: help help-all setup dev test lint format check build prod db-reset db-migrate clean qcp d t l f c
+.PHONY: help help-all setup dev test lint format check build prod clean qcp d t l f c
 
 # ============================================================================
 # Default Target
@@ -48,26 +51,22 @@ help:
 	@echo "  make setup        - Full environment setup (creates venv + installs dependencies)"
 	@echo ""
 	@echo "Development:"
-	@echo "  make dev          - Start backend + frontend servers"
+	@echo "  make dev          - Start backend server"
 	@echo ""
 	@echo "Testing:"
 	@echo "  make test         - Run all tests"
 	@echo "  make test COV=1   - Run tests with coverage report"
 	@echo ""
 	@echo "Code Quality:"
-	@echo "  make lint         - Run linters (ruff, eslint)"
-	@echo "  make format       - Auto-format code (ruff, prettier)"
+	@echo "  make lint         - Run linters (ruff)"
+	@echo "  make format       - Auto-format code (ruff)"
 	@echo "  make check        - Run lint + test"
 	@echo ""
 	@echo "Building:"
 	@echo "  make build        - Build production bundles"
 	@echo ""
 	@echo "Production:"
-	@echo "  make prod         - Start backend + frontend in production mode"
-	@echo ""
-	@echo "Database:"
-	@echo "  make db-reset     - Reset database (downgrade + upgrade)"
-	@echo "  make db-migrate   - Create migration (use: make db-migrate m=\"message\")"
+	@echo "  make prod         - Start backend in production mode"
 	@echo ""
 	@echo "Maintenance:"
 	@echo "  make clean        - Clean build artifacts"
@@ -83,8 +82,8 @@ help:
 	@echo "  make c            - Alias for 'make check'"
 	@echo ""
 	@echo "💡 Tip: Use 'make help-all' to see all commands (Makefile + Scripts + VS Code + Cursor)"
-	@echo "      Use scripts/ for advanced workflows (backend-only, frontend-only,"
-	@echo "      docker, benchmarks, health checks, reviews, etc.)"
+	@echo "      Use scripts/ for advanced workflows (docker, benchmarks, MCP verification,"
+	@echo "      monitoring, etc.)"
 
 # ============================================================================
 # Setup Targets
@@ -94,40 +93,29 @@ setup:
 	@echo "🔧 Setting up development environment..."
 	@echo ""
 	@echo "📦 Backend setup..."
-	@if [ ! -d $(BACKEND_DIR)/venv ]; then \
+	@if [ ! -d $(VENV_DIR) ]; then \
 		echo "  Creating Python virtual environment..."; \
-		cd $(BACKEND_DIR) && python3 -m venv venv; \
+		python3 -m venv $(VENV_DIR); \
 	fi
 	@echo "  Installing backend dependencies..."
-	@cd $(BACKEND_DIR) && $(VENV_BIN)/pip install -U pip setuptools wheel
-	@cd $(BACKEND_DIR) && $(VENV_BIN)/pip install -e .
-	@echo ""
-	@echo "📦 Frontend setup..."
-	@if ! command -v pnpm >/dev/null 2>&1; then \
-		echo "  Installing pnpm..."; \
-		npm install -g pnpm@9; \
+	@$(VENV_BIN)/pip install -U pip setuptools wheel
+	@if [ -f $(CONFIG_DIR)/requirements.txt ]; then \
+		$(VENV_BIN)/pip install -r $(CONFIG_DIR)/requirements.txt; \
 	fi
-	@cd $(FRONTEND_DIR) && pnpm install
 	@echo ""
 	@echo "✅ Setup complete!"
 	@echo "  Backend: $(VENV_BIN)/python"
-	@echo "  Frontend: pnpm (in $(FRONTEND_DIR))"
 
 # ============================================================================
 # Development Targets
 # ============================================================================
 
 dev:
-	@echo "🚀 Starting development servers..."
+	@echo "🚀 Starting development server..."
 	@echo "📦 Backend: http://localhost:8000"
-	@echo "⚡ Frontend: http://localhost:5173"
+	@echo "📚 API Docs: http://localhost:8000/docs"
 	$(check_venv)
-	@trap 'kill 0' EXIT; \
-	(cd $(BACKEND_DIR) && $(VENV_BIN)/uvicorn src.server:app --host 0.0.0.0 --port 8000 --reload) & \
-	(cd $(FRONTEND_DIR) && pnpm run dev) & \
-	sleep 3 && \
-	($(VENV_BIN)/python $(SCRIPTS_DIR)/python/mcp_tool.py get_tracking TEST 2>/dev/null | grep -q "status" && echo "✅ MCP tools verified" || echo "⚠️  MCP tools not yet accessible") & \
-	wait
+	@$(VENV_BIN)/uvicorn src.server:app --host 0.0.0.0 --port 8000 --reload
 
 # ============================================================================
 # Testing Targets
@@ -137,16 +125,13 @@ test:
 	@if [ "$(COV)" = "1" ]; then \
 		echo "📊 Running tests with coverage..."; \
 		$(check_venv); \
-		cd $(BACKEND_DIR) && $(VENV_BIN)/pytest tests/ -v --cov=src --cov-report=term-missing --cov-report=html; \
-		cd $(FRONTEND_DIR) && pnpm test:coverage; \
-		echo "✅ Coverage reports generated:"; \
-		echo "   Backend:  $(BACKEND_DIR)/htmlcov/index.html"; \
-		echo "   Frontend: $(FRONTEND_DIR)/coverage/index.html"; \
+		$(VENV_BIN)/pytest $(TESTS_DIR)/ -v --cov=$(SRC_DIR) --cov-report=term-missing --cov-report=html; \
+		echo "✅ Coverage report generated:"; \
+		echo "   HTML: htmlcov/index.html"; \
 	else \
-		echo "🧪 Running all tests..."; \
+		echo "🧪 Running backend tests..."; \
 		$(check_venv); \
-		cd $(BACKEND_DIR) && $(VENV_BIN)/pytest tests/ -v -n auto; \
-		cd $(FRONTEND_DIR) && pnpm test -- --run; \
+		$(VENV_BIN)/pytest $(TESTS_DIR)/ -v -n auto; \
 	fi
 
 # ============================================================================
@@ -156,16 +141,17 @@ test:
 lint:
 	@echo "🔍 Running linters..."
 	$(check_venv)
-	@cd $(BACKEND_DIR) && if [ -f "$(VENV_BIN)/ruff" ]; then $(VENV_BIN)/ruff check src/ tests/ || exit 1; else echo "⚠️  ruff not found, skipping backend lint"; fi & \
-	cd $(FRONTEND_DIR) && pnpm run lint || exit 1 & \
-	wait
+	@if [ -f "$(VENV_BIN)/ruff" ]; then $(VENV_BIN)/ruff check $(SRC_DIR)/ $(TESTS_DIR)/ || exit 1; else echo "⚠️  ruff not found, skipping lint"; fi
 
 format:
 	@echo "✨ Formatting code..."
 	$(check_venv)
-	@cd $(BACKEND_DIR) && if [ -f "$(VENV_BIN)/ruff" ]; then $(VENV_BIN)/ruff format src/ tests/ && $(VENV_BIN)/ruff check src/ tests/ --fix || exit 1; else echo "⚠️  ruff not found, skipping backend format"; fi & \
-	cd $(FRONTEND_DIR) && pnpm run format || exit 1 & \
-	wait
+	@if [ -f "$(VENV_BIN)/ruff" ]; then \
+		$(VENV_BIN)/ruff format $(SRC_DIR)/ $(TESTS_DIR)/ && \
+		$(VENV_BIN)/ruff check $(SRC_DIR)/ $(TESTS_DIR)/ --fix || exit 1; \
+	else \
+		echo "⚠️  ruff not found, skipping format"; \
+	fi
 
 check: lint test
 	@echo "✅ All checks passed!"
@@ -175,23 +161,14 @@ check: lint test
 # ============================================================================
 
 build:
-	@echo "📦 Building production bundles..."
-	@if [ "$(VENV_BIN)" != "venv not found" ]; then \
-		echo "  Compiling Python files..."; \
-		cd $(BACKEND_DIR) && $(VENV_BIN)/python -m compileall -q src/ || true; \
-		echo "  Type checking Python code..."; \
-		cd $(BACKEND_DIR) && $(VENV_BIN)/mypy src/ --no-error-summary 2>/dev/null || echo "    (mypy not available or errors found)"; \
-	fi
-	@echo "  Building frontend..."
-	@cd $(FRONTEND_DIR) && pnpm run build
-	@if [ ! -d $(FRONTEND_DIR)/dist ]; then \
-		echo "❌ Error: Build output directory not found!"; \
-		exit 1; \
-	fi
+	@echo "📦 Building production backend..."
+	$(check_venv)
+	@echo "  Compiling Python files..."
+	@$(VENV_BIN)/python -m compileall -q $(SRC_DIR)/ || true
+	@echo "  Type checking Python code..."
+	@$(VENV_BIN)/mypy $(SRC_DIR)/ --no-error-summary 2>/dev/null || echo "    (mypy not available or errors found)"
 	@echo ""
 	@echo "✅ Build complete!"
-	@echo "  Frontend bundle size:"
-	@du -sh $(FRONTEND_DIR)/dist 2>/dev/null || echo "    (dist directory not found)"
 
 # ============================================================================
 # Production Targets
@@ -202,25 +179,6 @@ prod:
 	@./$(SCRIPTS_DIR)/dev/start-prod.sh
 
 # ============================================================================
-# Database Targets
-# ============================================================================
-
-db-reset:
-	@echo "🔄 Resetting database..."
-	$(check_venv)
-	@cd $(BACKEND_DIR) && $(VENV_BIN)/alembic downgrade base && $(VENV_BIN)/alembic upgrade head
-	@echo "✅ Database reset complete!"
-
-db-migrate:
-	@echo "📝 Creating migration..."
-	@if [ -z "$(m)" ]; then \
-		echo "❌ Error: Migration message required. Use: make db-migrate m=\"message\""; \
-		exit 1; \
-	fi
-	$(check_venv)
-	@cd $(BACKEND_DIR) && $(VENV_BIN)/alembic revision --autogenerate -m "$(m)"
-
-# ============================================================================
 # Maintenance Targets
 # ============================================================================
 
@@ -229,8 +187,7 @@ clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true; \
 	find . -type f -name "*.pyc" -delete; \
 	find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true; \
-	rm -rf $(BACKEND_DIR)/.pytest_cache $(BACKEND_DIR)/htmlcov $(BACKEND_DIR)/.coverage; \
-	rm -rf $(FRONTEND_DIR)/dist $(FRONTEND_DIR)/node_modules/.vite $(FRONTEND_DIR)/coverage; \
+	rm -rf .pytest_cache htmlcov .coverage; \
 	echo "✨ Cleaned!"
 
 # ============================================================================
@@ -275,19 +232,17 @@ help-all:
 	@echo "────────────────────────────────────────────────────────────"
 	@make help | grep -v "^💡\|^───\|^Quick Aliases\|^make help-all" || true
 	@echo ""
-	@echo "📜 BASH SCRIPTS (13)"
+	@echo "📜 BASH SCRIPTS (10)"
 	@echo "────────────────────────────────────────────────────────────"
 	@echo "Development:"
-	@echo "  ./scripts/dev/start-dev.sh          - macOS Terminal windows (backend + frontend)"
-	@echo "  ./scripts/dev/start-backend.sh      - Backend only (standard, --jit, or --mcp-verify)"
-	@echo "  ./scripts/dev/dev_local.sh          - Docker PostgreSQL + servers"
-	@echo "  ./scripts/dev/start-prod.sh         - Production servers"
+	@echo "  ./scripts/dev/start-dev.sh          - macOS Terminal launcher (backend server)"
+	@echo "  ./scripts/dev/start-backend.sh      - Backend server (standard, --jit, --mcp-verify)"
+	@echo "  ./scripts/dev/start-prod.sh         - Production backend (multi-worker)"
 	@echo ""
 	@echo "Testing:"
-	@echo "  ./scripts/test/quick-test.sh         - Quick test suite (~30-60s)"
-	@echo "  ./scripts/test/watch-tests.sh       - Watch mode (TDD)"
-	@echo "  ./scripts/test/test-full-functionality.sh - Comprehensive tests"
-	@echo "  ./scripts/test/benchmark.sh          - Performance benchmarks"
+	@echo "  ./scripts/test/quick-test.sh        - Backend + MCP health checks"
+	@echo "  ./scripts/test/test-full-functionality.sh - Comprehensive backend/MCP battery"
+	@echo "  ./scripts/test/benchmark.sh         - Performance benchmarks"
 	@echo ""
 	@echo "Utilities:"
 	@echo "  ./scripts/utils/monitor-database.sh  - Database monitoring"
@@ -300,16 +255,14 @@ help-all:
 	@echo "  python scripts/python/verify_mcp_server.py - MCP server verification"
 	@echo "  python scripts/python/mcp_tool.py <tool> <args> - MCP tool CLI"
 	@echo ""
-	@echo "🎯 VS CODE TASKS (8)"
+	@echo "🎯 VS CODE TASKS (6)"
 	@echo "────────────────────────────────────────────────────────────"
-	@echo "  🚀 Dev: Full Stack          - Start backend + frontend (parallel)"
-	@echo "  Dev: Backend                - Backend server only"
-	@echo "  Dev: Frontend              - Frontend server only"
+	@echo "  Dev: Backend                - Start backend server"
+	@echo "  Dev: Backend (Prod)         - Backend with production settings"
 	@echo "  🧪 Test: Backend            - Run backend tests (parallel)"
-	@echo "  🧪 Test: Frontend           - Run frontend tests"
-	@echo "  🏗️ Build: Frontend          - Build frontend (default build)"
+	@echo "  🧪 Test: MCP Tools          - Run MCP verification workflow"
 	@echo "  ✅ Pre-Commit: Run All Checks - Format + lint + test"
-	@echo "  🗄️ Database: Create Migration - Create Alembic migration"
+	@echo "  🚑 Health Check             - Quick backend/MCP health probes"
 	@echo ""
 	@echo "🤖 CURSOR WORKFLOWS (6)"
 	@echo "────────────────────────────────────────────────────────────"

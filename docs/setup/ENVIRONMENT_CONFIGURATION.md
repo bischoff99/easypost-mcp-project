@@ -22,12 +22,14 @@ Configuration files are loaded in this order (later files override earlier ones)
 ### Development Setup
 
 1. Copy example file:
+
    ```bash
-   cd apps/backend
+   cd /Users/andrejs/Projects/personal/easypost-mcp-project
    cp .env.example .env
    ```
 
 2. Edit `.env` with your development values:
+
    ```bash
    # Use test API key for development
    EASYPOST_API_KEY=your_test_key_here
@@ -45,12 +47,14 @@ Configuration files are loaded in this order (later files override earlier ones)
 ### Production Setup
 
 1. Copy production template:
+
    ```bash
-   cd apps/backend
+   cd /Users/andrejs/Projects/personal/easypost-mcp-project
    cp .env.production .env
    ```
 
 2. Edit `.env` with production values:
+
    ```bash
    EASYPOST_API_KEY=your_production_key_here
    ENVIRONMENT=production
@@ -93,27 +97,6 @@ DATABASE_POOL_TIMEOUT=10       # Wait 10s for connection
 DATABASE_COMMAND_TIMEOUT=60    # Query timeout 60s
 DATABASE_CONNECT_TIMEOUT=10    # Connection timeout 10s
 DATABASE_STATEMENT_TIMEOUT_MS=15000  # Statement timeout 15s
-```
-
-## Frontend Configuration
-
-### Development
-
-Uses `.env.development` (auto-loaded by Vite):
-
-```bash
-VITE_API_URL=http://localhost:8000
-NODE_ENV=development
-```
-
-### Production
-
-Uses `.env.production` (loaded during build):
-
-```bash
-VITE_API_URL=https://api.yourdomain.com
-NODE_ENV=production
-BUILD_SOURCEMAP=false
 ```
 
 ## Environment-Specific Settings
@@ -181,15 +164,16 @@ export EASYPOST_API_KEY=$(security find-generic-password -s "easypost-api-key" -
 **Error**: `EASYPOST_API_KEY is required`
 
 **Solution**:
+
 ```bash
 # Check if .env exists
-ls apps/backend/.env
+ls config/.env
 
 # Create from example
-cp apps/backend/.env.example apps/backend/.env
+cp config/.env.example config/.env
 
 # Edit with your key
-nano apps/backend/.env
+nano config/.env
 ```
 
 ### Database connection fails
@@ -197,38 +181,38 @@ nano apps/backend/.env
 **Error**: `Database not configured`
 
 **Solution**:
+
 - Development: Leave `DATABASE_URL` empty (DB features disabled)
 - Production: Set correct `DATABASE_URL` in `.env`
 
-### CORS errors in browser
+### CORS errors in browser/clients
 
 **Error**: `CORS policy blocked`
 
 **Solution**:
-- Development: Add your frontend URL to `CORS_ORIGINS`
-- Production: Set `CORS_ORIGINS` to your domain
+
+- Development: Add the requesting origin (if any) to `CORS_ORIGINS`
+- Production: Set `CORS_ORIGINS` to trusted domains (or leave empty for MCP-only)
 
 ### Environment not detected
 
 **Error**: Wrong environment loaded
 
 **Solution**:
+
 ```bash
 # Explicitly set environment
 export ENVIRONMENT=production
 
 # Or in .env
-echo "ENVIRONMENT=production" >> apps/backend/.env
+echo "ENVIRONMENT=production" >> config/.env
 ```
 
 ## Related Files
 
-- `apps/backend/.env.example` - Backend configuration template
-- `apps/backend/.env.development` - Development defaults
-- `apps/backend/.env.production` - Production defaults
-- `apps/frontend/.env.example` - Frontend configuration template
-- `apps/frontend/.env.development` - Frontend development config
-- `apps/frontend/.env.production` - Frontend production config
+- `config/.env.example` - Backend configuration template
+- `config/.env.development` - Development defaults
+- `config/.env.production` - Production defaults
 - `.envrc` - direnv configuration (auto-loads .env)
 - `deploy/docker-compose.prod.yml` - Production Docker config
 
@@ -236,12 +220,12 @@ echo "ENVIRONMENT=production" >> apps/backend/.env
 
 ```bash
 # Development
-cp apps/backend/.env.example apps/backend/.env
+cp config/.env.example config/.env
 # Edit .env with test key
 /ep-dev
 
 # Production
-cp apps/backend/.env.production apps/backend/.env
+cp config/.env.production config/.env
 # Edit .env with production key
 make prod
 ```

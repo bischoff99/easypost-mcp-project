@@ -22,7 +22,7 @@ EasyPost MCP (Model Context Protocol) server integration. Multi-tier architectur
 ## Testing Requirements
 
 - Python: pytest for unit tests, pytest coverage for integration tests
-- Tests in `apps/backend/tests/` directory
+- Tests in `tests/` directory
 - Minimum 50% coverage target (track in CI/CD)
 - Mock external APIs (EasyPost, Neo4j, Chroma) in unit tests
 
@@ -36,13 +36,13 @@ EasyPost MCP (Model Context Protocol) server integration. Multi-tier architectur
 ## Before Making Changes
 
 1. Understand current test coverage (check CI status)
-2. Run `pytest apps/backend/tests/` locally before agent commits
+2. Run `pytest tests/` locally before agent commits
 3. Verify MCP server health (check logs in `.logs/`)
 4. For database changes: create migrations, never direct schema edits
 
 ## File Pattern Attachments
 
-- `@apps/backend/src/models.py` — Core data structures
-- `@apps/backend/src/services/easypost_service.py` — API integration logic
+- `@src/models.py` — Core data structures
+- `@src/services/easypost_service.py` — API integration logic
 - `.cursor/mcp.json` — MCP server definitions
 - `.vscode/settings.json` — Project IDE configuration

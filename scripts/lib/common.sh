@@ -42,11 +42,10 @@ get_python_scripts_dir() {
 
 # Port configuration with defaults
 BACKEND_PORT=${BACKEND_PORT:-8000}
-FRONTEND_PORT=${FRONTEND_PORT:-5173}
 
 # Check virtual environment exists
 check_venv() {
-  local backend_dir="${1:-apps/backend}"
+  local backend_dir="${1:-$(get_project_root "${(%):-%x}")}"
   if [ -d "${backend_dir}/.venv" ]; then
     echo "${backend_dir}/.venv"
     return 0
@@ -93,7 +92,7 @@ warning_msg() {
 
 # Activate virtual environment
 activate_venv() {
-  local backend_dir="${1:-apps/backend}"
+  local backend_dir="${1:-$(get_project_root "${(%):-%x}")}"
   local venv_path=$(check_venv "$backend_dir")
   if [ $? -ne 0 ]; then
     return 1
@@ -104,12 +103,14 @@ activate_venv() {
 
 # Install dependencies (standardized)
 install_dependencies() {
-  local backend_dir="${1:-apps/backend}"
+  local backend_dir="${1:-$(get_project_root "${(%):-%x}")}"
   pushd "$backend_dir" >/dev/null || return 1
 
   info_msg "Installing dependencies..."
   pip install -U pip setuptools wheel || return 1
-  pip install -e . || return 1
+  if [ -f "${backend_dir}/config/requirements.txt" ]; then
+    pip install -r "${backend_dir}/config/requirements.txt" || return 1
+  fi
 
   popd >/dev/null
   return 0
@@ -126,11 +127,9 @@ mcp_tool() {
   local tool_name="$1"
   shift
   local project_root=$(get_project_root "${(%):-%x}")
-  local backend_dir="${project_root}/apps/backend"
-  local venv_bin="${backend_dir}/.venv/bin"
-  if [ ! -d "$venv_bin" ]; then
-    venv_bin="${backend_dir}/venv/bin"
-  fi
+  local backend_dir="${project_root}"
+  local venv_path=$(check_venv "$backend_dir") || return 1
+  local venv_bin="${venv_path}/bin"
   local mcp_tool_path=$(get_mcp_tool_path)
   "${venv_bin}/python" "$mcp_tool_path" "$tool_name" "$@"
 }

@@ -43,7 +43,7 @@ Or try:
 ### 2. Use Makefile Commands
 
 ```bash
-make dev         # Start both servers (5s)
+make dev         # Start backend server (5s)
 make test-fast   # Parallel tests (3s)
 make benchmark   # See M3 Max performance
 make help        # See all commands
@@ -84,12 +84,12 @@ Edit `.dev-config.json`:
 {
   "stack": {
     "backend": { "language": "go", "framework": "gin" },
-    "frontend": { "language": "javascript", "framework": "vue" }
+    "mcp": { "language": "python", "framework": "fastmcp" }
   }
 }
 ```
 
-**Now `/api /users POST` generates Go code!**  
+**Now `/api /users POST` generates Go code!**
 **Now `/component UserCard` generates Vue!**
 
 ---

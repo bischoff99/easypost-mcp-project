@@ -1,0 +1,264 @@
+---
+description: 'Project-specific knowledge, user preferences, and technical decisions'
+globs: []
+alwaysApply: true
+version: '1.1.0'
+lastUpdated: '2025-01-17'
+---
+
+# Learned Memories
+
+This file stores project-specific knowledge, user preferences, and technical decisions that should be remembered across sessions.
+
+## Purpose
+
+Use this file to document:
+
+- Project-specific patterns and conventions
+- User preferences and coding style choices
+- Technical decisions and their rationale
+- Recurring issues and their solutions
+- Domain-specific knowledge
+
+## How to Use
+
+When the AI learns something new about the project or user preferences, it should be documented here. This helps maintain consistency and avoids repeating explanations.
+
+## Project-Specific Knowledge
+
+### Architecture Decisions
+
+- **Single Database Pool**: Uses SQLAlchemy ORM pool only (dual-pool strategy removed for personal use)
+- **Max Workers**: Limited to 16 workers maximum (not 32+) for personal use
+- **Max DB Connections**: Limited to 20 connections total (pool_size=10, max_overflow=10)
+- **Personal Use Focus**: Enterprise features removed (webhooks, multi-tenancy, audit logs)
+
+### Code Style Preferences
+
+- **British English**: Use British spelling (colour, organisation, optimise)
+- **No Emojis**: Avoid emojis in commits, code comments, or professional output
+- **Functional Over OOP**: Prefer functional programming; classes only for external connectors and data models
+- **Type Safety**: Strict typing everywhere; avoid `any`, `unknown`, `Any`
+- **Error Handling**: Always raise errors explicitly; never silently ignore failures
+
+### Development Patterns
+
+- **Testing**: Backend uses pytest with auto-detected workers; Frontend uses vitest
+- **API Responses**: Standard format `{"status": "success/error", "data": ..., "message": "..."}`
+- **MCP Tools**: Return structured responses for AI consumption
+- **Database**: SQLAlchemy 2.0 async style with connection pooling
+
+### MCP Tools Standards (Critical - Must Follow)
+
+**Context Parameter Pattern:**
+
+- **ALL tools MUST use**: `ctx: Context | None = None` (NOT `ctx: Context`)
+- Reason: MCP Protocol requires optional context for stdio mode compatibility
+- Files violating: `tracking_tools.py`, `rate_tools.py`, `refund_tools.py` (must fix)
+
+**Service Access Error Handling:**
+
+- **NEVER raise `ValueError`** for missing service - return error dict or raise `ToolError`
+- Pattern: Always return structured error dict, never raise unhandled exceptions
+- Use `from fastmcp.exceptions import ToolError` for user-facing errors
+
+**Error Messages:**
+
+- **ALWAYS include exception details**: `message: f"Failed to X: {str(e)}"` (not generic "Failed to X")
+- Log with `exc_info=True` for stack traces: `logger.error(..., exc_info=True)`
+
+**Input Validation:**
+
+- **REQUIRED** for all tool parameters (tracking numbers, shipment IDs, etc.)
+- Use Pydantic models or `Field` annotations with validation
+- Pattern: `rate_tools.py` uses Pydantic models (excellent example)
+
+**Output Schemas:**
+
+- Tools SHOULD define `outputSchema` for client validation (not yet implemented)
+- Tool annotations (readOnlyHint, destructiveHint) SHOULD be added for safety-critical tools
+
+**Timeout Standards:**
+
+- Standard operations: `20.0s` timeout
+- Bulk operations: `30.0s` timeout
+- Define constants: `STANDARD_TIMEOUT = 20.0`, `BULK_OPERATION_TIMEOUT = 30.0`
+
+### Tool Preferences
+
+- **Python Formatter**: Ruff (not Black) - modern all-in-one tool
+- **VS Code Settings**: Python language server set to Pylance
+- **File Watchers**: Exclude `__pycache__`, `.venv`, `node_modules`, `dist`, `build`
+
+## User Preferences
+
+### Communication Style
+
+- Direct and terse responses
+- Show actual code/solutions immediately
+- Treat as expert; skip obvious explanations
+- Answer first, then detailed explanation if needed
+
+### Code Philosophy
+
+- Minimal, focused changes
+- DRY, KISS, YAGNI principles
+- Check for existing logic before writing new code
+- Expand existing code when possible instead of creating duplicates
+
+## Technical Decisions
+
+### Database Strategy
+
+- **Database removed for personal use (YAGNI principle)**
+- All data retrieved directly from EasyPost API on-demand
+- No local persistence or caching needed
+- Simpler architecture with fewer dependencies
+
+### Performance Optimizations
+
+- Auto-detect worker counts (adapts to machine)
+- Parallel processing when beneficial (not excessive)
+- Simple patterns preferred over complex optimizations
+- Measure first, optimize only when needed
+
+### Testing Strategy
+
+- Backend: pytest with parallel execution (auto-detected workers)
+- Frontend: vitest with React Testing Library
+- Coverage targets: 36% backend, 70% frontend (progressive increase)
+- MCP tools: 100% coverage requirement
+
+## Common Patterns
+
+### Python Function Template
+
+```python
+async def func(param: dict, ctx: Context = None) -> dict:
+    """Brief description."""
+    try:
+        return {"status": "success", "data": result}
+    except Exception as e:
+        logger.error(f"Error: {str(e)}")
+        return {"status": "error", "message": str(e)}
+```
+
+### MCP Tool Template (Correct Pattern)
+
+```python
+from datetime import UTC, datetime
+from fastmcp import Context
+from fastmcp.exceptions import ToolError
+import asyncio
+
+@mcp.tool(tags=["category", "subcategory"])
+async def tool_name(
+    param: str,
+    ctx: Context | None = None,  # ✅ MUST be optional
+) -> dict:
+    """
+    Tool description.
+
+    Args:
+        param: Parameter description
+        ctx: MCP context (optional, for progress reporting)
+
+    Returns:
+        Standardized response dict
+    """
+    try:
+        # Guard all ctx usage
+        if ctx:
+            await ctx.info(f"Processing {param}...")
+
+        # Input validation
+        if not param or not param.strip():
+            raise ToolError("Parameter cannot be empty")
+
+        # Add timeout for API calls
+        result = await asyncio.wait_for(
+            service.method(param),
+            timeout=20.0
+        )
+
+        if ctx:
+            await ctx.report_progress(1, 1)
+
+        return result  # Service method should return standardized dict
+
+    except TimeoutError:
+        logger.error("Operation timed out after 20 seconds")
+        return {
+            "status": "error",
+            "data": None,
+            "message": "Operation timed out. Please try again.",
+            "timestamp": datetime.now(UTC).isoformat(),
+        }
+    except Exception as e:
+        logger.error(f"Tool error: {str(e)}", exc_info=True)  # ✅ Include exc_info
+        return {
+            "status": "error",
+            "data": None,
+            "message": f"Failed to process: {str(e)}",  # ✅ Include exception detail
+            "timestamp": datetime.now(UTC).isoformat(),
+        }
+```
+
+### React Component Template
+
+```javascript
+export default function Component() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleAction = async () => {
+    setLoading(true);
+    try {
+      const result = await api.call();
+      setData(result);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return <div>{/* JSX */}</div>;
+}
+```
+
+## MCP Tools Review Findings (2025-01-17)
+
+**Overall Assessment**: B+ (Good, with critical fixes needed)
+
+**Critical Issues Found (4):**
+
+1. Context parameter inconsistency - 3 tools require `ctx: Context` (should be optional)
+2. Service access error handling - mix of `raise ValueError` vs return error dict
+3. Missing exception details - some tools lose error context in generic catch
+4. Missing input validation - tracking numbers, shipment IDs not validated
+
+**Positive Patterns to Maintain:**
+
+- Consistent response format across all tools
+- Proper async/await usage with timeouts
+- Good logging with context
+- Pydantic validation in `rate_tools.py` (excellent example)
+- Environment warnings for production operations
+- Parallel processing with semaphores
+
+**Standards Compliance:**
+
+- MCP Protocol: ⚠️ Partial (missing optional context, output schemas, annotations)
+- FastMCP Best Practices: ⚠️ Partial (missing `ToolError` usage, inconsistent validation)
+
+**See**: `/universal/review.md` for complete detailed analysis
+
+## Notes
+
+- This file should be updated when new patterns or preferences are discovered
+- Keep entries concise and focused
+- Remove outdated information when patterns change
+- Reference specific rule files for detailed guidelines
+- **MCP Tools section is CRITICAL** - all new tools must follow these patterns

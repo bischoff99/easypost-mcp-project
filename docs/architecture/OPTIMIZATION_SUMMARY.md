@@ -16,9 +16,9 @@ Comprehensive review and optimization of project architecture, folder structure,
 **Issue:** Empty `__init__.py` files without proper exports made imports inconsistent.
 
 **Changes:**
-- ✅ Added exports to `apps/backend/src/services/__init__.py`
-- ✅ Added exports to `apps/backend/src/routers/__init__.py`
-- ✅ Added exports to `apps/backend/src/utils/__init__.py`
+- ✅ Added exports to `src/services/__init__.py`
+- ✅ Added exports to `src/routers/__init__.py`
+- ✅ Added exports to `src/utils/__init__.py`
 
 **Benefits:**
 - Consistent import patterns: `from src.services import DatabaseService`
@@ -31,7 +31,7 @@ Comprehensive review and optimization of project architecture, folder structure,
 **Issue:** `bulk_example.md` was in code directory (`mcp_server/tools/`).
 
 **Changes:**
-- ✅ Moved `apps/backend/src/mcp_server/tools/bulk_example.md` → `docs/guides/BULK_TOOL_EXAMPLE.md`
+- ✅ Moved `src/mcp_server/tools/bulk_example.md` → `docs/guides/BULK_TOOL_EXAMPLE.md`
 
 **Benefits:**
 - Separation of code and documentation

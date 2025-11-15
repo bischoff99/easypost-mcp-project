@@ -44,14 +44,13 @@ python scripts/mcp_tool.py <tool_name> [--key=value] [--flag]
 
 ### `make dev`
 Now includes MCP tool verification after server startup:
-- Starts backend and frontend servers
+- Starts backend server
 - Verifies MCP tools are accessible after 3 seconds
 - Shows status: ✅ MCP tools verified or ⚠️ MCP tools not yet accessible
 
 ### `make health`
 Enhanced health check that includes MCP verification:
 - Checks backend health endpoint
-- Checks frontend accessibility
 - **NEW**: Verifies MCP tools are accessible
 
 ### `make benchmark`
@@ -182,5 +181,5 @@ Potential additions:
 ## See Also
 
 - `docs/architecture/MCP_TOOLS_INVENTORY.md` - Complete MCP tools documentation
-- `apps/backend/src/mcp_server/` - MCP server implementation
-- `scripts/verify_mcp_server.py` - MCP server verification script
+- `src/mcp_server/` - MCP server implementation
+- `docs/guides/MCP_ENVIRONMENT_SWITCHING.md` - Environment switching guide

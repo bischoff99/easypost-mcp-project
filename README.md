@@ -1,8 +1,8 @@
 # EasyPost MCP Project
 
-**Personal-use** EasyPost shipping integration with MCP server and React frontend.
+**Personal-use** EasyPost shipping integration with MCP server (backend-only).
 
-> **Note**: This project has been simplified for personal use. Enterprise features (webhooks, database-backed endpoints, bulk operations) have been removed. The core MCP server functionality remains intact.
+> **Note**: This project has been simplified for personal use. Enterprise features (webhooks, database persistence, frontend) have been removed. The core MCP server functionality remains intact.
 
 ## Quick Start
 
@@ -18,45 +18,40 @@ cp .env.example .env
 ### 2. Install Dependencies
 
 ```bash
-make install
+make setup
 # Or manually:
-# cd apps/backend && python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt
-# cd apps/frontend && pnpm install
+# python3 -m venv venv && source venv/bin/activate && pip install -r config/requirements.txt
 ```
 
 ### 3. Start Development Servers
 
 ```bash
 make dev
-# Or separately:
-# make backend   # Backend on http://localhost:8000
-# make frontend   # Frontend on http://localhost:5173
+# Starts backend server on http://localhost:8000
 ```
 
 ## URLs
 
-- Frontend: http://localhost:5173
-- Backend: http://localhost:8000
-- Health: http://localhost:8000/health
+- Backend API: http://localhost:8000
+- Health Check: http://localhost:8000/health
 - API Docs: http://localhost:8000/docs
 
 ## Project Structure
 
 ```
 easypost-mcp-project/
-├── apps/
-│   ├── backend/      # FastAPI/Python backend service
-│   │   ├── src/      # Source code
-│   │   │   ├── mcp_server/  # MCP tools (core product)
-│   │   │   ├── routers/     # API endpoints (simplified)
-│   │   │   └── services/     # Business logic (EasyPost only)
-│   │   └── tests/    # Test suite (unit + integration)
-│   └── frontend/     # React/Vite frontend service
-│       ├── src/      # Source code
-│       └── tests/    # Tests
-├── deploy/           # Docker Compose configurations
-├── docs/             # Project documentation
-└── scripts/          # Utility scripts
+├── src/                  # FastAPI + FastMCP source code
+│   ├── mcp_server/       # MCP tools (core product)
+│   ├── routers/          # API endpoints (optional, for testing)
+│   └── services/         # Business logic (EasyPost only)
+├── tests/                # Test suite (unit + integration)
+├── config/               # pyproject, requirements, environment files
+├── data/                 # Sample data exports (gitignored)
+├── deploy/               # Docker Compose configurations
+├── docs/                 # Project documentation
+├── scripts/              # Utility scripts (dev/test/ops)
+└── venv/                 # Local Python virtual environment (personal use)
+└── scripts/              # Utility scripts
 ```
 
 ## Features
@@ -64,20 +59,17 @@ easypost-mcp-project/
 ### Core Features (Personal Use)
 
 ✅ **MCP Server** - AI agent tools for shipment management (core product)
-✅ **Basic API** - Simple FastAPI endpoints for frontend
-✅ **React Frontend** - Management interface
-✅ **Simplified Analytics** - Basic shipping statistics
+✅ **Basic API** - Simple FastAPI endpoints for testing
 ✅ **Error handling** - Comprehensive error handling
 ✅ **Input validation** - Pydantic validation
 ✅ **Logging** - Structured logging
 
 ### Removed (Enterprise Features)
 
+❌ Frontend/Web UI
 ❌ Webhook system
 ❌ Database persistence (all data from EasyPost API)
-❌ Database-backed endpoints (`/api/db/*`)
 ❌ Bulk operations endpoints (use MCP tools instead)
-❌ Complex parallel analytics processing
 ❌ Request ID middleware (disabled by default)
 
 ## Architecture
@@ -91,29 +83,22 @@ The MCP server provides AI agent tools for:
 - Tracking shipments
 - Bulk operations (via MCP tools, not API endpoints)
 
-**Location**: `apps/backend/src/mcp_server/`
+**Location**: `src/mcp_server/`
 **Endpoint**: `/mcp` (HTTP transport)
 
-### FastAPI Backend (Management Interface)
+### FastAPI Backend (Optional Testing Interface)
 
-Simplified API for the React frontend:
+Optional HTTP API endpoints for testing:
 
 - `/api/rates` - Get shipping rates
 - `/api/shipments` - Create and manage shipments
 - `/api/tracking` - Track shipments
-- `/api/analytics` - Basic shipping statistics
 
 ### Data Architecture
 
 - **No database** - Removed for personal use (YAGNI principle)
 - **Direct EasyPost API** - All data fetched on-demand
 - **Simpler architecture** - Fewer dependencies, easier maintenance
-
-### Frontend
-
-- **React 19** + **Vite 7.2** + **TailwindCSS 4**
-- Pages: Dashboard, Shipments, Analytics, Tracking
-- Simplified UI focused on core functionality
 
 ## Documentation
 
@@ -140,13 +125,6 @@ make format           # Auto-format
 make check            # Lint + test
 ```
 
-### Database
-
-```bash
-make db-reset         # Reset database
-make db-upgrade       # Apply migrations
-```
-
 ## MCP Server Usage
 
 The MCP server can be used with Claude Desktop or other MCP clients:
@@ -154,13 +132,17 @@ The MCP server can be used with Claude Desktop or other MCP clients:
 ```json
 {
   "mcpServers": {
-    "easypost": {
-      "command": "/path/to/backend/venv/bin/python",
-      "args": ["-m", "src.mcp_server"],
-      "env": {
-        "EASYPOST_API_KEY": "your_key_here",  # pragma: allowlist secret
-        "DATABASE_URL": "postgresql+asyncpg://..."  # pragma: allowlist secret
-      }
+    "easypost-test": {
+      "command": "/path/to/repo/venv/bin/python",
+      "args": ["/path/to/repo/scripts/python/run_mcp.py"],
+      "cwd": "/path/to/repo",
+      "env": { "ENVIRONMENT": "test" }
+    },
+    "easypost-prod": {
+      "command": "/path/to/repo/venv/bin/python",
+      "args": ["/path/to/repo/scripts/python/run_mcp.py"],
+      "cwd": "/path/to/repo",
+      "env": { "ENVIRONMENT": "production" }
     }
   }
 }
@@ -170,10 +152,10 @@ The MCP server can be used with Claude Desktop or other MCP clients:
 
 This project has been optimized for personal use by removing:
 
-1. **Webhook system** - Not needed for personal use
-2. **Database-backed endpoints** - Use EasyPost API directly
-3. **Bulk operations API** - Use MCP tools instead
-4. **Complex analytics** - Simplified to sequential processing
+1. **Frontend/Web UI** - Backend-only MCP server for AI agents
+2. **Webhook system** - Not needed for personal use
+3. **Database persistence** - All data fetched directly from EasyPost API
+4. **Bulk operations API** - Use MCP tools instead
 5. **Request ID middleware** - Disabled by default (set `DEBUG=true` to enable)
 
-**Result**: Leaner codebase focused on core MCP functionality while maintaining a simple management interface.
+**Result**: Lean backend-only codebase focused on MCP server functionality.

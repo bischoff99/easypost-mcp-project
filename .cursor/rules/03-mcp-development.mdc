@@ -1,0 +1,613 @@
+---
+description: 'MCP (Model Context Protocol) development patterns and best practices'
+globs: ['**/mcp_server/**/*.py', '**/mcp/**/*.py']
+alwaysApply: false
+version: '1.1.0'
+lastUpdated: '2025-01-17'
+---
+
+# MCP (Model Context Protocol) Development Best Practices
+
+You are an expert in FastMCP, Model Context Protocol, and AI tool development.
+
+## Core Principles
+
+- Design tools for AI agents, not humans
+- Provide clear, structured responses
+- Handle errors gracefully with informative messages
+- Support batch operations for efficiency
+- Optimize for parallel execution
+- Return machine-readable data with human-readable summaries
+
+## Critical Standards (MUST Follow)
+
+### Context Parameter Pattern
+
+**ALL tools MUST use optional context** for stdio mode compatibility:
+
+```python
+# ✅ CORRECT - Optional context
+@mcp.tool()
+async def get_tracking(
+    tracking_number: str,
+    ctx: Context | None = None  # MUST be optional
+) -> dict:
+    """Get tracking information."""
+    if ctx:
+        await ctx.info(f"Fetching tracking for {tracking_number}...")
+    # ... implementation
+    if ctx:
+        await ctx.report_progress(1, 1)
+
+# ❌ WRONG - Required context blocks stdio mode
+async def get_tracking(tracking_number: str, ctx: Context) -> dict:
+```
+
+**Reason**: MCP Protocol requires optional context. Tools must work in both stdio and HTTP modes.
+
+### Service Access Error Handling
+
+**NEVER raise `ValueError` for missing service** - use `ToolError` or return error dict:
+
+```python
+# ✅ CORRECT - Return error dict
+from fastmcp.exceptions import ToolError
+
+async def tool_name(param: str, ctx: Context | None = None) -> dict:
+    try:
+        if not service:
+            raise ToolError("EasyPost service not initialized")
+        # ... rest of logic
+    except ToolError as e:
+        return {
+            "status": "error",
+            "data": None,
+            "message": str(e),
+            "timestamp": datetime.now(UTC).isoformat(),
+        }
+
+# ❌ WRONG - Unhandled exception
+if not service:
+    raise ValueError("No EasyPost service available")  # Crashes tool
+```
+
+### Error Messages - Always Include Details
+
+**ALWAYS include exception details** in error messages:
+
+```python
+# ✅ CORRECT - Includes exception detail
+except Exception as e:
+    logger.error(f"Tool error: {str(e)}", exc_info=True)
+    return {
+        "status": "error",
+        "message": f"Failed to retrieve rates: {str(e)}",  # Includes detail
+        "timestamp": datetime.now(UTC).isoformat(),
+    }
+
+# ❌ WRONG - Loses exception detail
+except Exception as e:
+    logger.error(f"Tool error: {str(e)}")
+    return {
+        "status": "error",
+        "message": "Failed to retrieve rates",  # Lost detail
+        "timestamp": datetime.now(UTC).isoformat(),
+    }
+```
+
+### Input Validation
+
+**REQUIRED for all tool parameters** - use Pydantic models or Field annotations:
+
+```python
+# ✅ CORRECT - Pydantic validation
+from pydantic import BaseModel, Field
+
+class AddressModel(BaseModel):
+    street1: str = Field(..., min_length=1, description="Street address")
+    city: str = Field(..., min_length=1)
+    state: str = Field(..., min_length=2, max_length=2)
+
+@mcp.tool()
+async def get_rates(
+    to_address: dict,
+    from_address: dict,
+    parcel: dict,
+    ctx: Context | None = None
+) -> dict:
+    """Get shipping rates."""
+    # Validate inputs
+    to_addr = AddressModel(**to_address)
+    from_addr = AddressModel(**from_address)
+    # ... rest of logic
+
+# ❌ WRONG - No validation
+@mcp.tool()
+async def get_tracking(tracking_number: str, ctx: Context | None = None) -> dict:
+    # No validation - accepts empty strings, None, invalid formats
+    result = await service.get_tracking(tracking_number)
+```
+
+### Timeout Standards
+
+**Standardize timeout values**:
+
+```python
+# Define constants
+STANDARD_TIMEOUT = 20.0  # For single API calls
+BULK_OPERATION_TIMEOUT = 30.0  # For bulk operations
+
+# Use in tools
+result = await asyncio.wait_for(
+    service.method(param),
+    timeout=STANDARD_TIMEOUT
+)
+```
+
+## FastMCP Server Structure
+
+```python
+from fastmcp import FastMCP
+from typing import Optional
+import structlog
+
+logger = structlog.get_logger()
+
+# Initialize MCP server
+mcp = FastMCP("EasyPost MCP", dependencies=["easypost", "sqlalchemy"])
+
+@mcp.tool()
+async def create_shipment(
+    to_address: dict,
+    from_address: dict,
+    parcel: dict,
+    carrier_accounts: Optional[list[str]] = None,
+    ctx: Context | None = None  # Optional context for progress reporting
+) -> dict:
+    """
+    Create a shipment with EasyPost and generate a shipping label.
+
+    Args:
+        to_address: Recipient address details
+        from_address: Sender address details
+        parcel: Package dimensions and weight
+        carrier_accounts: Optional list of carrier account IDs to use
+
+    Returns:
+        Shipment details including tracking number and label URL
+    """
+    try:
+        # Implementation
+        result = await easypost_service.create_shipment(
+            to_address=to_address,
+            from_address=from_address,
+            parcel=parcel,
+            carrier_accounts=carrier_accounts
+        )
+
+        logger.info("shipment_created", shipment_id=result["id"])
+
+        return {
+            "status": "success",
+            "data": result,
+            "message": f"Shipment created: {result['tracking_code']}"
+        }
+    except Exception as e:
+        logger.error("shipment_creation_failed", error=str(e), exc_info=True)
+        return {
+            "status": "error",
+            "data": None,
+            "message": f"Failed to create shipment: {str(e)}",  # Always include exception detail
+            "timestamp": datetime.now(UTC).isoformat(),
+        }
+```
+
+## Tool Design Patterns
+
+### 1. Single Responsibility Tools
+
+Each tool should do ONE thing well:
+
+```python
+@mcp.tool()
+async def create_shipment(...):
+    """Create a shipment (does NOT buy it)."""
+    pass
+
+@mcp.tool()
+async def buy_shipment(shipment_id: str, rate_id: str):
+    """Buy a specific rate for an existing shipment."""
+    pass
+
+@mcp.tool()
+async def create_and_buy_shipment(...):
+    """Convenience tool that creates AND buys in one call."""
+    pass
+```
+
+### 2. Batch Operations
+
+Support bulk operations with parallel processing:
+
+```python
+@mcp.tool()
+async def create_bulk_shipments(
+    shipments: list[dict],
+    max_workers: int = 16
+) -> dict:
+    """
+    Create multiple shipments in parallel.
+
+    Args:
+        shipments: List of shipment data dicts
+        max_workers: Number of parallel workers (default: 16 for M3 Max)
+
+    Returns:
+        Results with success/failure counts and details
+    """
+    async def create_one(shipment_data: dict) -> dict:
+        try:
+            result = await easypost_service.create_shipment(**shipment_data)
+            return {"status": "success", "data": result}
+        except Exception as e:
+            return {"status": "error", "message": str(e), "data": shipment_data}
+
+    # Process in parallel
+    results = await asyncio.gather(*[
+        create_one(shipment) for shipment in shipments
+    ], return_exceptions=True)
+
+    successes = [r for r in results if r.get("status") == "success"]
+    failures = [r for r in results if r.get("status") == "error"]
+
+    return {
+        "status": "success",
+        "data": {
+            "total": len(shipments),
+            "successful": len(successes),
+            "failed": len(failures),
+            "successes": successes,
+            "failures": failures
+        },
+        "message": f"Processed {len(shipments)} shipments: {len(successes)} successful, {len(failures)} failed"
+    }
+```
+
+### 3. Flexible Search/Filter Tools
+
+```python
+@mcp.tool()
+async def search_shipments(
+    tracking_code: Optional[str] = None,
+    status: Optional[str] = None,
+    carrier: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    limit: int = 100
+) -> dict:
+    """
+    Search shipments with flexible filters.
+
+    All parameters are optional - at least one should be provided.
+    """
+    filters = {}
+    if tracking_code:
+        filters["tracking_code"] = tracking_code
+    if status:
+        filters["status"] = status
+    if carrier:
+        filters["carrier"] = carrier
+
+    results = await db_service.search_shipments(filters, limit=limit)
+
+    return {
+        "status": "success",
+        "data": results,
+        "message": f"Found {len(results)} shipments matching criteria"
+    }
+```
+
+### 4. Comprehensive Error Information
+
+```python
+@mcp.tool()
+async def track_shipment(tracking_code: str) -> dict:
+    """Track a shipment by tracking code."""
+    try:
+        result = await easypost_service.track_shipment(tracking_code)
+        return {
+            "status": "success",
+            "data": result,
+            "message": f"Tracking info retrieved for {tracking_code}"
+        }
+    except EasyPostNotFoundError:
+        return {
+            "status": "error",
+            "error_type": "not_found",
+            "message": f"Tracking number {tracking_code} not found",
+            "suggestion": "Verify the tracking number is correct"
+        }
+    except EasyPostAPIError as e:
+        return {
+            "status": "error",
+            "error_type": "api_error",
+            "message": f"EasyPost API error: {e.message}",
+            "code": e.code,
+            "suggestion": "Try again later or contact support"
+        }
+    except Exception as e:
+        logger.error("tracking_failed", error=str(e), tracking_code=tracking_code)
+        return {
+            "status": "error",
+            "error_type": "unknown",
+            "message": f"Unexpected error: {str(e)}"
+        }
+```
+
+## Resources (Read-Only Data)
+
+```python
+@mcp.resource("easypost://carriers")
+async def list_carriers() -> str:
+    """List all available carriers and their capabilities."""
+    carriers = await easypost_service.list_carriers()
+
+    # Return formatted text for AI consumption
+    output = "Available Carriers:\n\n"
+    for carrier in carriers:
+        output += f"- {carrier['name']} ({carrier['type']})\n"
+        output += f"  Services: {', '.join(carrier['services'])}\n"
+        output += f"  Countries: {', '.join(carrier['countries'])}\n\n"
+
+    return output
+
+@mcp.resource("easypost://shipment/{shipment_id}")
+async def get_shipment(shipment_id: str) -> str:
+    """Get details for a specific shipment."""
+    shipment = await db_service.get_shipment(shipment_id)
+
+    # Return structured text
+    return f"""
+Shipment: {shipment.id}
+Tracking: {shipment.tracking_code}
+Status: {shipment.status}
+Carrier: {shipment.carrier}
+Created: {shipment.created_at}
+
+From: {format_address(shipment.from_address)}
+To: {format_address(shipment.to_address)}
+
+Label: {shipment.label_url}
+"""
+```
+
+## Prompts (Guided Workflows)
+
+```python
+@mcp.prompt()
+async def create_shipment_workflow() -> list[dict]:
+    """Guide user through shipment creation."""
+    return [
+        {
+            "role": "user",
+            "content": "I need to create a shipment"
+        },
+        {
+            "role": "assistant",
+            "content": "I'll help you create a shipment. Please provide:\n1. Recipient address\n2. Sender address\n3. Package dimensions (length, width, height in inches)\n4. Package weight (in ounces)"
+        }
+    ]
+
+@mcp.prompt()
+async def bulk_shipment_workflow() -> list[dict]:
+    """Guide through bulk shipment creation."""
+    return [
+        {
+            "role": "user",
+            "content": "I need to create multiple shipments"
+        },
+        {
+            "role": "assistant",
+            "content": """I'll help you create bulk shipments efficiently.
+
+Options:
+1. Upload CSV file with shipment data
+2. Provide shipments as JSON array
+3. Use template to generate shipments
+
+Which method would you prefer?"""
+        }
+    ]
+```
+
+## Testing MCP Tools
+
+```python
+import pytest
+from unittest.mock import AsyncMock
+
+@pytest.mark.asyncio
+async def test_create_shipment_tool(mock_easypost_service):
+    """Test create_shipment MCP tool."""
+    # Arrange
+    mock_easypost_service.create_shipment.return_value = {
+        "id": "shp_123",
+        "tracking_code": "EZ1234567890"
+    }
+
+    arguments = {
+        "to_address": {"street1": "123 Main St", "city": "SF", "state": "CA", "zip": "94105"},
+        "from_address": {"street1": "456 Oak Ave", "city": "LA", "state": "CA", "zip": "90001"},
+        "parcel": {"weight": 12, "length": 10, "width": 8, "height": 6}
+    }
+
+    # Act
+    result = await create_shipment(**arguments)
+
+    # Assert
+    assert result["status"] == "success"
+    assert result["data"]["tracking_code"] == "EZ1234567890"
+    mock_easypost_service.create_shipment.assert_called_once()
+
+@pytest.mark.asyncio
+async def test_bulk_shipments_performance(mock_easypost_service):
+    """Test bulk shipment creation performance."""
+    shipments = [{"to_address": {...}, "from_address": {...}, "parcel": {...}} for _ in range(100)]
+
+    start = time.time()
+    result = await create_bulk_shipments(shipments, max_workers=16)
+    duration = time.time() - start
+
+    assert result["data"]["successful"] == 100
+    assert duration < 40  # Should complete in <40s on M3 Max
+```
+
+## Response Format Standards
+
+All MCP tools should return consistent response format:
+
+```python
+{
+    "status": "success" | "error",
+    "data": {...},  # Main response data
+    "message": "Human-readable summary",
+    "metadata": {  # Optional
+        "duration_ms": 123,
+        "request_id": "uuid",
+        "timestamp": "2024-01-01T00:00:00Z"
+    },
+    "error_type": "validation_error",  # For errors
+    "suggestion": "Try X"  # For errors
+}
+```
+
+## Performance Optimization
+
+### Parallel Execution
+
+```python
+# Good: Process items in parallel
+results = await asyncio.gather(*[
+    process_item(item) for item in items
+])
+
+# Bad: Sequential processing
+results = []
+for item in items:
+    result = await process_item(item)
+    results.append(result)
+```
+
+### Caching
+
+```python
+from functools import lru_cache
+
+@lru_cache(maxsize=128)
+async def get_carrier_accounts():
+    """Cache carrier accounts (they rarely change)."""
+    return await easypost_service.list_carrier_accounts()
+```
+
+### Rate Limiting
+
+```python
+from asyncio import Semaphore
+
+async def rate_limited_operation(items, max_concurrent=10):
+    """Limit concurrent operations to avoid rate limits."""
+    semaphore = Semaphore(max_concurrent)
+
+    async def limited_call(item):
+        async with semaphore:
+            return await api_call(item)
+
+    return await asyncio.gather(*[limited_call(item) for item in items])
+```
+
+## Documentation Standards
+
+Every tool must have:
+
+1. Clear docstring explaining purpose
+2. Typed parameters with descriptions
+3. Return type specification
+4. Example usage in comments
+5. Error conditions documented
+
+```python
+@mcp.tool()
+async def calculate_shipping_cost(
+    from_zip: str,
+    to_zip: str,
+    weight: float,
+    dimensions: dict[str, float]
+) -> dict:
+    """
+    Calculate shipping cost for a package.
+
+    Args:
+        from_zip: Origin ZIP code (5 digits)
+        to_zip: Destination ZIP code (5 digits)
+        weight: Package weight in ounces
+        dimensions: Dict with 'length', 'width', 'height' in inches
+
+    Returns:
+        Dict with rates from all available carriers
+
+    Raises:
+        ValueError: If ZIP codes are invalid
+        EasyPostAPIError: If EasyPost API fails
+
+    Example:
+        >>> await calculate_shipping_cost(
+        ...     from_zip="94105",
+        ...     to_zip="90001",
+        ...     weight=12,
+        ...     dimensions={"length": 10, "width": 8, "height": 6}
+        ... )
+        {
+            "status": "success",
+            "data": {
+                "rates": [
+                    {"carrier": "USPS", "service": "Priority", "rate": "12.50"},
+                    {"carrier": "UPS", "service": "Ground", "rate": "15.75"}
+                ]
+            }
+        }
+    """
+    # Implementation
+    pass
+```
+
+## Key Conventions
+
+1. **Tool Naming**: Use clear, action-oriented names (`create_shipment`, not `shipment`)
+2. **Context Parameter**: MUST be optional (`ctx: Context | None = None`)
+3. **Batch Support**: Provide both single and bulk versions of operations
+4. **Error Handling**: Always return structured error information, never raise unhandled exceptions
+5. **Error Messages**: Always include exception details (`f"Failed to X: {str(e)}"`)
+6. **Input Validation**: REQUIRED for all parameters (use Pydantic models)
+7. **Timeouts**: Use constants (STANDARD_TIMEOUT=20.0s, BULK_TIMEOUT=30.0s)
+8. **Performance**: Leverage parallel processing for bulk operations
+9. **Logging**: Log all operations with `exc_info=True` for stack traces
+10. **Testing**: 100% coverage for all MCP tools
+11. **Documentation**: Comprehensive docstrings with examples
+
+## Review Status
+
+**Last Review**: 2025-01-17
+**Assessment**: B+ (Good, with critical fixes needed)
+**See**: `/universal/review.md` for complete analysis
+
+**Critical Issues Found (4)**:
+1. Context parameter inconsistency - 3 tools require `ctx: Context` (should be optional)
+2. Service access error handling - mix of `raise ValueError` vs return error dict
+3. Missing exception details - some tools lose error context in generic catch
+4. Missing input validation - tracking numbers, shipment IDs not validated
+
+**All new tools MUST follow the standards above to achieve protocol compliance.**
+
+---
+
+Design MCP tools to be intuitive for AI agents while maintaining flexibility and performance.

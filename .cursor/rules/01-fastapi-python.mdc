@@ -1,13 +1,13 @@
 ---
 <<<<<<< HEAD
 description: 'Comprehensive FastAPI and Python best practices for backend development'
-globs: ['apps/backend/**/*.py']
+globs: ['src/**/*.py']
 ||||||| 7a576da
 description: "Comprehensive FastAPI and Python best practices for backend development"
 globs: ["backend/**/*.py", "**/*.py"]
 =======
 description: "Comprehensive FastAPI and Python best practices for backend development"
-globs: ["apps/backend/**/*.py"]
+globs: ["src/**/*.py"]
 >>>>>>> 99314e0f7fef772f5a4f4779d02c1c7df730f0d8
 alwaysApply: false
 version: '1.0.0'
@@ -33,12 +33,14 @@ You are an expert in Python, FastAPI, PostgreSQL, and scalable API development.
 ## Python/FastAPI Standards
 
 ### Function Definitions
+
 - Use `def` for pure functions and `async def` for asynchronous operations
 - Use type hints for ALL function signatures
 - Prefer Pydantic models over raw dictionaries for input validation
 - Always include docstrings for public functions
 
 ### File Structure
+
 - Exported router first
 - Sub-routes
 - Utilities
@@ -46,6 +48,7 @@ You are an expert in Python, FastAPI, PostgreSQL, and scalable API development.
 - Types (models, schemas)
 
 ### Conditional Statements
+
 - Avoid unnecessary curly braces in conditional statements
 - For single-line statements, omit braces
 - Use concise, one-line syntax: `if condition: do_something()`
@@ -111,23 +114,27 @@ python-json-logger >= 2.0.7
 ## FastAPI-Specific Guidelines
 
 ### Route Definitions
+
 - Use functional components (plain functions)
 - Use Pydantic models for input validation and response schemas
 - Use declarative route definitions with clear return type annotations
 - Use `def` for synchronous operations and `async def` for asynchronous ones
 
 ### Lifecycle Management
+
 - Minimize `@app.on_event("startup")` and `@app.on_event("shutdown")`
 - Prefer lifespan context managers for startup/shutdown events
 - Use middleware for logging, error monitoring, and performance optimization
 
 ### Performance
+
 - Optimize using async functions for I/O-bound tasks
 - Implement caching strategies (Redis, in-memory)
 - Use lazy loading for large datasets
 - Minimize blocking I/O operations
 
 ### Error Handling
+
 - Use `HTTPException` for expected errors with specific HTTP responses
 - Use middleware for unexpected errors, logging, and monitoring
 - Use Pydantic's `BaseModel` for consistent input/output validation
@@ -174,6 +181,7 @@ async def batch_track_shipments(
 ## Database Integration (SQLAlchemy 2.0 + PostgreSQL)
 
 ### Query Optimization
+
 ```python
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -197,6 +205,7 @@ async def get_shipments_with_addresses(
 ```
 
 ### Connection Pooling
+
 ```python
 # Use connection pooling for PostgreSQL
 engine = create_async_engine(

@@ -30,30 +30,17 @@ chmod +x start_backend.sh
 
 Backend will run on: http://localhost:8000
 
-## Frontend Setup
+## MCP Notes
 
-1. Navigate to frontend directory (in a new terminal):
-```bash
-cd /Users/andrejs/easypost-mcp-project/frontend
-```
+The legacy React UI has been removed. The backend doubles as the MCP server and optional HTTP API:
 
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Make startup script executable and run:
-```bash
-chmod +x start_frontend.sh
-./start_frontend.sh
-```
-
-Frontend will run on: http://localhost:5173
+- Use Claude Desktop (MCP) or REST clients to interact with the system.
+- Swagger docs remain available at http://localhost:8000/docs for manual testing.
 
 ## Testing
 
-Visit http://localhost:8000/health to verify backend is running
-Visit http://localhost:5173 to access the dashboard
+Visit http://localhost:8000/health to verify backend is running.
+Use `python scripts/python/mcp_tool.py list_tools` to confirm MCP registration.
 
 ## Project Structure
 
@@ -69,15 +56,8 @@ easypost-mcp-project/
 │   ├── requirements.txt
 │   ├── .env
 │   └── start_backend.sh
-└── frontend/
-    ├── src/
-    │   ├── components/
-    │   │   ├── Dashboard.jsx
-    │   │   └── Dashboard.css
-    │   ├── services/
-    │   │   └── api.js
-    │   ├── App.jsx
-    │   └── main.jsx
-    ├── package.json
-    └── start_frontend.sh
+└── scripts/
+    ├── dev/
+    ├── test/
+    └── python/
 ```

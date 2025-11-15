@@ -1,20 +1,23 @@
 # MCP Tools & Resources Inventory
 
 **Server**: EasyPost MCP Server
-**Location**: `backend/src/mcp_server.py`
+**Location**: `src/mcp_server/__init__.py` (`build_mcp_server()`)
 **Framework**: FastMCP 2.x
 
 ---
 
-## 🔧 Tools (4)
+## 🔧 Tools (6)
 
 ### 1. `get_tracking`
+
 **Purpose**: Get real-time tracking information for a shipment
 
 **Parameters**:
+
 - `tracking_number` (str) - The tracking number to look up
 
 **Returns**:
+
 ```json
 {
   "status": "success",
@@ -33,9 +36,11 @@
 ---
 
 ### 2. `get_shipment_rates`
+
 **Purpose**: Get shipping rates for single or multiple shipments
 
 **Parameters**:
+
 - `spreadsheet_data` (str) - Tab-separated shipment data (1+ lines)
 - `ctx` (Context, optional) - MCP context for progress reporting
 
@@ -44,9 +49,11 @@
 ---
 
 ### 3. `create_shipment`
+
 **Purpose**: Create single or multiple shipments in parallel (M3 Max optimized, 16 workers)
 
 **Parameters**:
+
 - `spreadsheet_data` (str) - Tab-separated shipment data
 - `purchase_labels` (bool) - Whether to purchase labels immediately (default: False)
 - `carrier` (str, optional) - Force specific carrier
@@ -57,9 +64,11 @@
 ---
 
 ### 4. `buy_shipment_label`
+
 **Purpose**: Purchase labels for pre-created shipments using selected rates
 
 **Parameters**:
+
 - `shipment_ids` (list[str]) - List of shipment IDs
 - `rate_ids` (list[str]) - List of rate IDs to use
 - `customs_data` (list[dict], optional) - Customs information
@@ -68,10 +77,38 @@
 
 ---
 
-### 5. `create_shipment` (Legacy - use bulk tools for single shipments)
-**Purpose**: Create a new shipment and purchase a shipping label
+### 5. `download_shipment_documents`
+
+**Purpose**: Download purchased labels and customs forms
 
 **Parameters**:
+
+- `shipment_ids` (str | list[str]) - Shipment IDs to download
+- `request` (str) - `"label"`, `"customs"`, `"invoice"`, `"both"` (default)
+- `download_path` (str, optional) - Override output directory
+
+**Returns**: Paths/URLs for each requested asset per shipment with success flags
+
+---
+
+### 6. `refund_shipment`
+
+**Purpose**: Submit refunds for single or multiple shipments
+
+**Parameters**:
+
+- `shipment_ids` (str | list[str]) - Shipments to refund
+
+**Returns**: Per-shipment refund status with carriers, tracking codes, and amounts
+
+---
+
+### Legacy single-shipment helpers (superseded by bulk tools)
+
+**Purpose**: Create/buy a single shipment directly via JSON payloads
+
+**Parameters**:
+
 - `to_address` (dict) - Destination address
   - name, street1, city, state, zip, country (optional)
 - `from_address` (dict) - Origin address
@@ -81,6 +118,7 @@
 - `carrier` (str, optional) - Preferred carrier (default: "USPS")
 
 **Returns**:
+
 ```json
 {
   "status": "success",
@@ -97,6 +135,7 @@
 ```
 
 **Example**:
+
 ```python
 result = await create_shipment(
     to_address={"name": "John Doe", "street1": "123 Main St", ...},
@@ -107,14 +146,17 @@ result = await create_shipment(
 ```
 
 ---
+
 **Purpose**: Get shipping rates from multiple carriers
 
 **Parameters**:
+
 - `to_address` (dict) - Destination address
 - `from_address` (dict) - Origin address
 - `parcel` (dict) - Package dimensions
 
 **Returns**:
+
 ```json
 {
   "status": "success",
@@ -133,6 +175,7 @@ result = await create_shipment(
 ```
 
 **Example**:
+
 ```python
 result = await get_rates(
     to_address={...},
@@ -146,9 +189,11 @@ result = await get_rates(
 ## 📦 Resources (2)
 
 ### 1. `easypost://shipments/recent`
+
 **Purpose**: Get list of recent shipments from EasyPost API
 
 **Returns**: JSON list of recent shipments with:
+
 - Shipment ID
 - Tracking number
 - Status
@@ -157,6 +202,7 @@ result = await get_rates(
 - Label URL
 
 **Usage**:
+
 ```python
 # Accessed as MCP resource
 shipments = mcp.read_resource("easypost://shipments/recent")
@@ -165,9 +211,11 @@ shipments = mcp.read_resource("easypost://shipments/recent")
 ---
 
 ### 2. `easypost://stats/overview`
+
 **Purpose**: Get shipping statistics overview
 
 **Returns**: JSON with:
+
 - Total shipments count
 - Active deliveries
 - Total cost
@@ -175,6 +223,7 @@ shipments = mcp.read_resource("easypost://shipments/recent")
 - Success rate
 
 **Usage**:
+
 ```python
 stats = mcp.read_resource("easypost://stats/overview")
 ```
@@ -184,15 +233,18 @@ stats = mcp.read_resource("easypost://stats/overview")
 ## 💡 Prompts (5)
 
 ### 1. `compare_carriers`
+
 **Purpose**: Compare shipping rates across carriers
 
 **Parameters**:
+
 - origin (str) - Origin city/state
 - destination (str) - Destination city/state
 - weight_oz (float) - Package weight in ounces
 - length, width, height (float) - Dimensions in inches
 
 **Workflow**:
+
 1. Fetch rates from all carriers
 2. Compare prices and delivery times
 3. Create comparison table
@@ -201,13 +253,16 @@ stats = mcp.read_resource("easypost://stats/overview")
 ---
 
 ### 2. `track_and_notify`
+
 **Purpose**: Track a shipment and set up notifications
 
 **Parameters**:
+
 - tracking_number (str) - Tracking number
 - notification_email (str) - Email for updates
 
 **Workflow**:
+
 1. Retrieve current tracking status
 2. Parse tracking events
 3. Estimate delivery date
@@ -217,12 +272,15 @@ stats = mcp.read_resource("easypost://stats/overview")
 ---
 
 ### 3. `cost_optimization`
+
 **Purpose**: Analyze shipping costs and suggest optimizations
 
 **Parameters**:
+
 - time_period (str) - Analysis period (e.g., "last_30_days")
 
 **Workflow**:
+
 1. Retrieve shipment history
 2. Analyze cost patterns
 3. Identify optimization opportunities
@@ -232,12 +290,15 @@ stats = mcp.read_resource("easypost://stats/overview")
 ---
 
 ### 4. `bulk_rate_check`
+
 **Purpose**: Check rates for multiple shipments at once
 
 **Parameters**:
+
 - shipments_list (list) - List of shipment details
 
 **Workflow**:
+
 1. Process each shipment
 2. Get rates for all
 3. Create cost comparison table
@@ -248,48 +309,62 @@ stats = mcp.read_resource("easypost://stats/overview")
 
 ## 🎯 Tool Usage Summary
 
-| Type | Count | Purpose |
-|------|-------|---------|
-| **Tools** | 4 | Core shipping operations (tracking, rates, bulk create, bulk purchase) |
-| **Resources** | 2 | Data access (shipments, stats) |
-| **Prompts** | 5 | Guided workflows |
-| **Total** | **11** | Complete MCP integration |
+| Type          | Count  | Purpose                                                                    |
+| ------------- | ------ | -------------------------------------------------------------------------- |
+| **Tools**     | 6      | Core shipping operations (tracking, rates, bulk create/buy, docs, refunds) |
+| **Resources** | 2      | Data access (shipments, stats)                                             |
+| **Prompts**   | 5      | Guided workflows                                                           |
+| **Total**     | **13** | Complete MCP integration                                                   |
 
 ---
 
 ## 🔌 Integration Points
 
 ### FastMCP Server
-- **Entry Point**: `backend/src/mcp_server.py`
-- **Runner**: `backend/run_mcp.py` (stdio mode)
-- **HTTP Mode**: Integrated in `backend/src/server.py`
 
-### REST API Equivalent
-All MCP tools have REST API endpoints:
+- **Entry Point**: `src/mcp_server/__init__.py` (`build_mcp_server()`)
+- **Runner**: `scripts/python/run_mcp.py` (stdio mode, loads `.env` + `config/.env`)
+- **HTTP Mode**: Mounted at `/mcp` inside `src/server.py`
+
+### REST API Coverage
+
 - `create_shipment` → `POST /api/shipments`
-- `get_tracking` → `GET /api/tracking/{number}`
-- `get_rates` → `POST /api/rates`
+- `buy_shipment_label` (via FastAPI) → `POST /api/shipments/buy`
+- `refund_shipment` → `POST /api/shipments/{shipment_id}/refund`
+- `get_tracking` → `GET /api/tracking/{tracking_number}`
+- `get_shipment_rates` → `POST /api/rates`
+
+`download_shipment_documents` and other automation helpers remain MCP-only to keep the REST surface minimal for personal use.
 
 ### Configuration
+
 ```json
 {
   "mcpServers": {
-    "easypost-shipping": {
-      "command": "python",
-      "args": ["/path/to/run_mcp.py"],
-      "env": {
-        "EASYPOST_API_KEY": "your_key_here"
-      }
+    "easypost-test": {
+      "command": "/path/to/repo/venv/bin/python",
+      "args": ["/path/to/repo/scripts/python/run_mcp.py"],
+      "cwd": "/path/to/repo",
+      "env": { "ENVIRONMENT": "test" }
+    },
+    "easypost-prod": {
+      "command": "/path/to/repo/venv/bin/python",
+      "args": ["/path/to/repo/scripts/python/run_mcp.py"],
+      "cwd": "/path/to/repo",
+      "env": { "ENVIRONMENT": "production" }
     }
   }
 }
 ```
+
+> `run_mcp.py` automatically loads `.env` and `config/.env`, so keep EasyPost keys in those files (never in the JSON).
 
 ---
 
 ## 📝 Example Usage
 
 ### Create Shipment with MCP
+
 ```python
 import mcp
 
@@ -308,6 +383,7 @@ result = await mcp.call_tool(
 ```
 
 ### Use Prompt for Comparison
+
 ```python
 comparison = await mcp.use_prompt(
     "compare_carriers",
@@ -325,6 +401,7 @@ comparison = await mcp.use_prompt(
 ## ✅ Tool Validation
 
 All tools:
+
 - ✅ Properly decorated with @mcp.tool()
 - ✅ Complete docstrings
 - ✅ Type hints provided

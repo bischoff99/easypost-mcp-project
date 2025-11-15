@@ -6,12 +6,11 @@ services:
       POSTGRES_DB: easypost_mcp
       POSTGRES_USER: easypost
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_INITDB_ARGS: "-E UTF8 --locale=en_US.UTF-8"
+      POSTGRES_INITDB_ARGS: '-E UTF8 --locale=en_US.UTF-8'
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ../apps/backend/alembic:/docker-entrypoint-initdb.d/migrations:ro
     ports:
-      - "5432:5432"
+      - '5432:5432'
     cpus: '4'
     mem_limit: 16g
     shm_size: 4g
@@ -34,7 +33,7 @@ services:
       -c max_parallel_maintenance_workers=4
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U easypost -d easypost_mcp"]
+      test: ['CMD-SHELL', 'pg_isready -U easypost -d easypost_mcp']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -44,11 +43,11 @@ services:
 
   backend:
     build:
-      context: ../apps/backend
-      dockerfile: Dockerfile.prod
+      context: ..
+      dockerfile: deploy/Dockerfile.prod
     container_name: easypost-backend
     ports:
-      - "8000:8000"
+      - '8000:8000'
     cpus: '14'
     mem_limit: 96g
     environment:
@@ -60,7 +59,7 @@ services:
       - LOG_LEVEL=INFO
       - MCP_HOST=0.0.0.0
       - MCP_PORT=8000
-      - CORS_ORIGINS=http://localhost,http://localhost:80,https://${DOMAIN:-localhost}
+      - CORS_ORIGINS=http://localhost,http://localhost:8000,https://${DOMAIN:-localhost}
       - WORKERS=16
       - PYTHONOPTIMIZE=2
       - PYTHONUNBUFFERED=1
@@ -69,38 +68,13 @@ services:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:8000/health']
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 30s
     volumes:
-      - ../apps/backend/logs:/app/logs
-    networks:
-      - easypost-network
-
-  frontend:
-    build:
-      context: ../apps/frontend
-      dockerfile: Dockerfile.prod
-      args:
-        - VITE_API_URL=${BACKEND_URL:-http://localhost:8000}
-    container_name: easypost-frontend
-    ports:
-      - "80:80"
-      - "443:443"
-    cpus: '10'
-    mem_limit: 16g
-    depends_on:
-      backend:
-        condition: service_healthy
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1/"]
-      interval: 30s
-      timeout: 3s
-      retries: 3
-      start_period: 10s
+      - ../logs:/app/logs
     networks:
       - easypost-network
 
@@ -111,17 +85,16 @@ volumes:
 networks:
   easypost-network:
     driver: bridge
-
 # Production Deployment Instructions:
 #
-# 1. Ensure backend/.env is configured with production values:
+# 1. Ensure config/.env is configured with production values:
 #    ENVIRONMENT=production
 #    EASYPOST_API_KEY=EZAK... (production key)
 #    DEBUG=false
 #    LOG_LEVEL=INFO
 #
 # 2. Build and start:
-#    docker-compose -f docker-compose.prod.yml --env-file backend/.env up -d
+#    docker-compose -f docker-compose.prod.yml --env-file config/.env up -d
 #
 # 3. Run database migrations:
 #    docker-compose -f docker-compose.prod.yml exec backend alembic upgrade head

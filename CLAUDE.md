@@ -4,47 +4,37 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-EasyPost MCP is a **personal-use** shipping integration with:
+EasyPost MCP is a **personal-use** backend-only shipping integration with:
 
 - **Backend**: FastAPI + FastMCP server for EasyPost API integration
-- **Frontend**: React 19 + Vite 7.2 + TailwindCSS 4
-- **Database**: PostgreSQL with SQLAlchemy ORM (simplified from dual-pool)
 - **MCP Tools**: AI agent tools for shipment creation, tracking, and rate comparison
+- **Data**: Direct EasyPost API integration (no database)
 
-> **Note**: Enterprise features (webhooks, database-backed endpoints, bulk API operations) have been removed for personal use. The core MCP server functionality remains intact.
+> **Note**: Enterprise features (webhooks, database persistence, frontend, bulk API operations) have been removed for personal use. The core MCP server functionality remains intact.
 
 ## Development Commands
 
 ### Quick Start
 
 ```bash
-# Start both servers
+# Start backend server
 make dev
 
-# Backend only
-cd apps/backend && source venv/bin/activate && uvicorn src.server:app --reload
-
-# Frontend only
-cd apps/frontend && pnpm run dev
+# Or manually:
+source venv/bin/activate && uvicorn src.server:app --reload
 ```
 
 ### Testing
 
 ```bash
-# All tests (16 parallel workers for backend, vitest for frontend)
+# All tests (auto-detected parallel workers)
 make test
 
-# Fast tests (changed files only)
-make test-fast
-
 # Coverage report
-make test-cov
+make test COV=1
 
 # Run single backend test
-cd apps/backend && pytest tests/path/to/test_file.py::test_function_name -v
-
-# Run single frontend test
-cd apps/frontend && npm test -- src/path/to/test.test.jsx
+pytest tests/path/to/test_file.py::test_function_name -v
 ```
 
 ### Code Quality
@@ -53,7 +43,7 @@ cd apps/frontend && npm test -- src/path/to/test.test.jsx
 # Lint
 make lint
 
-# Auto-format (black + ruff for Python, prettier for JS)
+# Auto-format (ruff for Python)
 make format
 
 # Full check (lint + test)
@@ -82,7 +72,7 @@ make prod-docker
 ### Backend Structure
 
 ```
-apps/backend/src/
+src/
 ├── server.py           # FastAPI app with MCP integration
 ├── routers/            # API endpoints (shipments, tracking, analytics - simplified)
 ├── services/           # Business logic (easypost_service only - database removed)
@@ -93,21 +83,6 @@ apps/backend/src/
 │   └── resources/      # Resource providers
 ├── lifespan.py         # App startup/shutdown lifecycle
 └── utils/              # Config, monitoring, helpers
-```
-
-### Frontend Structure
-
-```
-apps/frontend/src/
-├── App.jsx             # Main app with routing
-├── pages/              # Page components (Dashboard, Shipments, Analytics, etc.)
-├── components/         # Reusable UI components
-│   ├── layout/         # Header, Sidebar
-│   ├── shipments/      # Shipment-related components
-│   ├── analytics/      # Charts and visualizations
-│   └── ui/             # Shadcn-style UI primitives
-├── services/           # API client (axios with retry)
-└── tests/              # Unit and E2E tests
 ```
 
 ### Data Strategy (Personal Use - No Database)
@@ -169,50 +144,16 @@ MCP (Model Context Protocol) tools are designed for AI agents to interact with t
 - AAA pattern (Arrange, Act, Assert)
 - Coverage target: 40%+ (see pytest.ini)
 
-### Frontend
-
-**React Patterns:**
-
-- Functional components with hooks
-- React Query for server state
-- Zustand for client state
-- React Router v7 for navigation
-- Error boundaries for graceful error handling
-
-**UI Components:**
-
-- Radix UI primitives + TailwindCSS 4
-- Custom components in `components/ui/`
-- Framer Motion for animations
-- Recharts for analytics
-
-**API Integration:**
-
-- Axios with automatic retry (3 attempts, exponential backoff)
-- API client in `services/api.js`
-- Error handling with toast notifications
-
-**Testing:**
-
-- Vitest with React Testing Library
-- E2E tests with Puppeteer (see `src/tests/e2e/`)
-
 ## Important Configuration Files
 
 - **Backend**:
   - `pyproject.toml`: Ruff, Black, mypy configuration
   - `pytest.ini`: Test configuration with auto-detected parallel workers
   - `requirements.in`: Production dependencies (compile with `pip-compile`)
-  - `.env`: Environment variables (EASYPOST_API_KEY, DATABASE_URL)
-
-- **Frontend**:
-  - `vite.config.js`: Build optimizations, proxy, code splitting
-  - `package.json`: Scripts and dependencies
-  - `tailwind.config.js`: TailwindCSS configuration
+  - `.env`: Environment variables (EASYPOST_API_KEY)
 
 - **Root**:
   - `Makefile`: Quick development commands
-  - `docker-compose.prod.yml`: Production deployment with PostgreSQL
   - `.cursor/rules/`: Comprehensive coding standards (see 00-INDEX.mdc)
 
 ## Optimizations
@@ -220,7 +161,6 @@ MCP (Model Context Protocol) tools are designed for AI agents to interact with t
 This project uses simple, effective optimizations:
 
 - **Backend**: Auto-detected pytest workers, async I/O, direct API integration
-- **Frontend**: Code splitting, lazy loading, esbuild minification
 - **Testing**: Parallel execution with auto-detected workers
 - **Architecture**: Database removed (YAGNI) - simpler, fewer dependencies
 
@@ -228,17 +168,16 @@ This project uses simple, effective optimizations:
 
 ### Adding a New API Endpoint
 
-1. Create route in `apps/backend/src/routers/`
-2. Define Pydantic request/response models in `apps/backend/src/models/requests.py`
+1. Create route in `src/routers/`
+2. Define Pydantic request/response models in `src/models/requests.py`
 3. Implement business logic in service layer (`services/`)
-4. Add tests in `apps/backend/tests/`
-5. Update frontend API client in `apps/frontend/src/services/api.js`
+4. Add tests in `tests/`
 
 ### Adding a New MCP Tool
 
-1. Create tool function in `apps/backend/src/mcp_server/tools/`
+1. Create tool function in `src/mcp_server/tools/`
 2. Decorate with `@mcp.tool()` and add comprehensive docstring
-3. Register in `apps/backend/src/mcp_server/tools/__init__.py`
+3. Register in `src/mcp_server/tools/__init__.py`
 4. Add tests with 100% coverage requirement
 5. Document in `docs/guides/MCP_TOOLS_USAGE.md`
 
@@ -246,7 +185,7 @@ This project uses simple, effective optimizations:
 
 **Critical rules** (see `.cursor/rules/` for comprehensive details):
 
-1. **Type Safety**: Type hints required for all Python functions; avoid `any` in JavaScript
+1. **Type Safety**: Type hints required for all Python functions
 2. **Error Handling**: Raise errors explicitly, never silently ignore failures
 3. **Async Operations**: Use async/await for all I/O operations
 4. **Testing**: AAA pattern, mock external APIs, parametrized tests
@@ -281,13 +220,17 @@ The backend can run as a standalone MCP server for AI agents:
 # In Claude Desktop config (claude_desktop_config.json):
 {
   "mcpServers": {
-    "easypost": {
-      "command": "/path/to/backend/venv/bin/python",
-      "args": ["-m", "src.mcp_server"],
-      "env": {
-        "EASYPOST_API_KEY": "your_key_here",  # pragma: allowlist secret
-        "DATABASE_URL": "postgresql+asyncpg://..."  # pragma: allowlist secret
-      }
+    "easypost-test": {
+      "command": "/path/to/repo/venv/bin/python",
+      "args": ["/path/to/repo/scripts/python/run_mcp.py"],
+      "cwd": "/path/to/repo",
+      "env": { "ENVIRONMENT": "test" }
+    },
+    "easypost-prod": {
+      "command": "/path/to/repo/venv/bin/python",
+      "args": ["/path/to/repo/scripts/python/run_mcp.py"],
+      "cwd": "/path/to/repo",
+      "env": { "ENVIRONMENT": "production" }
     }
   }
 }
@@ -307,36 +250,42 @@ The backend can run as a standalone MCP server for AI agents:
 - **Cursor Rules**: `.cursor/rules/`
   - `00-INDEX.mdc`: Complete rules index
   - `01-fastapi-python.mdc`: Backend best practices
-  - `02-react-vite-frontend.mdc`: Frontend best practices
-  - `03-testing-best-practices.mdc`: Testing strategy
-  - `04-mcp-development.mdc`: MCP tool development
-  - `05-m3-max-optimizations.mdc`: Performance optimization
+  - `02-testing-best-practices.mdc`: Testing strategy
+  - `03-mcp-development.mdc`: MCP tool development
+  - `04-m3-max-optimizations.mdc`: Performance optimization
 
 ## Environment Setup
 
 **Backend**:
 
 ```bash
-cd backend
+# 1. Create virtual environment
 python3 -m venv venv
 source venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env  # Add EASYPOST_API_KEY
+
+# 2. Install dependencies
+pip install -r config/requirements.txt
+
+# 3. Store API keys in macOS Keychain (RECOMMENDED)
+security add-generic-password -s "easypost-test" -a "${USER}" -w "YOUR_TEST_KEY"
+security add-generic-password -s "easypost-prod" -a "${USER}" -w "YOUR_PROD_KEY"
+
+# 4. Setup direnv (optional but recommended)
+brew install direnv
+echo 'eval "$(direnv hook zsh)"' >> ~/.zshrc
+direnv allow
+
+# API keys are automatically loaded from Keychain via .envrc
+# See config/.env.example for alternative setup methods
 ```
 
-**Frontend**:
-
-```bash
-cd frontend
-npm install
-```
+**Note**: API keys are stored securely in macOS Keychain and loaded automatically by direnv. The [.envrc](.envrc) file handles environment-specific key loading based on `ENVIRONMENT` variable (test/production).
 
 ## URLs
 
-- Frontend: http://localhost:5173
 - Backend API: http://localhost:8000
-- API Docs: http://localhost:8000/docs
 - Health Check: http://localhost:8000/health
+- API Docs: http://localhost:8000/docs
 
 ## Troubleshooting
 
@@ -345,14 +294,8 @@ npm install
 - Check logs: Backend logs to stdout with structured logging
 - EasyPost API: Ensure `EASYPOST_API_KEY` is valid (test/production)
 
-**Frontend issues:**
-
-- Check console for errors
-- Verify backend is running on port 8000
-- Clear Vite cache: `rm -rf frontend/node_modules/.vite`
-
 **Test failures:**
 
-- Run serially for debugging: `pytest tests/file.py -v` (without `-n 16`)
+- Run serially for debugging: `pytest tests/file.py -v` (without `-n auto`)
 - Check mocks: Ensure EasyPost API calls are mocked
-- View coverage: `make test-cov` then open `backend/htmlcov/index.html`
+- View coverage: `make test COV=1` then open `htmlcov/index.html`

@@ -1,7 +1,7 @@
 # Code Cleanup Analysis - EasyPost MCP Project
 
-**Generated**: 2025-11-14  
-**Scan Tool**: Ruff + Manual Inspection + Desktop Commander  
+**Generated**: 2025-11-14
+**Scan Tool**: Ruff + Manual Inspection + Desktop Commander
 **Status**: Safe to proceed with cleanup
 
 ---
@@ -28,11 +28,12 @@
 
 ```bash
 # Backend Python caches
-apps/backend/.pytest_cache/
-apps/backend/.mypy_cache/
-apps/backend/.ruff_cache/
-apps/backend/__pycache__/
-apps/backend/htmlcov/
+src/__pycache__/
+tests/__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
 
 # Frontend build caches
 apps/frontend/node_modules/.vite/
@@ -45,11 +46,11 @@ node_modules/.cache/
 ```
 
 **Cleanup Command**:
+
 ```bash
 # Safe - these regenerate automatically
 make clean
 ```
-
 
 ### 2. Old Review Documents (Consider Consolidating)
 
@@ -58,6 +59,7 @@ make clean
 **Current State**: 35 review documents in `docs/reviews/`
 
 **Outdated/Duplicate Reviews**:
+
 ```
 docs/reviews/
 ├── ALL_FIXES_SUMMARY.md                  # 2025-11-11 (old)
@@ -81,6 +83,7 @@ docs/reviews/
 **Recommended Action**:
 
 **Keep** (Recent & Useful):
+
 ```
 - MCP_PROTOCOL_COMPLIANCE_REVIEW.md (2025-11-14) ✅
 - SIMPLIFICATION_ANALYSIS.md (2025-11-14) ✅
@@ -91,6 +94,7 @@ docs/reviews/
 ```
 
 **Archive** (Move to `docs/reviews/archive/`):
+
 ```
 - All "*_SUMMARY.md" files (except most recent)
 - All "*_CONSOLIDATION.md" files
@@ -99,17 +103,18 @@ docs/reviews/
 ```
 
 **Delete** (Truly outdated):
+
 ```
 - LATEST_REVIEW.md (symlink, use direct file instead)
 - Duplicate FINAL_* summaries
 ```
-
 
 ### 3. Cursor Temporary Files (Should be Gitignored)
 
 **Impact**: Clean working directory
 
 **Found** (shouldn't be in repo):
+
 ```
 .cursor/
 ├── COMMANDS_REVIEW.md
@@ -120,6 +125,7 @@ docs/reviews/
 ```
 
 **These match `.gitignore` patterns**:
+
 ```gitignore
 .cursor/*RECOVERED*.md
 .cursor/*STATUS*.md
@@ -128,6 +134,7 @@ docs/reviews/
 ```
 
 **Action**: Remove and verify .gitignore is working
+
 ```bash
 rm .cursor/COMMANDS_REVIEW.md
 rm .cursor/RULES_COMPLETE.md
@@ -144,6 +151,7 @@ git status
 **Current Size**: 8.8MB (reasonable)
 
 **Optional Cleanup**:
+
 ```bash
 # Remove unreferenced objects
 git gc --aggressive --prune=now
@@ -154,32 +162,36 @@ git fsck --full
 
 **Expected Result**: Minimal impact (repo is already clean)
 
-
 ---
 
 ## ⚠️ Keep (Do NOT Remove)
 
 ### Database Migration Files (6 files)
+
 ```
-apps/backend/alembic/versions/*.py
+alembic/versions/*.py
 ```
+
 **Reason**: Track database schema history, needed for migrations
 
 ### Configuration Files
+
 ```
 .env
 .env.test
 .env.production
 ```
+
 **Reason**: Active configuration (already gitignored)
 
 ### Build Artifacts (Gitignored)
+
 ```
 apps/frontend/dist/
-apps/backend/.venv/
-apps/backend/venv/
+venv/
 node_modules/
 ```
+
 **Reason**: Required for development, properly ignored
 
 ---
@@ -223,7 +235,6 @@ mv docs/reviews/MAKEFILE_CONSOLIDATION.md docs/reviews/archive/
 rm docs/reviews/LATEST_REVIEW.md
 ```
 
-
 ### Phase 3: Remove Cursor Temp Files (Zero Risk)
 
 ```bash
@@ -248,6 +259,7 @@ git fsck --full
 ## 📊 Expected Results
 
 ### Before Cleanup:
+
 ```
 Total Files:        ~11,000
 Cache Dirs:         603
@@ -257,6 +269,7 @@ Disk Usage:         ~2.5GB (with node_modules)
 ```
 
 ### After Cleanup:
+
 ```
 Total Files:        ~10,400 (-600)
 Cache Dirs:         0 (-603)
@@ -265,7 +278,7 @@ Git Objects:        ~8.5MB (-300KB)
 Disk Usage:         ~2.0GB (-500MB)
 ```
 
-**Time to Complete**: ~5 minutes  
+**Time to Complete**: ~5 minutes
 **Risk Level**: Low (all cached files regenerate automatically)
 
 ---
@@ -321,7 +334,6 @@ echo "  - Removed 6 temporary files"
 echo "  - Optimized git repository"
 ```
 
-
 ---
 
 ## ✅ Conclusion
@@ -346,6 +358,7 @@ Your codebase is **exceptionally clean**! The main opportunities are:
 ### Maintenance Status: Excellent
 
 This project follows best practices:
+
 - YAGNI principle applied
 - Regular cleanup
 - Proper gitignore
@@ -372,12 +385,14 @@ make clean
 ## 📝 Safety Notes
 
 **All cleanup operations are reversible**:
+
 - Cache dirs regenerate automatically
 - Archived files preserved in `docs/reviews/archive/`
 - Git history untouched
 - No source code modified
 
 **Before cleanup**:
+
 ```bash
 # Optional: Create backup
 tar -czf easypost-mcp-backup-$(date +%Y%m%d).tar.gz \
@@ -385,6 +400,7 @@ tar -czf easypost-mcp-backup-$(date +%Y%m%d).tar.gz \
 ```
 
 **After cleanup**:
+
 ```bash
 # Verify everything still works
 make test
@@ -393,6 +409,6 @@ make lint
 
 ---
 
-**Analysis Complete** ✅  
-**Generated**: 2025-11-14  
+**Analysis Complete** ✅
+**Generated**: 2025-11-14
 **Next Review**: 2026-02-14 (3 months)

@@ -1,7 +1,35 @@
 {
   "indexing": {
-    "ignore": ["deploy", "__pycache__", ".venv", "venv", "node_modules", ".git", ".direnv", "dist", "build", "coverage", "htmlcov"],
-    "include": ["apps/backend", "apps/frontend", "scripts", "docs"]
+    "ignore": [
+      "deploy",
+      "__pycache__",
+      ".venv",
+      "venv",
+      "node_modules",
+      ".git",
+      ".direnv",
+      "dist",
+      "build",
+      "coverage",
+      "htmlcov",
+      ".pytest_cache",
+      ".mypy_cache",
+      ".ruff_cache",
+      "*.egg-info",
+      ".DS_Store",
+      ".coverage"
+    ],
+    "include": [
+      "src",
+      "tests",
+      "scripts",
+      "docs",
+      "config",
+      ".cursor",
+      ".vscode",
+      "fullstack-agent-gen"
+    ]
   },
-  "contextWindow": 128000
+  "contextWindow": 200000,
+  "description": "MCP server optimised for Claude 200K context window with enhanced indexing"
 }

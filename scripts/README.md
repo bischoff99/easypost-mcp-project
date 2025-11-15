@@ -5,6 +5,7 @@ Helper scripts for development, testing, and maintenance of the EasyPost MCP pro
 ## Organization
 
 Scripts are organized into subdirectories:
+
 - **`dev/`** - Development startup scripts
 - **`test/`** - Testing and benchmarking scripts
 - **`utils/`** - Utility and maintenance scripts
@@ -14,28 +15,30 @@ Scripts are organized into subdirectories:
 ## Development Scripts
 
 ### `start-dev.sh`
-Start both backend and frontend servers in separate terminal windows (macOS only).
+
+Start the backend FastAPI server in a new macOS Terminal window.
 
 ```bash
 ./scripts/dev/start-dev.sh
 ```
 
 **What it does:**
-- Opens new Terminal window for backend (port 8000)
-- Opens new Terminal window for frontend (port 5173)
-- Shows URLs and test commands
+
+- Opens a Terminal window, activates the backend virtual environment, and runs uvicorn with reload
+- Prints backend + docs URLs and quick curl commands
 
 **URLs:**
+
 - Backend API: http://localhost:8000
 - API Docs: http://localhost:8000/docs
-- Frontend: http://localhost:5173
 
 **Requirements:** macOS Terminal
 
 ---
 
 ### `start-backend.sh`
-Start only the backend FastAPI server.
+
+Backend-only launcher with optional JIT and MCP verification modes.
 
 ```bash
 ./scripts/dev/start-backend.sh          # Standard mode (single worker, reload)
@@ -44,72 +47,52 @@ Start only the backend FastAPI server.
 ```
 
 **What it does:**
-- Activates Python virtual environment
-- Standard mode: Starts uvicorn with hot reload (single worker)
-- JIT mode: Multi-worker setup with JIT compilation (Python 3.13+)
-  - Calculates workers: (2 × CPU cores) + 1
-  - Uses uvloop for better performance
-  - Expects 10-20% performance boost
-- Port: 8000
 
----
-
-**Note**: For frontend-only development, use `cd apps/frontend && npm run dev` directly or use VS Code task "Dev: Frontend".
+- Activates the backend virtual environment and installs dependencies if needed
+- Standard mode: single-worker uvicorn with reload
+- `--jit`: multi-worker uvicorn with uvloop/JIT, auto worker calculation
+- `--mcp-verify`: runs MCP smoke tests after startup
+- Serves on port 8000 by default
 
 ---
 
 ## Testing Scripts
 
 ### `quick-test.sh`
-Run quick test suite for both backend and frontend.
+
+Run a 10-second backend + MCP health check.
 
 ```bash
 ./scripts/test/quick-test.sh
 ```
 
 **What it does:**
-- Backend: Runs pytest with minimal output
-- Frontend: Runs Vitest in run mode
-- Shows test results summary
 
-**Duration:** ~30-60 seconds (depending on test count)
+- Backend health: hits `/health`
+- MCP: runs `verify_mcp_server.py`
+- Optional proxy health check
+- Analytics endpoint probe
+- Quick backend unit tests
 
----
-
-### `watch-tests.sh`
-Run tests in watch mode for active development.
-
-```bash
-./scripts/test/watch-tests.sh
-```
-
-**What it does:**
-- Backend: Starts pytest-watch (re-runs on file changes)
-- Frontend: Starts Vitest in watch mode
-- Useful for TDD workflow
-
-**Stop:** Ctrl+C
+**Duration:** ~10 seconds
 
 ---
 
 ### `benchmark.sh`
-Run comprehensive performance benchmarks (M3 Max optimized).
+
+Run backend + MCP performance benchmarks (M3 Max optimised).
 
 ```bash
 ./scripts/test/benchmark.sh
 ```
 
 **What it does:**
-- System information (CPU, RAM, cores)
-- Backend performance:
-  - ThreadPoolExecutor worker calculation
-  - Build speed
-  - Test speed (parallel)
-- Frontend performance:
-  - Build speed (Vite)
-  - Test speed
-- Docker build speed (if available)
-- Performance summary with expected gains
+
+- Prints system information (CPU, RAM, cores)
+- Benchmarks backend build/test throughput
+- Measures MCP tool latency
+- Optional Docker build timing
+- Summarises expected gains
 
 **Output:** Detailed performance metrics
 **Duration:** 2-5 minutes
@@ -118,23 +101,8 @@ Run comprehensive performance benchmarks (M3 Max optimized).
 
 ## Additional Development Scripts
 
-### `dev_local.sh`
-Development startup script with Docker PostgreSQL.
-
-```bash
-./scripts/dev/dev_local.sh
-```
-
-**What it does:**
-- Starts PostgreSQL Docker container
-- Setup and start backend server
-- Setup and start frontend server
-- Includes error checking and user feedback
-- Handles cleanup on exit
-
----
-
 ### `start-prod.sh`
+
 Start production servers.
 
 ```bash
@@ -142,15 +110,16 @@ Start production servers.
 ```
 
 **What it does:**
-- Starts backend in production mode
-- Starts frontend production build
-- Uses production environment variables
+
+- Starts backend in production mode (multi-worker uvicorn)
+- Loads `config/.env` and writes logs to `logs/production.log`
 
 ---
 
 ## Utility Scripts
 
 ### `monitor-database.sh`
+
 Monitor PostgreSQL database activity.
 
 ```bash
@@ -158,6 +127,7 @@ Monitor PostgreSQL database activity.
 ```
 
 **What it does:**
+
 - Shows active connections
 - Displays query statistics
 - Monitors database performance
@@ -165,21 +135,23 @@ Monitor PostgreSQL database activity.
 ---
 
 ### `setup-nginx-proxy.sh`
-Setup Nginx reverse proxy for production.
+
+Setup Nginx reverse proxy for backend/MCP traffic.
 
 ```bash
 ./scripts/utils/setup-nginx-proxy.sh
 ```
 
 **What it does:**
-- Configures Nginx for frontend/backend routing
-- Sets up SSL certificates (if available)
+
+- Configures Nginx to expose the FastAPI/MCP server
+- Adds SSL certificate placeholders (if available)
 - Configures proxy headers
 
 ---
 
-
 ### `test-full-functionality.sh`
+
 Run comprehensive functionality tests.
 
 ```bash
@@ -187,14 +159,16 @@ Run comprehensive functionality tests.
 ```
 
 **What it does:**
-- Runs full test suite
-- Tests API endpoints
-- Validates database operations
-- Checks frontend functionality
+
+- Runs backend unit/integration suites
+- Exercises HTTP endpoints + proxy routing
+- Validates MCP tool responses
+- Checks configuration files and linting
 
 ---
 
 ### `get-bulk-rates.py`
+
 Python script for bulk rate testing.
 
 ```bash
@@ -202,6 +176,7 @@ python scripts/python/get-bulk-rates.py
 ```
 
 **What it does:**
+
 - Tests bulk shipment rate retrieval
 - Validates bulk operations
 - Useful for debugging bulk tools
@@ -209,6 +184,7 @@ python scripts/python/get-bulk-rates.py
 ---
 
 ### `verify_mcp_server.py`
+
 Verify MCP server configuration.
 
 ```bash
@@ -216,6 +192,7 @@ python scripts/python/verify_mcp_server.py
 ```
 
 **What it does:**
+
 - Validates MCP server setup
 - Tests tool registration
 - Checks resource providers
@@ -225,6 +202,7 @@ python scripts/python/verify_mcp_server.py
 ## Usage Examples
 
 ### Quick Development Start
+
 ```bash
 # Option 1: Use Makefile (from root)
 make dev
@@ -234,6 +212,7 @@ make dev
 ```
 
 ### Testing Workflow
+
 ```bash
 # Quick test before commit
 ./scripts/test/quick-test.sh
@@ -246,15 +225,13 @@ make dev
 ```
 
 ### Utility Workflow
+
 ```bash
 # Monitor database
 ./scripts/utils/monitor-database.sh
 
 # Test full functionality
 ./scripts/test/test-full-functionality.sh
-
-# Verify MCP server
-python scripts/python/verify_mcp_server.py
 
 # MCP utilities
 ./scripts/utils/mcp-utils.sh health
@@ -265,12 +242,13 @@ python scripts/python/verify_mcp_server.py
 ## Script Requirements
 
 ### macOS-Specific Scripts
+
 - `dev/start-dev.sh` - Uses `osascript` for Terminal
 
 ### General Requirements
-- `bash` - All scripts
+
+- `bash`/`zsh` - All scripts
 - `python3` + `venv` - Backend scripts
-- `node` + `npm` - Frontend scripts
 - `docker` - Docker-related benchmarks (optional)
 
 ## Environment Variables
@@ -282,13 +260,13 @@ Scripts respect these environment variables:
 ENVIRONMENT=production ./scripts/dev/start-backend.sh
 
 # Custom ports
-cd apps/frontend && PORT=3000 npm run dev
 API_PORT=9000 ./scripts/dev/start-backend.sh
 ```
 
 ## Exit Codes
 
 Scripts follow standard exit code conventions:
+
 - `0` - Success
 - `1` - General error
 - `2` - Misuse (wrong arguments)
@@ -329,11 +307,13 @@ exit 0
 ## Troubleshooting
 
 ### Permission Denied
+
 ```bash
 chmod +x scripts/script-name.sh
 ```
 
 ### Script Not Found
+
 ```bash
 # Run from project root
 ./scripts/script-name.sh
@@ -343,6 +323,7 @@ cd scripts && ./script-name.sh  # ❌ May break relative paths
 ```
 
 ### macOS Terminal Errors
+
 ```bash
 # If osascript fails, enable Terminal in System Preferences:
 # System Preferences → Security & Privacy → Automation
@@ -350,6 +331,7 @@ cd scripts && ./script-name.sh  # ❌ May break relative paths
 ```
 
 ### Virtual Environment Not Found
+
 ```bash
 # Backend scripts need venv
 cd backend
@@ -373,6 +355,7 @@ See [Makefile](../Makefile) for complete list.
 ## Performance Notes
 
 Scripts are optimized for M3 Max hardware but work on any system:
+
 - Benchmark results scale with CPU cores
 - Parallel testing adapts to available cores
 - ThreadPoolExecutor dynamically sizes workers
@@ -380,6 +363,7 @@ Scripts are optimized for M3 Max hardware but work on any system:
 ## Contributing
 
 When adding/modifying scripts:
+
 1. Follow existing naming convention (`action-description.sh`)
 2. Add comprehensive comments
 3. Update this README

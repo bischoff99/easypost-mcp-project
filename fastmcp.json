@@ -1,0 +1,28 @@
+{
+  "$schema": "https://gofastmcp.com/public/schemas/fastmcp.json/v1.json",
+  "source": {
+    "type": "filesystem",
+    "path": "src/server.py",
+    "entrypoint": "mcp"
+  },
+  "environment": {
+    "type": "uv",
+    "python": ">=3.11",
+    "project": ".",
+    "dependencies": [
+      "fastapi>=0.110",
+      "fastmcp>=0.4",
+      "easypost>=8.0",
+      "httpx>=0.26",
+      "pydantic>=2.6",
+      "uvicorn>=0.27"
+    ]
+  },
+  "deployment": {
+    "transport": "stdio",
+    "log_level": "INFO",
+    "env": {
+      "ENVIRONMENT": "${ENVIRONMENT:-development}"
+    }
+  }
+}

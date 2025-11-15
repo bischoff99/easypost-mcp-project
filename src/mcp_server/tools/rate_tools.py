@@ -9,6 +9,7 @@ from fastmcp.exceptions import ToolError
 from pydantic import ValidationError
 
 from src.services.easypost_service import AddressModel, ParcelModel
+from src.utils.constants import STANDARD_TIMEOUT
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +17,13 @@ logger = logging.getLogger(__name__)
 def register_rate_tools(mcp, easypost_service=None):  # noqa: ARG001 - Uses Context instead
     """Register rate-related tools with MCP server."""
 
-    @mcp.tool(tags=["rates", "shipping", "core"])
+    @mcp.tool(
+        tags=["rates", "shipping", "core"],
+        annotations={
+            "readOnlyHint": True,
+            "idempotentHint": True,
+        },
+    )
     async def get_rates(
         to_address: dict, from_address: dict, parcel: dict, ctx: Context | None = None
     ) -> dict:
@@ -56,7 +63,7 @@ def register_rate_tools(mcp, easypost_service=None):  # noqa: ARG001 - Uses Cont
             # Add timeout to prevent SSE timeout errors
             result = await asyncio.wait_for(
                 service.get_rates(to_addr.dict(), from_addr.dict(), parcel_obj.dict()),
-                timeout=20.0,
+                timeout=STANDARD_TIMEOUT,
             )
 
             if ctx:
@@ -64,7 +71,7 @@ def register_rate_tools(mcp, easypost_service=None):  # noqa: ARG001 - Uses Cont
 
             return result
         except TimeoutError:
-            logger.error("Rates calculation timed out after 20 seconds")
+            logger.error(f"Rates calculation timed out after {STANDARD_TIMEOUT} seconds")
             return {
                 "status": "error",
                 "data": None,

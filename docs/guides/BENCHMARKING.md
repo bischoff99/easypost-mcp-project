@@ -25,10 +25,6 @@ make benchmark
 - **Build Speed**: Python compilation time
 - **Test Speed**: Parallel test execution time (pytest-xdist)
 
-### Frontend Performance
-- **Build Speed**: Vite production build time
-- **Test Speed**: Vitest parallel test execution time
-
 ### Docker Performance
 - **Build Speed**: Docker Compose parallel build time
 
@@ -39,10 +35,10 @@ Based on 16-core M3 Max with 128GB RAM:
 | Metric | Expected Value |
 |--------|----------------|
 | Backend startup | ~1.9x faster than single-threaded |
-| Frontend build | ~2.1x faster with SWC |
+| MCP tool call | 1-3s including EasyPost latency |
 | Test suite | ~5x faster with parallel execution |
 | API requests/sec | ~5x higher throughput |
-| Dev server HMR | ~4x faster |
+| Benchmark script | < 60s total runtime |
 
 ## Interpreting Results
 
@@ -63,18 +59,6 @@ Based on 16-core M3 Max with 128GB RAM:
 - Automatically detects optimal worker count
 - Compare against baseline: `pytest tests/ -n 1`
 
-### Frontend Metrics
-
-**Build Speed**:
-- Uses Vite with SWC transpilation
-- Code splitting enabled
-- Compare against baseline: `npm run build` without optimizations
-
-**Test Speed**:
-- Uses Vitest with parallel execution
-- Thread count based on CPU cores
-- Compare against baseline: `npm test -- --run --threads=1`
-
 ## Baseline Measurements
 
 To establish a baseline, run benchmarks before optimizations:
@@ -86,16 +70,11 @@ To establish a baseline, run benchmarks before optimizations:
 
 ## Performance Targets
 
-### Backend
-- **API Response Time**: < 100ms (p95)
+### Backend & MCP
+- **API Response Time**: < 100ms (p95) for lightweight endpoints
 - **Test Suite**: < 2 minutes (all tests)
 - **Build Time**: < 30 seconds
-
-### Frontend
-- **First Paint**: < 1s
-- **Bundle Size**: < 500KB (gzipped)
-- **Test Suite**: < 1 minute
-- **Build Time**: < 30 seconds
+- **MCP Tool Turnaround**: < 3 seconds for single shipment flows
 
 ## Continuous Monitoring
 
@@ -125,11 +104,6 @@ mkdir -p benchmarks
 - Install dependencies: `pip install -r requirements.txt`
 - Check pytest-xdist is installed: `pip install pytest-xdist`
 
-### Frontend Build Fails
-- Ensure dependencies installed: `pnpm install`
-- Check Node.js version: `node --version` (should be 18+)
-- Clear cache: `rm -rf node_modules/.vite`
-
 ### Docker Build Fails
 - Ensure Docker is running: `docker ps`
 - Check docker-compose version: `docker compose version`
@@ -154,13 +128,6 @@ Use profiling tools for deeper analysis:
 ```bash
 # Python profiling
 python -m cProfile -o profile.stats src/server.py
-```
-
-**Frontend**:
-```bash
-# Lighthouse CI
-npm install -g @lhci/cli
-lhci autorun
 ```
 
 ## Related Documentation

@@ -1,7 +1,7 @@
 # 🔧 Environment Configuration Guide
 
-**Status:** ✅ Configured  
-**Standard:** 12-Factor App with `.env` files  
+**Status:** ✅ Configured
+**Standard:** 12-Factor App with `.env` files
 **Date:** November 3, 2025
 
 ---
@@ -17,16 +17,6 @@ backend/
 └── .env.example            ← Template (committed)
 ```
 
-### **Frontend (React/Vite)**
-```
-frontend/
-├── .env                    ← Local dev (gitignored)
-├── .env.development        ← Dev defaults (committed)
-├── .env.production         ← Production (committed)
-└── .env.example            ← Template (committed)
-```
-
----
 
 ## 🔑 API Keys Configured
 
@@ -49,14 +39,13 @@ frontend/
 ### **Development (Default)**
 ```bash
 # Option 1: Automated (Recommended)
-Cmd+Shift+P → "Run Task" → "🚀 Dev: Full Stack"
+Cmd+Shift+P → "Run Task" → "🚀 Dev: Backend"
 
 # Option 2: Manual
 cd backend && source venv/bin/activate && uvicorn src.server:app --reload
-cd frontend && npm run dev
 ```
 
-Uses: `backend/.env` (test key) + `frontend/.env.development`
+Uses: `backend/.env` (test key)
 
 ### **Production Mode**
 ```bash
@@ -65,10 +54,9 @@ Cmd+Shift+P → "Run Task" → "🏭 Prod: Backend"
 
 # Option 2: Manual
 cd backend && ENVIRONMENT=production uvicorn src.server:app
-cd frontend && npm run build && npm run preview
 ```
 
-Uses: `backend/.env.production` (live key) + `frontend/.env.production`
+Uses: `backend/.env.production` (live key)
 
 ---
 
@@ -83,15 +71,6 @@ ENVIRONMENT=development → Loads .env.development (test key)
 ENVIRONMENT=production → Loads .env.production (live key)
 ```
 
-### **Frontend Auto-Loading**
-Vite automatically loads based on command:
-
-```bash
-npm run dev     → Loads .env.development
-npm run build   → Loads .env.production
-```
-
----
 
 ## 🔄 Switching Environments
 
@@ -99,9 +78,9 @@ npm run build   → Loads .env.production
 1. Press `Cmd+Shift+P`
 2. Type "Run Task"
 3. Select environment:
-   - `🚀 Dev: Full Stack` (test key)
+   - `🚀 Dev: Backend` (test key)
    - `🏭 Prod: Backend` (live key)
-   - `🐳 Docker: Start` (production)
+   - `🐳 Docker: Start` (production stack)
 
 ### **Method 2: Environment Variable**
 ```bash
@@ -128,14 +107,11 @@ docker compose up --build
 - `.env.local`
 - `backend/.env`
 - `backend/.env.production`
-- `frontend/.env`
 
 **Committed (Safe):**
 - `.env.example` (template)
 - `.env.development` (test keys)
 - `backend/.env.development`
-- `frontend/.env.development`
-- `frontend/.env.production` (no secrets)
 
 ---
 
@@ -200,18 +176,9 @@ cp backend/.env.development backend/.env
 echo $ENVIRONMENT  # Should be 'development' or 'production'
 ```
 
-### **Problem: Frontend can't connect to backend**
-**Solution:** Verify `VITE_API_URL` in `frontend/.env.development`:
-```bash
-VITE_API_URL=http://localhost:8000
-```
-
----
-
 ## 📚 Additional Resources
 
 - **12-Factor App:** https://12factor.net/config
-- **Vite Env:** https://vitejs.dev/guide/env-and-mode.html
 - **python-dotenv:** https://github.com/theskumar/python-dotenv
 - **EasyPost Docs:** https://easypost.com/docs
 

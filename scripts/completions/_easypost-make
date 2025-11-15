@@ -5,10 +5,8 @@ _easypost_make_targets() {
     local -a targets
     targets=(
         'help:Show all available commands'
-        'dev:Start backend + frontend servers'
+        'dev:Start backend server with auto-reload'
         'dev-mock:Start with mock EasyPost API'
-        'backend:Start backend server only'
-        'frontend:Start frontend server only'
         'test:Run all tests'
         'test-fast:Run tests for changed files'
         'test-watch:Run tests in watch mode'
@@ -34,4 +32,3 @@ _easypost_make_targets() {
 }
 
 _easypost_make_targets "$@"
-
