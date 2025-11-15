@@ -31,44 +31,22 @@ repos:
       # - id: no-commit-to-branch
       #   args: [--branch, master, --branch, main]
 
-  # Python code formatting
-  - repo: https://github.com/psf/black
-    rev: 25.11.0
-    hooks:
-      - id: black
-        language_version: python3.12
-        args: [--line-length=100]
-        files: ^apps/backend/
-
-  # Python linting
+  # Python linting (Ruff replaces Black for modern Python)
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.14.4
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
-        files: ^apps/backend/
+        files: ^(src|tests)/
       - id: ruff-format
-        files: ^apps/backend/
-
-  # JavaScript/TypeScript linting
-  - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v9.39.1
-    hooks:
-      - id: eslint
-        files: ^apps/frontend/.*\.(js|jsx)$
-        additional_dependencies:
-          - eslint@9.39.1
-          - '@eslint/js@9.39.1'
-          - 'eslint-plugin-react@7.37.5'
-          - 'eslint-plugin-react-hooks@7.0.1'
-          - 'globals@16.5.0'
+        files: ^(src|tests)/
 
   # Secret detection (Yelp detect-secrets)
   - repo: https://github.com/Yelp/detect-secrets
     rev: v1.5.0
     hooks:
       - id: detect-secrets
-        args: ['--baseline', '.secrets.baseline']
+        args: ["--baseline", ".secrets.baseline"]
         exclude: |
           (?x)^(
             .*\.lock$|
@@ -81,16 +59,17 @@ repos:
             node_modules/.*|
             venv/.*|
             \.venv/.*|
-            apps/backend/htmlcov/.*|
-            apps/frontend/coverage/.*
+            htmlcov/.*|
+            coverage/.*
           )
 
-  # Code formatting (YAML, JavaScript, JSON, CSS, Markdown)
+  # Code formatting (YAML, JSON, Markdown) - Prettier removed (frontend removed)
+  # Keeping YAML/JSON/MD formatting for config files and docs
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v4.0.0-alpha.8
     hooks:
       - id: prettier
-        files: \.(yaml|yml|js|jsx|json|css|md)$
+        files: \.(yaml|yml|json|md)$
         exclude: |
           (?x)^(
             .*\.lock$|
@@ -100,10 +79,9 @@ repos:
             dist/.*|
             build/.*|
             coverage/.*|
-            apps/backend/.*|
-            apps/frontend/dist/.*|
-            apps/frontend/build/.*|
-            apps/frontend/coverage/.*
+            htmlcov/.*|
+            src/.*|
+            tests/.*
           )
 
 # Global exclude patterns
@@ -115,8 +93,8 @@ exclude: |
     node_modules/.*|
     venv/.*|
     \.venv/.*|
-    apps/backend/htmlcov/.*|
-    apps/frontend/coverage/.*|
+    htmlcov/.*|
+    coverage/.*|
     docs/.*|
     \.git/.*
   )
