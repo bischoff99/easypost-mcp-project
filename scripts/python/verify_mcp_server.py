@@ -16,14 +16,16 @@ def verify_mcp_server() -> bool:
     sys.path.insert(0, str(project_root))
 
     try:
-        print("1. Testing MCP server import...")
+        print("1. Testing MCP server import (backward compatibility)...")
         from src.mcp_server import mcp
 
-        print("   ✅ MCP server imports successfully")
-        print("2. Testing server.py entry point...")
-        from src.server import mcp as server_mcp  # noqa: F401
+        print("   ✅ MCP server imports successfully via __init__.py")
+        print("2. Testing FastMCP entrypoint (server.py)...")
+        from src.mcp_server.server import mcp as server_mcp  # noqa: F401 - imported for verification
 
-        print("   ✅ server.py entry point works")
+        # Verify the entrypoint exports mcp
+        assert server_mcp is not None, "FastMCP entrypoint must export mcp"
+        print("   ✅ FastMCP entrypoint (server.py) works")
         print("3. Verifying mcp.run() method...")
         if hasattr(mcp, "run"):
             print("   ✅ mcp.run() method exists")

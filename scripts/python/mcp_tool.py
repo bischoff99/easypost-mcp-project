@@ -16,12 +16,11 @@ import json
 import sys
 from pathlib import Path
 
-# Add backend to path (mcp_tool.py is now in scripts/python/, so go up two levels)
-backend_path = Path(__file__).parent.parent.parent / "apps" / "backend"
-sys.path.insert(0, str(backend_path))
+# Ensure project root is on sys.path so `src/...` imports resolve
+project_root = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(project_root))
 
-from src.mcp_server import mcp, easypost_service
-from fastmcp import Context
+from src.mcp_server import easypost_service
 
 
 async def call_tool(tool_name: str, **kwargs):
@@ -40,25 +39,24 @@ async def call_tool(tool_name: str, **kwargs):
             if not spreadsheet_data:
                 return {
                     "status": "error",
-                    "message": "Missing required parameter: spreadsheet_data"
+                    "message": "Missing required parameter: spreadsheet_data",
                 }
-            result = {"status": "success", "message": "Rate calculation would be called with provided data"}
+            result = {
+                "status": "success",
+                "message": "Rate calculation would be called with provided data",
+            }
 
         else:
             return {
                 "status": "error",
                 "message": f"Tool '{tool_name}' not implemented in CLI",
-                "available_tools": ["get_tracking", "get_shipment_rates"]
+                "available_tools": ["get_tracking", "get_shipment_rates"],
             }
 
         return result
 
     except Exception as e:
-        return {
-            "status": "error",
-            "message": str(e),
-            "error_type": type(e).__name__
-        }
+        return {"status": "error", "message": str(e), "error_type": type(e).__name__}
 
 
 def parse_args():
@@ -89,7 +87,11 @@ def parse_args():
         else:
             # Positional argument - use as first parameter
             if "data" not in kwargs and "spreadsheet_data" not in kwargs:
-                kwargs["spreadsheet_data" if "shipment" in tool_name or "rate" in tool_name else "tracking_number"] = arg
+                kwargs[
+                    "spreadsheet_data"
+                    if "shipment" in tool_name or "rate" in tool_name
+                    else "tracking_number"
+                ] = arg
 
     return tool_name, kwargs
 
