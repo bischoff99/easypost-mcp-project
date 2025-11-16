@@ -7,9 +7,8 @@
 ## Quick Start
 
 **New to the project?** Start here:
-1. [Setup Instructions](setup/START_HERE.md) - Get up and running
-2. [Environment Setup](setup/ENVIRONMENT_SETUP.md) - Configure your dev environment
-3. [Workflows Guide](WORKFLOWS_GUIDE.md) - Daily development workflows
+1. [README.md](../README.md) - Project overview and setup
+2. [CLAUDE.md](../CLAUDE.md) - Development guide for AI assistants
 
 ---
 
@@ -18,67 +17,46 @@
 ### Architecture
 High-level system design and patterns.
 
-- [PostgreSQL Architecture](architecture/POSTGRESQL_ARCHITECTURE.md) - Database design and optimization
+- [FastMCP Structure](architecture/FASTMCP_STRUCTURE.md) - MCP server architecture
 - [MCP Tools Inventory](architecture/MCP_TOOLS_INVENTORY.md) - Available MCP tools
-- [Structure Optimization](architecture/STRUCTURE_OPTIMIZATION.md) - Project organization
+- [Build Commands Optimization](architecture/BUILD_COMMANDS_OPTIMIZATION.md) - Development workflow optimization
+- [Optimization Summary](architecture/OPTIMIZATION_SUMMARY.md) - Performance improvements
+
+### Architecture Decisions
+Key architectural decisions documented as ADRs.
+
+- [ADR-001: Router Organization](architecture/decisions/ADR-001-router-organization.md) - API routing structure
+- [ADR-002: M3 Max Optimization](architecture/decisions/ADR-002-m3-max-optimization.md) - Performance tuning
 
 ### Guides
 How-to guides for specific tasks.
 
-- [Deployment Guide](guides/DEPLOYMENT.md) - Production deployment
-- [Development Deployment](guides/DEV_DEPLOYMENT_GUIDE.md) - Local development setup
-- [Monitoring Guide](guides/MONITORING.md) - Health checks and metrics
-- [M3 Max Optimizations](guides/M3_MAX_OPTIMIZATION_REPORT.md) - Performance tuning
-- [Optional Optimizations](guides/OPTIONAL_OPTIMIZATIONS.md) - Enhancement suggestions
-- [PostgreSQL Best Practices](guides/POSTGRESQL_BEST_PRACTICES.md) - Database patterns
-- [Proxy Integration](guides/PROXY_AND_DATABASE_INTEGRATION.md) - Nginx setup
-- [Proxy Benefits](guides/PROXY_BENEFITS.md) - Why use a reverse proxy
-- [Quick Reference](guides/QUICK_REFERENCE.md) - Command cheat sheet
-- [Shell Integration](../SHELL_INTEGRATION.md) - Terminal productivity
-- [Slash Commands Setup](guides/SLASH_COMMANDS_SETUP.md) - Cursor IDE commands
-- [Universal Commands](guides/UNIVERSAL_COMMANDS.md) - Cross-project commands
-- [Bulk Tool Usage](guides/BULK_TOOL_USAGE.md) - Parallel processing
-- [Database Integration](guides/DATABASE_INTEGRATION_IMPLEMENTATION.md) - DB setup
+- [Benchmarking](guides/BENCHMARKING.md) - Performance testing
+- [MCP Bash Integration](guides/MCP_BASH_INTEGRATION.md) - Shell integration for MCP tools
+- [MCP Environment Switching](guides/MCP_ENVIRONMENT_SWITCHING.md) - Test/production environments
+- [Workflow Bash Integration](guides/WORKFLOW_BASH_INTEGRATION.md) - Terminal workflows
+- [Workflow Usage Guide](guides/WORKFLOW_USAGE_GUIDE.md) - Development workflows
 
-### Setup
-Getting started with the project.
-
-- [Start Here](setup/START_HERE.md) - Quick start guide
-- [Environment Setup](setup/ENVIRONMENT_SETUP.md) - Environment variables
-- [Setup Instructions](setup/SETUP_INSTRUCTIONS.md) - Detailed setup
-
-### Workflows
-Development workflows and automation.
-
-- [Workflows Guide](WORKFLOWS_GUIDE.md) - Make command workflows
-- [Shell Integration](../SHELL_INTEGRATION.md) - Terminal shortcuts
-
-### Archive
-Historical documents and reports.
-
-- [2025-11-03](archive/2025-11-03/) - Initial implementation
-- [2025-11-03-cleanup](archive/2025-11-03-cleanup/) - First cleanup
-- [2025-11-implementation](archive/2025-11-implementation/) - Full implementation
-- [2025-11-04](archive/2025-11-04/) - Latest cleanup and reorganization
+### API Testing
+- [API Requests](api-requests.http) - HTTP request examples for testing
 
 ---
 
 ## Key Documents
 
 ### Must Read
-1. **[README.md](../README.md)** - Project overview
+1. **[README.md](../README.md)** - Project overview and quick start
 2. **[CLAUDE.md](../CLAUDE.md)** - AI assistant development guide
-3. **[Workflows Guide](WORKFLOWS_GUIDE.md)** - 25 Make commands
-4. **[Shell Integration](../SHELL_INTEGRATION.md)** - Terminal productivity
+3. **[Makefile](../Makefile)** - Development commands (`make help`)
 
 ### Architecture
-- **[PostgreSQL Architecture](architecture/POSTGRESQL_ARCHITECTURE.md)** - Database design
-- **[MCP Tools Inventory](architecture/MCP_TOOLS_INVENTORY.md)** - Available tools
+- **[FastMCP Structure](architecture/FASTMCP_STRUCTURE.md)** - MCP server architecture
+- **[MCP Tools Inventory](architecture/MCP_TOOLS_INVENTORY.md)** - Available MCP tools
 
-### Operations
-- **[Deployment](guides/DEPLOYMENT.md)** - Production deployment
-- **[Monitoring](guides/MONITORING.md)** - Health checks and metrics
-- **[M3 Max Optimizations](guides/M3_MAX_OPTIMIZATION_REPORT.md)** - Performance
+### Development
+- **[MCP Environment Switching](guides/MCP_ENVIRONMENT_SWITCHING.md)** - Environment management
+- **[Workflow Usage Guide](guides/WORKFLOW_USAGE_GUIDE.md)** - Development workflows
+- **[Benchmarking](guides/BENCHMARKING.md)** - Performance testing
 
 ---
 
@@ -86,23 +64,17 @@ Historical documents and reports.
 
 ### Development
 ```bash
-make dev           # Start servers
+make dev           # Start backend server
 make test          # Run tests
-make check         # Quality checks
+make check         # Quality checks (lint + test)
+make help          # See all commands
 ```
 
-### Documentation
+### API Testing
 ```bash
-# View in browser
-open docs/README.md
-open docs/guides/QUICK_REFERENCE.md
-open ../README.md
-```
-
-### Get Help
-```bash
-make help          # See all make commands
-ep-help            # Shell integration commands (if installed)
+# Use api-requests.http file with REST Client extension
+# Or use curl/httpie directly
+curl http://localhost:8000/health
 ```
 
 ---
@@ -110,26 +82,19 @@ ep-help            # Shell integration commands (if installed)
 ## Documentation by Role
 
 ### For New Developers
-1. [Start Here](setup/START_HERE.md)
-2. [Environment Setup](setup/ENVIRONMENT_SETUP.md)
-3. [Workflows Guide](WORKFLOWS_GUIDE.md)
-4. [Shell Integration](../SHELL_INTEGRATION.md)
+1. [README.md](../README.md) - Project overview
+2. [CLAUDE.md](../CLAUDE.md) - Development guide
+3. [MCP Tools Inventory](architecture/MCP_TOOLS_INVENTORY.md) - Available tools
 
-### For DevOps/SRE
-1. [Deployment Guide](guides/DEPLOYMENT.md)
-2. [PostgreSQL Architecture](architecture/POSTGRESQL_ARCHITECTURE.md)
-3. [Monitoring Guide](guides/MONITORING.md)
-4. [Proxy Integration](guides/PROXY_AND_DATABASE_INTEGRATION.md)
+### For MCP Developers
+1. [FastMCP Structure](architecture/FASTMCP_STRUCTURE.md) - Architecture
+2. [MCP Tools Inventory](architecture/MCP_TOOLS_INVENTORY.md) - Tool reference
+3. [MCP Environment Switching](guides/MCP_ENVIRONMENT_SWITCHING.md) - Environments
 
 ### For Performance Engineers
-1. [M3 Max Optimizations](guides/M3_MAX_OPTIMIZATION_REPORT.md)
-2. [Optional Optimizations](guides/OPTIONAL_OPTIMIZATIONS.md)
-3. [PostgreSQL Best Practices](guides/POSTGRESQL_BEST_PRACTICES.md)
-
-### For AI/MCP Developers
-1. [MCP Tools Inventory](architecture/MCP_TOOLS_INVENTORY.md)
-2. [Bulk Tool Usage](guides/BULK_TOOL_USAGE.md)
-3. [Database Integration](guides/DATABASE_INTEGRATION_IMPLEMENTATION.md)
+1. [Optimization Summary](architecture/OPTIMIZATION_SUMMARY.md) - Performance improvements
+2. [Build Commands Optimization](architecture/BUILD_COMMANDS_OPTIMIZATION.md) - Workflow optimization
+3. [Benchmarking](guides/BENCHMARKING.md) - Testing methodology
 
 ---
 
@@ -143,4 +108,4 @@ See [CLAUDE.md](../CLAUDE.md) for:
 
 ---
 
-**Last Updated:** November 5, 2025
+**Note:** This is a personal-use, backend-only project. Database persistence and frontend have been removed. All data is fetched directly from EasyPost API on-demand.
