@@ -52,7 +52,7 @@ jobs:
           pnpm audit --json > audit-npm.json || true
 
       - name: Upload audit results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: security-audits
           path: |
