@@ -4,21 +4,24 @@ import asyncio
 import logging
 from datetime import UTC, datetime
 
-from fastmcp import Context
+from fastmcp import Context, FastMCP
 from fastmcp.exceptions import ToolError
 from pydantic import ValidationError
 
-from src.services.easypost_service import AddressModel, ParcelModel
+from src.mcp_server.tools._utils import resolve_service
+from src.services.easypost_service import AddressModel, EasyPostService, ParcelModel
 from src.utils.constants import STANDARD_TIMEOUT
 
 logger = logging.getLogger(__name__)
 
 
-def register_rate_tools(mcp, easypost_service=None):  # noqa: ARG001 - Uses Context instead
+def register_rate_tools(
+    mcp: FastMCP, easypost_service: EasyPostService | None = None
+) -> None:  # noqa: ARG001 - Uses Context instead
     """Register rate-related tools with MCP server."""
 
     @mcp.tool(
-        tags=["rates", "shipping", "core"],
+        tags={"rates", "shipping", "core"},
         annotations={
             "readOnlyHint": True,
             "idempotentHint": True,
@@ -39,18 +42,8 @@ def register_rate_tools(mcp, easypost_service=None):  # noqa: ARG001 - Uses Cont
             Standardized response with available rates
         """
         try:
-            # Get service from context lifespan (dict access)
-            if ctx:
-                lifespan_ctx = ctx.request_context.lifespan_context
-                service = (
-                    lifespan_ctx.get("easypost_service")
-                    if isinstance(lifespan_ctx, dict)
-                    else lifespan_ctx.easypost_service
-                )
-            elif easypost_service:
-                service = easypost_service
-            else:
-                raise ToolError("EasyPost service not available. Check server configuration.")
+            # Resolve service from context or injected instance
+            service = resolve_service(ctx, easypost_service)
 
             # Validate inputs
             to_addr = AddressModel(**to_address)
@@ -62,7 +55,11 @@ def register_rate_tools(mcp, easypost_service=None):  # noqa: ARG001 - Uses Cont
 
             # Add timeout to prevent SSE timeout errors
             result = await asyncio.wait_for(
-                service.get_rates(to_addr.dict(), from_addr.dict(), parcel_obj.dict()),
+                service.get_rates(
+                    to_addr.model_dump(),
+                    from_addr.model_dump(),
+                    parcel_obj.model_dump(),
+                ),
                 timeout=STANDARD_TIMEOUT,
             )
 
@@ -71,7 +68,9 @@ def register_rate_tools(mcp, easypost_service=None):  # noqa: ARG001 - Uses Cont
 
             return result
         except TimeoutError:
-            logger.error(f"Rates calculation timed out after {STANDARD_TIMEOUT} seconds")
+            logger.error(
+                f"Rates calculation timed out after {STANDARD_TIMEOUT} seconds"
+            )
             return {
                 "status": "error",
                 "data": None,

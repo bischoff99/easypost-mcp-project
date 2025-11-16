@@ -4,15 +4,18 @@ import asyncio
 import logging
 from datetime import UTC, datetime
 
-from fastmcp import Context
+from fastmcp import Context, FastMCP
 from fastmcp.exceptions import ToolError
 
+from src.services.easypost_service import EasyPostService
 from src.utils.constants import STANDARD_TIMEOUT
 
 logger = logging.getLogger(__name__)
 
 
-def register_refund_tools(mcp, easypost_service=None):
+def register_refund_tools(
+    mcp: FastMCP, easypost_service: EasyPostService | None = None
+) -> None:
     """Register refund-related tools with MCP server."""
 
     @mcp.tool(
@@ -136,7 +139,9 @@ def register_refund_tools(mcp, easypost_service=None):
                         "timestamp": datetime.now(UTC).isoformat(),
                     }
                 except Exception as e:
-                    logger.error(f"Refund failed for {shipment_id}: {str(e)}")
+                    logger.error(
+                        f"Refund failed for {shipment_id}: {str(e)}", exc_info=True
+                    )
                     return {
                         "status": "error",
                         "data": {"shipment_id": shipment_id},

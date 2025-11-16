@@ -10,10 +10,14 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.cors import CORSMiddleware
 
+from src.mcp_server import build_mcp_server
+from src.routers import analytics, shipments, tracking
 from src.dependencies import EasyPostDep
 from src.lifespan import app_lifespan
 from src.utils.config import settings
 from src.utils.monitoring import metrics
+
+mcp, mcp_service = build_mcp_server(lifespan=app_lifespan)
 
 # Constants
 REQUEST_ID_HEADER = "X-Request-ID"
@@ -32,10 +36,6 @@ except ValueError as e:
     logger.error(f"Configuration error: {e}")
     raise
 
-# Initialize FastMCP server with lifespan
-from src.mcp_server import build_mcp_server
-
-mcp, mcp_service = build_mcp_server(lifespan=app_lifespan)
 
 # Initialize FastAPI app with MCP lifespan
 app = FastAPI(
@@ -134,8 +134,6 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 app.mount("/mcp", mcp.http_app())
 
 # Include routers (simplified for personal use)
-from src.routers import analytics, shipments, tracking
-
 app.include_router(shipments.rates_router, prefix="/api")
 app.include_router(shipments.router, prefix="/api")
 app.include_router(analytics.router, prefix="/api")
@@ -143,7 +141,9 @@ app.include_router(tracking.router, prefix="/api/tracking")
 
 logger.info("Routers registered: shipments, analytics, tracking")
 
-logger.info("MCP server mounted at /mcp (HTTP transport) with error handling and retry middleware")
+logger.info(
+    "MCP server mounted at /mcp (HTTP transport) with error handling and retry middleware"
+)
 
 
 # Endpoints

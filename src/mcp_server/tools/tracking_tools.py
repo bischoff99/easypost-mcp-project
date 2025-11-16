@@ -4,19 +4,23 @@ import asyncio
 import logging
 from datetime import UTC, datetime
 
-from fastmcp import Context
+from fastmcp import Context, FastMCP
 from fastmcp.exceptions import ToolError
 
+from src.mcp_server.tools._utils import resolve_service
+from src.services.easypost_service import EasyPostService
 from src.utils.constants import STANDARD_TIMEOUT
 
 logger = logging.getLogger(__name__)
 
 
-def register_tracking_tools(mcp, easypost_service=None):
+def register_tracking_tools(
+    mcp: FastMCP, easypost_service: EasyPostService | None = None
+) -> None:
     """Register tracking-related tools with MCP server."""
 
     @mcp.tool(
-        tags=["tracking", "shipping", "core"],
+        tags={"tracking", "shipping", "core"},
         annotations={
             "readOnlyHint": True,
             "idempotentHint": True,
@@ -33,24 +37,16 @@ def register_tracking_tools(mcp, easypost_service=None):
             Standardized response with tracking data
         """
         try:
-            # Get service from context or use provided
-            if ctx:
-                lifespan_ctx = ctx.request_context.lifespan_context
-                service = (
-                    lifespan_ctx.get("easypost_service")
-                    if isinstance(lifespan_ctx, dict)
-                    else lifespan_ctx.easypost_service
-                )
-            elif easypost_service:
-                service = easypost_service
-            else:
-                raise ToolError("EasyPost service not available. Check server configuration.")
+            # Resolve service from context or injected instance
+            service = resolve_service(ctx, easypost_service)
 
             if ctx:
                 await ctx.info(f"Fetching tracking for {tracking_number}...")
 
             # Add timeout to prevent SSE timeout errors
-            result = await asyncio.wait_for(service.get_tracking(tracking_number), timeout=STANDARD_TIMEOUT)
+            result = await asyncio.wait_for(
+                service.get_tracking(tracking_number), timeout=STANDARD_TIMEOUT
+            )
 
             if ctx:
                 await ctx.report_progress(1, 1)

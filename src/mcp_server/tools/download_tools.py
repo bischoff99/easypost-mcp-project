@@ -13,14 +13,17 @@ from typing import Any
 
 import easypost
 import requests  # type: ignore[import-untyped]
-from fastmcp import Context
+from fastmcp import Context, FastMCP
 
+from src.services.easypost_service import EasyPostService
 from src.utils.constants import BULK_OPERATION_TIMEOUT
 
 logger = logging.getLogger(__name__)
 
 # Default download directory
-DOWNLOAD_DIR = Path(__file__).parent.parent.parent.parent.parent / "data" / "shipping-labels"
+DOWNLOAD_DIR = (
+    Path(__file__).parent.parent.parent.parent.parent / "data" / "shipping-labels"
+)
 DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 
@@ -48,7 +51,13 @@ def detect_download_intent(request: str) -> dict[str, bool]:
         "customs document",
     ]
     invoice_keywords = ["invoice", "commercial invoice", "commercial"]
-    both_keywords = ["both", "all", "everything", "labels and customs", "label and customs"]
+    both_keywords = [
+        "both",
+        "all",
+        "everything",
+        "labels and customs",
+        "label and customs",
+    ]
 
     # Check for explicit "both" or "all" first
     if any(keyword in request_lower for keyword in both_keywords):
@@ -95,7 +104,9 @@ def download_file(url: str, filepath: Path) -> bool:
         return False
 
 
-def register_download_tools(mcp, easypost_service=None):
+def register_download_tools(
+    mcp: FastMCP, easypost_service: EasyPostService | None = None
+) -> None:
     """Register download tools with MCP server."""
 
     @mcp.tool(
@@ -236,7 +247,9 @@ def register_download_tools(mcp, easypost_service=None):
                 shipment_result = await service.retrieve_shipment(shipment_id)
                 if shipment_result.get("status") != "success":
                     results[shipment_id] = {
-                        "error": shipment_result.get("message", "Failed to retrieve shipment"),
+                        "error": shipment_result.get(
+                            "message", "Failed to retrieve shipment"
+                        ),
                     }
                     continue
 
@@ -260,14 +273,18 @@ def register_download_tools(mcp, easypost_service=None):
                 api_key_str: str = easypost_api_key
 
                 # Capture API key in closure with default parameter
-                def retrieve_shipment_sync(shipment_id: str, api_key: str = api_key_str) -> Any:
+                def retrieve_shipment_sync(
+                    shipment_id: str, api_key: str = api_key_str
+                ) -> Any:
                     """Synchronous shipment retrieval."""
                     easypost.api_key = api_key  # type: ignore[attr-defined]
                     client = easypost.EasyPostClient(api_key=api_key)
                     return client.shipment.retrieve(shipment_id)
 
                 try:
-                    shipment = await loop.run_in_executor(None, retrieve_shipment_sync, shipment_id)
+                    shipment = await loop.run_in_executor(
+                        None, retrieve_shipment_sync, shipment_id
+                    )
                 except Exception as e:
                     results[shipment_id] = {
                         "error": f"Failed to retrieve shipment object: {str(e)}",
@@ -305,7 +322,8 @@ def register_download_tools(mcp, easypost_service=None):
 
                     # Try to generate commercial invoice if not present
                     if wants_invoice and not any(
-                        getattr(f, "form_type", "").lower() == "commercial_invoice" for f in forms
+                        getattr(f, "form_type", "").lower() == "commercial_invoice"
+                        for f in forms
                     ):
                         try:
                             if ctx:
@@ -327,11 +345,16 @@ def register_download_tools(mcp, easypost_service=None):
                                 )
 
                             form = await loop.run_in_executor(
-                                None, generate_form_sync, shipment_id, "commercial_invoice"
+                                None,
+                                generate_form_sync,
+                                shipment_id,
+                                "commercial_invoice",
                             )
                             forms.append(form)
                         except Exception as e:
-                            logger.warning(f"Failed to generate commercial invoice: {e}")
+                            logger.warning(
+                                f"Failed to generate commercial invoice: {e}"
+                            )
 
                     for form in forms:
                         form_type = getattr(form, "form_type", "unknown")
@@ -342,14 +365,19 @@ def register_download_tools(mcp, easypost_service=None):
 
                         # Determine if this is an invoice
                         is_invoice = (
-                            "invoice" in form_type.lower() or "commercial" in form_type.lower()
+                            "invoice" in form_type.lower()
+                            or "commercial" in form_type.lower()
                         )
 
                         # Download if it matches request
-                        if (wants_customs and not is_invoice) or (wants_invoice and is_invoice):
+                        if (wants_customs and not is_invoice) or (
+                            wants_invoice and is_invoice
+                        ):
                             # Determine file extension
                             ext = ".pdf" if "pdf" in form_url.lower() else ".pdf"
-                            filename = f"{tracking_code or shipment_id}_{form_type}{ext}"
+                            filename = (
+                                f"{tracking_code or shipment_id}_{form_type}{ext}"
+                            )
                             filepath = download_dir / filename
 
                             if download_file(form_url, filepath):

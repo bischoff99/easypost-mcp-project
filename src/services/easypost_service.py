@@ -8,179 +8,12 @@ from typing import Any
 import easypost
 from pydantic import BaseModel, Field
 
+from src.services.address_utils import normalize_address
+from src.services.error_utils import sanitize_error
+
+from src.services.smart_customs import get_or_create_customs
+
 logger = logging.getLogger(__name__)
-
-
-# Country name to ISO 2-letter code mapping for EasyPost API
-COUNTRY_CODE_MAP = {
-    "UNITED KINGDOM": "GB",
-    "NORTHERN IRELAND": "GB",
-    "ENGLAND": "GB",
-    "SCOTLAND": "GB",
-    "WALES": "GB",
-    "GERMANY": "DE",
-    "SPAIN": "ES",
-    "FRANCE": "FR",
-    "ITALY": "IT",
-    "NETHERLANDS": "NL",
-    "THE NETHERLANDS": "NL",
-    "BELGIUM": "BE",
-    "AUSTRIA": "AT",
-    "SWITZERLAND": "CH",
-    "POLAND": "PL",
-    "SWEDEN": "SE",
-    "DENMARK": "DK",
-    "NORWAY": "NO",
-    "FINLAND": "FI",
-    "IRELAND": "IE",
-    "PORTUGAL": "PT",
-    "GREECE": "GR",
-    "CZECH REPUBLIC": "CZ",
-    "HUNGARY": "HU",
-    "ROMANIA": "RO",
-    "BULGARIA": "BG",
-    "CROATIA": "HR",
-    "SLOVAKIA": "SK",
-    "SLOVENIA": "SI",
-    "LUXEMBOURG": "LU",
-    "ESTONIA": "EE",
-    "LATVIA": "LV",
-    "LITHUANIA": "LT",
-    "MALTA": "MT",
-    "CYPRUS": "CY",
-    "CANADA": "CA",
-    "MEXICO": "MX",
-    "AUSTRALIA": "AU",
-    "NEW ZEALAND": "NZ",
-    "JAPAN": "JP",
-    "SOUTH KOREA": "KR",
-    "KOREA": "KR",
-    "CHINA": "CN",
-    "INDIA": "IN",
-    "SINGAPORE": "SG",
-    "HONG KONG": "HK",
-    "TAIWAN": "TW",
-    "THAILAND": "TH",
-    "MALAYSIA": "MY",
-    "INDONESIA": "ID",
-    "PHILIPPINES": "PH",
-    "VIETNAM": "VN",
-    "BRAZIL": "BR",
-    "ARGENTINA": "AR",
-    "CHILE": "CL",
-    "COLOMBIA": "CO",
-    "PERU": "PE",
-    "SOUTH AFRICA": "ZA",
-    "ISRAEL": "IL",
-    "TURKEY": "TR",
-    "SAUDI ARABIA": "SA",
-    "UAE": "AE",
-    "UNITED ARAB EMIRATES": "AE",
-    "USA": "US",
-    "UNITED STATES": "US",
-    "UNITED STATES OF AMERICA": "US",
-    "US": "US",
-}
-
-
-def normalize_country_code(country: str) -> str:
-    """
-    Convert country name to ISO 2-letter code for EasyPost API.
-
-    Args:
-        country: Country name or code
-
-    Returns:
-        ISO 2-letter country code (uppercase)
-    """
-    if not country:
-        return "US"  # Default to US
-
-    country_upper = country.strip().upper()
-
-    # If already a 2-letter code, return as-is
-    if len(country_upper) == 2:
-        return country_upper
-
-    # Look up in mapping
-    return COUNTRY_CODE_MAP.get(country_upper, country_upper)
-
-
-def normalize_address(address: dict[str, Any]) -> dict[str, Any]:
-    """
-    Normalize address data for EasyPost API.
-
-    Ensures country codes are ISO 2-letter format and trims whitespace.
-
-    Args:
-        address: Address dictionary
-
-    Returns:
-        Normalized address dictionary
-    """
-    if not address:
-        return address
-
-    normalized = address.copy()
-
-    # Normalize country code
-    if "country" in normalized:
-        normalized["country"] = normalize_country_code(normalized["country"])
-
-    # Trim whitespace from all string fields (preserve None values)
-    for key, value in normalized.items():
-        if isinstance(value, str):
-            normalized[key] = value.strip()
-        elif value is None:
-            # Keep None values (don't convert to empty string)
-            pass
-
-    return normalized
-
-
-def preprocess_address_for_fedex(address: dict[str, Any]) -> dict[str, Any]:
-    """
-    Reformat address to meet FedEx/UPS international API requirements.
-
-    Both FedEx and UPS have strict validation for international addresses:
-    - State field must be removed for non-US addresses (max 5 chars, rejects long values)
-    - FedEx doesn't accept descriptive text in street2 (building names like "FOUR WINDS")
-    - street1 max 35 characters for FedEx
-    - UPS Worldwide Economy has 36" girth limit (length + width + height)
-
-    Args:
-        address: Address dict to preprocess
-
-    Returns:
-        Preprocessed address dict with state removed for international addresses
-    """
-    result = address.copy()
-    street1 = result.get("street1", "").strip()
-    street2 = result.get("street2", "").strip()
-    country = result.get("country", "").upper()
-
-    # For non-US addresses, remove state field entirely (UPS/FedEx requirements)
-    if country and country != "US" and "state" in result:
-        del result["state"]  # Remove entirely, not just set to empty/None
-
-    # Handle descriptive street2 (building names, etc.)
-    # FedEx often rejects these, so combine with street1 or drop
-    if street2:
-        # If street2 is short (likely a building name), try combining
-        if len(street2.split()) <= 3 and len(street1) + len(street2) + 2 <= 35:
-            # Combine into street1 if it fits
-            result["street1"] = f"{street1}, {street2}"
-            result["street2"] = ""
-        elif len(street2.split()) <= 3:
-            # Too long to combine - drop street2
-            result["street1"] = street1
-            result["street2"] = ""
-        else:
-            # Keep longer street2 (likely apartment/suite number)
-            result["street1"] = street1[:35]
-            result["street2"] = street2[:35]
-
-    return result
 
 
 class AddressModel(BaseModel):
@@ -188,11 +21,15 @@ class AddressModel(BaseModel):
 
     name: str = Field(..., max_length=100, description="Recipient name")
     street1: str = Field(..., max_length=200, description="Street address line 1")
-    street2: str | None = Field(None, max_length=200, description="Street address line 2")
+    street2: str | None = Field(
+        None, max_length=200, description="Street address line 2"
+    )
     city: str = Field(..., max_length=100, description="City name")
     state: str = Field(..., max_length=50, description="State or province")
     zip: str = Field(..., max_length=20, description="Postal/ZIP code")
-    country: str = Field(default="US", max_length=2, description="2-letter ISO country code")
+    country: str = Field(
+        default="US", max_length=2, description="2-letter ISO country code"
+    )
     phone: str | None = Field(None, max_length=20, description="Contact phone")
     email: str | None = Field(None, max_length=100, description="Contact email")
     company: str | None = Field(None, max_length=100, description="Company name")
@@ -204,7 +41,9 @@ class ParcelModel(BaseModel):
     length: float = Field(..., gt=0, le=108, description="Length in inches (max 108)")
     width: float = Field(..., gt=0, le=108, description="Width in inches (max 108)")
     height: float = Field(..., gt=0, le=108, description="Height in inches (max 108)")
-    weight: float = Field(..., gt=0, le=2400, description="Weight in ounces (max 150 lbs)")
+    weight: float = Field(
+        ..., gt=0, le=2400, description="Weight in ounces (max 150 lbs)"
+    )
 
 
 class ShipmentResponse(BaseModel):
@@ -264,10 +103,10 @@ class EasyPostService:
     - Event loop: Stays responsive, handles other requests concurrently
 
     PERFORMANCE:
-    - 32-40 parallel workers (scales with CPU cores)
+    - Max workers: 16 (personal-use constraint)
     - Multiple shipment operations can run concurrently
     - Event loop never blocks on API calls
-    - ~3-4 shipments/second on M3 Max
+    - ThreadPoolExecutor fixed to 4 workers for SDK I/O
 
     EXAMPLE:
     ```python
@@ -334,7 +173,9 @@ class EasyPostService:
             self.executor.shutdown(wait=True, cancel_futures=False)
             self.logger.info("ThreadPoolExecutor shutdown complete")
 
-    async def _api_call_with_retry(self, func: callable, *args, max_retries: int = 3) -> Any:
+    async def _api_call_with_retry(
+        self, func: callable, *args, max_retries: int = 3
+    ) -> Any:
         """
         Execute API call with exponential backoff on rate limits.
 
@@ -449,7 +290,7 @@ class EasyPostService:
                 duty_payment,
             )
         except Exception as e:
-            self.logger.error(f"Error creating shipment: {self._sanitize_error(e)}")
+            self.logger.error(f"Error creating shipment: {sanitize_error(e)}")
             return {"status": "error", "message": "Failed to create shipment"}
 
     def _create_shipment_sync(
@@ -493,57 +334,10 @@ class EasyPostService:
                 shipment_params["carrier_accounts"] = self.CARRIER_ACCOUNTS
 
             if customs_info:
-                # Create CustomsInfo object using EasyPost SDK
-                # customs_info dict should have: customs_items (list), customs_certify,
-                # customs_signer, etc.
-                # Note: EasyPost API requires 'weight' for each customs_item
-                customs_items = []
-                total_value = 0.0
-                for item in customs_info.get("customs_items", customs_info.get("contents", [])):
-                    # Weight is REQUIRED by EasyPost API - use item weight or parcel weight
-                    item_weight = item.get("weight")
-                    if item_weight is None:
-                        # Fallback: use parcel weight if item weight not specified
-                        item_weight = parcel.get("weight", 16.0)  # Default 1 lb if missing
-
-                    # Calculate total value for EEL/PFC validation
-                    quantity = item.get("quantity", 1)
-                    value = item.get("value", 50.0)
-                    total_value += quantity * value
-
-                    customs_item = self.client.customs_item.create(
-                        description=item.get("description", "General Merchandise"),
-                        quantity=quantity,
-                        value=value,
-                        weight=item_weight,  # REQUIRED by EasyPost API
-                        hs_tariff_number=item.get("hs_tariff_number"),
-                        origin_country=item.get("origin_country", "US"),
-                    )
-                    customs_items.append(customs_item)
-
-                # Validate EEL/PFC requirement (per EasyPost customs guide)
-                eel_pfc = customs_info.get("eel_pfc")
-                if eel_pfc is None:
-                    if total_value >= 2500:
-                        raise ValueError(
-                            f"Shipment value ${total_value:.2f} ≥ $2,500 requires AES ITN. "
-                            "Get ITN from https://aesdirect.census.gov or use "
-                            "smart_customs.extract_customs_smart() for automatic validation. "
-                            "Example: 'AES X20120502123456'"
-                        )
-                    eel_pfc = "NOEEI 30.37(a)"
-
-                customs_info_obj = self.client.customs_info.create(
-                    customs_items=customs_items,
-                    customs_certify=customs_info.get("customs_certify", True),
-                    customs_signer=customs_info.get("customs_signer", ""),
-                    contents_type=customs_info.get("contents_type", "merchandise"),
-                    restriction_type=customs_info.get("restriction_type", "none"),
-                    restriction_comments=customs_info.get("restriction_comments", ""),
-                    eel_pfc=eel_pfc,
-                    non_delivery_option=customs_info.get("non_delivery_option", "return"),
-                )
-                shipment_params["customs_info"] = customs_info_obj
+                # Centralised customs creation
+                created_customs = self._create_customs_info(customs_info, parcel)
+                if created_customs:
+                    shipment_params["customs_info"] = created_customs
 
             # Add duty_payment for DDP/DDU (FedEx/UPS international shipments)
             if duty_payment:
@@ -595,7 +389,9 @@ class EasyPostService:
                     )
 
                 # Buy the label using the selected rate
-                bought_shipment = self.client.shipment.buy(shipment.id, rate={"id": rate_id})
+                bought_shipment = self.client.shipment.buy(
+                    shipment.id, rate={"id": rate_id}
+                )
                 result["postage_label_url"] = bought_shipment.postage_label.label_url
                 result["purchased_rate"] = {
                     "carrier": rate_obj.carrier,
@@ -611,7 +407,11 @@ class EasyPostService:
             error_msg = str(e)
             self.logger.error(f"Failed to create shipment: {error_msg}", exc_info=True)
             # Include full error details for debugging
-            return {"status": "error", "message": error_msg, "error_type": type(e).__name__}
+            return {
+                "status": "error",
+                "message": error_msg,
+                "error_type": type(e).__name__,
+            }
 
     async def refund_shipment(self, shipment_id: str) -> dict[str, Any]:
         """
@@ -624,9 +424,11 @@ class EasyPostService:
             Dict with status and refund information
         """
         try:
-            return await self._api_call_with_retry(self._refund_shipment_sync, shipment_id)
+            return await self._api_call_with_retry(
+                self._refund_shipment_sync, shipment_id
+            )
         except Exception as e:
-            self.logger.error(f"Error refunding shipment: {self._sanitize_error(e)}")
+            self.logger.error(f"Error refunding shipment: {sanitize_error(e)}")
             return {
                 "status": "error",
                 "message": "Failed to refund shipment",
@@ -646,18 +448,24 @@ class EasyPostService:
                     "shipment_id": shipment.id,
                     "tracking_code": shipment.tracking_code,
                     "refund_status": (
-                        refund.refund_status if hasattr(refund, "refund_status") else "submitted"
+                        refund.refund_status
+                        if hasattr(refund, "refund_status")
+                        else "submitted"
                     ),
                     "carrier": (
-                        shipment.selected_rate.carrier if shipment.selected_rate else "unknown"
+                        shipment.selected_rate.carrier
+                        if shipment.selected_rate
+                        else "unknown"
                     ),
-                    "amount": shipment.selected_rate.rate if shipment.selected_rate else "unknown",
+                    "amount": shipment.selected_rate.rate
+                    if shipment.selected_rate
+                    else "unknown",
                 },
                 "message": "Refund request submitted successfully",
                 "timestamp": datetime.now(UTC).isoformat(),
             }
         except Exception as e:
-            self.logger.error(f"Failed to refund shipment: {self._sanitize_error(e)}")
+            self.logger.error(f"Failed to refund shipment: {sanitize_error(e)}")
             return {
                 "status": "error",
                 "message": str(e),
@@ -676,9 +484,11 @@ class EasyPostService:
             Dict with status and label information
         """
         try:
-            return await self._api_call_with_retry(self._buy_shipment_sync, shipment_id, rate_id)
+            return await self._api_call_with_retry(
+                self._buy_shipment_sync, shipment_id, rate_id
+            )
         except Exception as e:
-            self.logger.error(f"Error buying shipment: {self._sanitize_error(e)}")
+            self.logger.error(f"Error buying shipment: {sanitize_error(e)}")
             return {
                 "status": "error",
                 "message": "Failed to purchase label",
@@ -707,7 +517,7 @@ class EasyPostService:
                 carrier,
             )
         except Exception as e:
-            error_msg = self._sanitize_error(e)
+            error_msg = sanitize_error(e)
             self.logger.error(f"Error verifying address: {error_msg}")
             return {
                 "status": "error",
@@ -746,17 +556,25 @@ class EasyPostService:
 
             # Check verification results
             verifications = (
-                verified_address.verifications if hasattr(verified_address, "verifications") else {}
+                verified_address.verifications
+                if hasattr(verified_address, "verifications")
+                else {}
             )
-            delivery_verification = verifications.get("delivery", {}) if verifications else {}
+            delivery_verification = (
+                verifications.get("delivery", {}) if verifications else {}
+            )
             carrier_verification = verifications.get("carrier", {}) if carrier else {}
 
             # Log detailed verification results for debugging
             delivery_success = delivery_verification.get("success", "N/A")
-            carrier_success = carrier_verification.get("success", "N/A") if carrier else "N/A"
+            carrier_success = (
+                carrier_verification.get("success", "N/A") if carrier else "N/A"
+            )
             self.logger.info("Address verification results:")
             self.logger.info(f"  - Delivery success: {delivery_success}")
-            self.logger.info(f"  - Delivery errors: {delivery_verification.get('errors', [])}")
+            self.logger.info(
+                f"  - Delivery errors: {delivery_verification.get('errors', [])}"
+            )
             if carrier:
                 self.logger.info(f"  - Carrier ({carrier}) success: {carrier_success}")
                 self.logger.info(
@@ -783,7 +601,9 @@ class EasyPostService:
 
             status_value = "success" if success else "warning"
             message = (
-                "Address verified successfully" if success else "Address verification had warnings"
+                "Address verified successfully"
+                if success
+                else "Address verification had warnings"
             )
 
             return {
@@ -809,7 +629,7 @@ class EasyPostService:
                 "timestamp": datetime.now(UTC).isoformat(),
             }
         except Exception as e:
-            self.logger.error(f"Address verification failed: {self._sanitize_error(e)}")
+            self.logger.error(f"Address verification failed: {sanitize_error(e)}")
             return {
                 "status": "error",
                 "message": str(e),
@@ -819,7 +639,9 @@ class EasyPostService:
     def _buy_shipment_sync(self, shipment_id: str, rate_id: str) -> dict[str, Any]:
         """Synchronous label purchase."""
         try:
-            self.logger.info(f"Buying label for shipment {shipment_id} with rate {rate_id}")
+            self.logger.info(
+                f"Buying label for shipment {shipment_id} with rate {rate_id}"
+            )
             shipment = self.client.shipment.retrieve(shipment_id)
 
             # Find the rate object matching the rate_id
@@ -834,8 +656,12 @@ class EasyPostService:
 
             # Log shipment details for debugging - especially address for FedEx
             to_addr = shipment.to_address if hasattr(shipment, "to_address") else None
-            street1 = to_addr.street1 if to_addr and hasattr(to_addr, "street1") else None
-            has_duty = hasattr(shipment, "duty_payment") and shipment.duty_payment is not None
+            street1 = (
+                to_addr.street1 if to_addr and hasattr(to_addr, "street1") else None
+            )
+            has_duty = (
+                hasattr(shipment, "duty_payment") and shipment.duty_payment is not None
+            )
             self.logger.info(
                 f"Shipment details: id={shipment.id}, status={shipment.status}, "
                 f"carrier={rate_obj.carrier}, service={rate_obj.service}, "
@@ -849,14 +675,18 @@ class EasyPostService:
             # Validate address before purchase (especially for FedEx)
             if to_addr and (not street1 or not street1.strip()):
                 addr_dict = to_addr.__dict__ if hasattr(to_addr, "__dict__") else "N/A"
-                error_msg = f"Invalid address: street1 is empty or None. Address: {addr_dict}"
+                error_msg = (
+                    f"Invalid address: street1 is empty or None. Address: {addr_dict}"
+                )
                 self.logger.error(error_msg)
                 raise ValueError(error_msg)
 
             # Buy the shipment with the rate ID
             # EasyPost API expects: { "rate": { "id": "rate_..." } }
             # Python SDK accepts rate object or rate dict
-            bought_shipment = self.client.shipment.buy(shipment_id, rate={"id": rate_id})
+            bought_shipment = self.client.shipment.buy(
+                shipment_id, rate={"id": rate_id}
+            )
 
             # bought_shipment is the updated shipment object returned by buy()
             return {
@@ -906,7 +736,7 @@ class EasyPostService:
                 error_details["json_body"] = e.json_body
 
             self.logger.error(f"Buy error details: {error_details}")
-            self.logger.error(f"Failed to buy shipment: {self._sanitize_error(e)}")
+            self.logger.error(f"Failed to buy shipment: {sanitize_error(e)}")
 
             # Return detailed error message
             detailed_error = error_msg
@@ -936,7 +766,7 @@ class EasyPostService:
                 self.executor, self._get_tracking_sync, tracking_number
             )
         except Exception as e:
-            self.logger.error(f"Error getting tracking: {self._sanitize_error(e)}")
+            self.logger.error(f"Error getting tracking: {sanitize_error(e)}")
             return {
                 "status": "error",
                 "data": None,
@@ -961,7 +791,9 @@ class EasyPostService:
                             {
                                 "timestamp": str(
                                     getattr(
-                                        event, "timestamp", getattr(event, "datetime", "unknown")
+                                        event,
+                                        "timestamp",
+                                        getattr(event, "datetime", "unknown"),
                                     )
                                 ),
                                 "status": getattr(event, "status", "unknown"),
@@ -970,7 +802,8 @@ class EasyPostService:
                             }
                             for event in tracker.tracking_details
                         ]
-                        if hasattr(tracker, "tracking_details") and tracker.tracking_details
+                        if hasattr(tracker, "tracking_details")
+                        and tracker.tracking_details
                         else []
                     ),
                 },
@@ -978,7 +811,7 @@ class EasyPostService:
                 "timestamp": datetime.now(UTC).isoformat(),
             }
         except Exception as e:
-            self.logger.error(f"Failed to get tracking: {self._sanitize_error(e)}")
+            self.logger.error(f"Failed to get tracking: {sanitize_error(e)}")
             return {
                 "status": "error",
                 "data": None,
@@ -1022,7 +855,7 @@ class EasyPostService:
                 "timestamp": datetime.now(UTC).isoformat(),
             }
         except Exception as e:
-            error_msg = self._sanitize_error(e)
+            error_msg = sanitize_error(e)
             self.logger.error(f"Error getting rates: {error_msg}")
             return {
                 "status": "error",
@@ -1072,38 +905,11 @@ class EasyPostService:
 
             # Add customs_info if provided (for international shipments)
             if customs_info:
-                # Create CustomsInfo object using EasyPost SDK (same as _create_shipment_sync)
-                # Note: EasyPost API requires 'weight' for each customs_item
-                customs_items = []
-                for item in customs_info.get("customs_items", customs_info.get("contents", [])):
-                    # Weight is REQUIRED by EasyPost API - use item weight or parcel weight
-                    item_weight = item.get("weight")
-                    if item_weight is None:
-                        # Fallback: use parcel weight if item weight not specified
-                        item_weight = parcel.get("weight", 16.0)  # Default 1 lb if missing
-
-                    customs_item = self.client.customs_item.create(
-                        description=item.get("description", "General Merchandise"),
-                        quantity=item.get("quantity", 1),
-                        value=item.get("value", 50.0),
-                        weight=item_weight,  # REQUIRED by EasyPost API
-                        hs_tariff_number=item.get("hs_tariff_number"),
-                        origin_country=item.get("origin_country", "US"),
-                    )
-                    customs_items.append(customs_item)
-
-                customs_info_obj = self.client.customs_info.create(
-                    customs_items=customs_items,
-                    customs_certify=customs_info.get("customs_certify", True),
-                    customs_signer=customs_info.get("customs_signer", ""),
-                    contents_type=customs_info.get("contents_type", "merchandise"),
-                    restriction_type=customs_info.get("restriction_type", "none"),
-                    restriction_comments=customs_info.get("restriction_comments", ""),
-                    eel_pfc=customs_info.get("eel_pfc", "NOEEI 30.37(a)"),
-                    non_delivery_option=customs_info.get("non_delivery_option", "return"),
-                )
-                shipment_params["customs_info"] = customs_info_obj
-
+                # Centralised customs creation
+                created_customs = self._create_customs_info(customs_info, parcel)
+                if created_customs:
+                    shipment_params["customs_info"] = created_customs
+            # Create shipment and return raw rates
             shipment = self.client.shipment.create(**shipment_params)
 
             return [
@@ -1117,8 +923,77 @@ class EasyPostService:
                 for rate in shipment.rates
             ]
         except Exception as e:
-            self.logger.error(f"Failed to get rates: {self._sanitize_error(e)}")
+            self.logger.error(f"Failed to get rates: {sanitize_error(e)}")
             raise
+
+    def _create_customs_info(
+        self, customs_info: dict[str, Any], parcel: dict[str, Any]
+    ):
+        """
+        Create EasyPost CustomsInfo using either smart text extraction or explicit items.
+        """
+        try:
+            weight_oz = float(parcel.get("weight", 16.0) or 16.0)
+        except Exception:
+            weight_oz = 16.0
+
+        # Prefer smart customs when contents text provided
+        contents_text = customs_info.get("contents")
+        if isinstance(contents_text, str) and contents_text.strip():
+            return get_or_create_customs(
+                contents=contents_text.strip(),
+                weight_oz=weight_oz,
+                easypost_client=self.client,
+                value=customs_info.get("value"),
+                customs_signer=customs_info.get("customs_signer", "Sender"),
+                incoterm=customs_info.get("incoterm", "DDP"),
+                eel_pfc=customs_info.get("eel_pfc"),
+                contents_explanation=customs_info.get("contents_explanation", ""),
+                restriction_comments=customs_info.get("restriction_comments", ""),
+            )
+
+        # Fallback to explicit customs_items structure
+        items = customs_info.get("customs_items")
+        if isinstance(items, list) and items:
+            customs_items = []
+            total_value = 0.0
+            for item in items:
+                item_weight = item.get("weight") or weight_oz
+                quantity = item.get("quantity", 1)
+                value = float(item.get("value", 50.0))
+                total_value += quantity * value
+                customs_item = self.client.customs_item.create(
+                    description=item.get("description", "General Merchandise"),
+                    quantity=quantity,
+                    value=value,
+                    weight=item_weight,
+                    hs_tariff_number=item.get("hs_tariff_number"),
+                    origin_country=item.get("origin_country", "US"),
+                )
+                customs_items.append(customs_item)
+
+            eel_pfc = customs_info.get("eel_pfc")
+            if eel_pfc is None:
+                if total_value >= 2500:
+                    raise ValueError(
+                        f"Shipment value ${total_value:.2f} ≥ $2,500 requires AES ITN. "
+                        "Get ITN from https://aesdirect.census.gov"
+                    )
+                eel_pfc = "NOEEI 30.37(a)"
+
+            return self.client.customs_info.create(
+                customs_items=customs_items,
+                customs_certify=customs_info.get("customs_certify", True),
+                customs_signer=customs_info.get("customs_signer", ""),
+                contents_type=customs_info.get("contents_type", "merchandise"),
+                restriction_type=customs_info.get("restriction_type", "none"),
+                restriction_comments=customs_info.get("restriction_comments", ""),
+                eel_pfc=eel_pfc,
+                non_delivery_option=customs_info.get("non_delivery_option", "return"),
+            )
+
+        # Nothing to create
+        return None
 
     async def list_shipments(
         self,
@@ -1182,7 +1057,7 @@ class EasyPostService:
                 before_id,
             )
         except Exception as e:
-            self.logger.error(f"Error getting shipments list: {self._sanitize_error(e)}")
+            self.logger.error(f"Error getting shipments list: {sanitize_error(e)}")
             return {
                 "status": "error",
                 "data": [],
@@ -1206,7 +1081,7 @@ class EasyPostService:
                 self.executor, self._retrieve_shipment_sync, shipment_id
             )
         except Exception as e:
-            self.logger.error(f"Error retrieving shipment: {self._sanitize_error(e)}")
+            self.logger.error(f"Error retrieving shipment: {sanitize_error(e)}")
             return {
                 "status": "error",
                 "data": None,
@@ -1246,7 +1121,8 @@ class EasyPostService:
 
             # Transform shipments to our format
             shipments = [
-                self._shipment_to_dict(shipment) for shipment in shipments_response.shipments
+                self._shipment_to_dict(shipment)
+                for shipment in shipments_response.shipments
             ]
 
             self.logger.info(f"Retrieved {len(shipments)} shipments from EasyPost")
@@ -1260,7 +1136,7 @@ class EasyPostService:
             }
 
         except Exception as e:
-            self.logger.error(f"Failed to get shipments list: {self._sanitize_error(e)}")
+            self.logger.error(f"Failed to get shipments list: {sanitize_error(e)}")
             return {
                 "status": "error",
                 "data": [],
@@ -1282,7 +1158,7 @@ class EasyPostService:
                 "timestamp": datetime.now(UTC).isoformat(),
             }
         except Exception as e:
-            self.logger.error(f"Failed to retrieve shipment: {self._sanitize_error(e)}")
+            self.logger.error(f"Failed to retrieve shipment: {sanitize_error(e)}")
             return {
                 "status": "error",
                 "data": None,
@@ -1342,7 +1218,9 @@ class EasyPostService:
                 "weight": getattr(parcel, "weight", None) if parcel else None,
             },
             "tracking_url": getattr(shipment, "public_url", None),
-            "label_url": getattr(getattr(shipment, "postage_label", None), "label_url", None),
+            "label_url": getattr(
+                getattr(shipment, "postage_label", None), "label_url", None
+            ),
             "from": location_string(from_address),
             "to": location_string(to_address),
         }
@@ -1362,14 +1240,21 @@ class EasyPostService:
         msg = str(error)
 
         # Remove API keys (EasyPost format: EZAKxxxx or EZTKxxxx)
-        msg = re.sub(r"(EZAK|EZTK)[a-zA-Z0-9]{32,}", "[API_KEY_REDACTED]", msg, flags=re.IGNORECASE)
+        msg = re.sub(
+            r"(EZAK|EZTK)[a-zA-Z0-9]{32,}",
+            "[API_KEY_REDACTED]",
+            msg,
+            flags=re.IGNORECASE,
+        )
 
         # Remove Bearer tokens
         msg = re.sub(r"Bearer\s+[^\s]+", "Bearer [REDACTED]", msg)
 
         # Remove email addresses from error messages
         msg = re.sub(
-            r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b", "[EMAIL_REDACTED]", msg
+            r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b",
+            "[EMAIL_REDACTED]",
+            msg,
         )
 
         # Truncate if too long

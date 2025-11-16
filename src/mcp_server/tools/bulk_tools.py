@@ -6,9 +6,23 @@ import re
 from datetime import UTC, datetime
 from typing import Any
 
-from fastmcp import Context
+from src.services.product_utils import PRODUCT_CATEGORIES, detect_product_category
+from src.services.parsing_utils import (
+    normalize_country_code,
+    parse_dimensions,
+    parse_weight,
+    COUNTRY_CODE_MAP,
+)
+from src.services.warehouse_utils import (
+    get_warehouse_address,
+    get_customs_signer,
+)
+
+
+from fastmcp import Context, FastMCP
 from pydantic import BaseModel
 
+from src.services.easypost_service import EasyPostService
 from src.utils.constants import STANDARD_TIMEOUT
 
 logger = logging.getLogger(__name__)
@@ -37,10 +51,11 @@ class ShipmentLine(BaseModel):
     contents: str
 
 
-# Product category detection patterns (ORDER MATTERS - checked sequentially)
-# More specific categories first to avoid false matches
-PRODUCT_CATEGORIES = {
-    # Apparel & Footwear (check first - very specific keywords)
+# Moved to src/services/product_utils.py
+# from src.services.product_utils import PRODUCT_CATEGORIES
+PRODUCT_CATEGORIES = PRODUCT_CATEGORIES  # alias for backward compatibility
+
+"""
     "apparel": [
         "jeans",
         "shirt",
@@ -312,52 +327,9 @@ PRODUCT_CATEGORIES = {
     ],
 }
 
-# Customs signer names by company (actual person names for customs declarations)
-CUSTOMS_SIGNERS = {
-    "California Apparel Supply": "Michael Chen",
-    "California Outdoor Supply": "Sarah Martinez",
-    "Premium Bedding Distribution": "David Rodriguez",
-    "Natural Essentials Store": "Jennifer Lee",
-    "West Coast Footwear": "Robert Kim",
-    "California Fine Arts": "Emily Zhang",
-    "Pacific Tech Supply": "James Wilson",
-    "Nevada Apparel Supply": "Thomas Anderson",
-    "Nevada Sporting Supply": "Lisa Thompson",
-    "Nevada Home Essentials": "Maria Garcia",
-    "Nevada Beauty Supply": "Amanda Foster",
-    "Desert Shoes": "Christopher Moore",
-    "Nevada Fine Arts": "Patricia Bennett",
-    "Desert Electronics": "Daniel Harris",
-    "Nevada Logistics Hub": "Jessica Martinez",
-    "New York Fashion Supply": "William Taylor",
-    "New York Outdoor Supplies": "Michelle Brown",
-    "New York Home Essentials": "Brandon Clarke",
-    "New York Beauty Essentials": "Victoria Wright",
-    "East Coast Shoes": "Anthony Green",
-    "New York Fine Arts": "Samantha King",
-    "Silicon Alley Electronics": "Christopher Davis",
-    "New York Logistics Hub": "Nicole Anderson",
-}
+"""
+"""
 
-
-def get_customs_signer(warehouse_address: dict) -> str:
-    """
-    Get the customs signer name (actual person) for a warehouse.
-
-    Args:
-        warehouse_address: Address dict with 'company' field
-
-    Returns:
-        Person's name for customs signing
-    """
-    company = warehouse_address.get("company", "")
-    return CUSTOMS_SIGNERS.get(company, "Shipping Manager")
-
-
-# Warehouse addresses by product category (3 locations only)
-WAREHOUSE_BY_CATEGORY = {
-    "California": {
-        "bedding": {
             "name": "LA Home Goods Warehouse",
             "company": "Premium Bedding Distribution",
             "street1": "8500 Beverly Blvd",
@@ -652,361 +624,7 @@ WAREHOUSE_BY_CATEGORY = {
     },
 }
 
-# Legacy format for backward compatibility
-STORE_ADDRESSES = {
-    "California": {
-        "Los Angeles": WAREHOUSE_BY_CATEGORY["California"]["default"],
-    },
-    "New York": {
-        "New York": WAREHOUSE_BY_CATEGORY["New York"]["default"],
-    },
-    "Nevada": {
-        "Las Vegas": WAREHOUSE_BY_CATEGORY["Nevada"]["default"],
-    },
-}
-
-# Backward compatibility
-CA_STORE_ADDRESSES = STORE_ADDRESSES["California"]
-
-# Country name to ISO 2-letter code mapping for EasyPost API
-COUNTRY_CODE_MAP = {
-    "UNITED KINGDOM": "GB",
-    "NORTHERN IRELAND": "GB",
-    "ENGLAND": "GB",
-    "SCOTLAND": "GB",
-    "WALES": "GB",
-    "GERMANY": "DE",
-    "SPAIN": "ES",
-    "FRANCE": "FR",
-    "ITALY": "IT",
-    "NETHERLANDS": "NL",
-    "THE NETHERLANDS": "NL",
-    "BELGIUM": "BE",
-    "AUSTRIA": "AT",
-    "SWITZERLAND": "CH",
-    "POLAND": "PL",
-    "SWEDEN": "SE",
-    "DENMARK": "DK",
-    "NORWAY": "NO",
-    "FINLAND": "FI",
-    "IRELAND": "IE",
-    "PORTUGAL": "PT",
-    "GREECE": "GR",
-    "CZECH REPUBLIC": "CZ",
-    "HUNGARY": "HU",
-    "ROMANIA": "RO",
-    "BULGARIA": "BG",
-    "CROATIA": "HR",
-    "SLOVAKIA": "SK",
-    "SLOVENIA": "SI",
-    "LUXEMBOURG": "LU",
-    "ESTONIA": "EE",
-    "LATVIA": "LV",
-    "LITHUANIA": "LT",
-    "MALTA": "MT",
-    "CYPRUS": "CY",
-    "CANADA": "CA",
-    "MEXICO": "MX",
-    "AUSTRALIA": "AU",
-    "NEW ZEALAND": "NZ",
-    "JAPAN": "JP",
-    "SOUTH KOREA": "KR",
-    "KOREA": "KR",
-    "CHINA": "CN",
-    "INDIA": "IN",
-    "SINGAPORE": "SG",
-    "HONG KONG": "HK",
-    "TAIWAN": "TW",
-    "THAILAND": "TH",
-    "MALAYSIA": "MY",
-    "INDONESIA": "ID",
-    "PHILIPPINES": "PH",
-    "VIETNAM": "VN",
-    "BRAZIL": "BR",
-    "ARGENTINA": "AR",
-    "CHILE": "CL",
-    "COLOMBIA": "CO",
-    "PERU": "PE",
-    "SOUTH AFRICA": "ZA",
-    "ISRAEL": "IL",
-    "TURKEY": "TR",
-    "SAUDI ARABIA": "SA",
-    "UAE": "AE",
-    "UNITED ARAB EMIRATES": "AE",
-    "USA": "US",
-    "UNITED STATES": "US",
-    "UNITED STATES OF AMERICA": "US",
-    "US": "US",
-}
-
-
-def normalize_country_code(country: str) -> str:
-    """
-    Convert country name to ISO 2-letter code for EasyPost API.
-
-    Args:
-        country: Country name or code
-
-    Returns:
-        ISO 2-letter country code (uppercase)
-    """
-    if not country:
-        return "US"  # Default to US
-
-    country_upper = country.strip().upper()
-    logger.debug(f"normalize_country_code: input='{country}' -> upper='{country_upper}'")
-
-    # If already a 2-letter code, return as-is
-    if len(country_upper) == 2:
-        logger.debug(f"normalize_country_code: already 2-letter code -> '{country_upper}'")
-        return country_upper
-
-    # Check for exact match first
-    if country_upper in COUNTRY_CODE_MAP:
-        result = COUNTRY_CODE_MAP[country_upper]
-        logger.debug(f"normalize_country_code: exact match -> '{result}'")
-        return result
-
-    # Handle compound country names (e.g., "NORTHERN IRELAND UNITED KINGDOM")
-    # Check if any mapped country name appears in the input
-    for country_name, code in COUNTRY_CODE_MAP.items():
-        if country_name in country_upper:
-            logger.debug(f"normalize_country_code: partial match '{country_name}' -> '{code}'")
-            return code
-
-    # If no match found, return original (will trigger API validation error)
-    logger.warning(f"normalize_country_code: no match found for '{country_upper}'")
-    return country_upper
-
-
-def parse_dimensions(dim_str: str) -> tuple:
-    """
-    Parse dimensions string into (length, width, height).
-
-    Supports multiple formats:
-    - Decimals: '12.5 x 10.25 x 3.75'
-    - Fractions: '11 1/2 x 9 3/4 x 2 1/4'
-    - Mixed: '12.5 × 11 1/2 × 3'
-    - Separators: x, ×, *, 'by'
-
-    Args:
-        dim_str: Dimension string (e.g., "12.5 x 10 x 3", "11 1/2 x 9 x 2 1/4")
-
-    Returns:
-        Tuple of (length, width, height) as floats
-
-    Raises:
-        ValueError: If dimensions cannot be parsed or are invalid
-    """
-    if not dim_str or not dim_str.strip():
-        raise ValueError("Dimension string is empty")
-
-    # Replace all separators with spaces for uniform parsing
-    normalized = dim_str.lower()
-    for separator in ["×", "*", "by", "x"]:
-        normalized = normalized.replace(separator, " ")
-
-    # Extract all numbers (including decimals and fractions)
-    parts = normalized.split()
-    numbers = []
-    i = 0
-    while i < len(parts):
-        part = parts[i].strip()
-
-        # Check for fraction format (e.g., "1/2")
-        if "/" in part:
-            try:
-                num, denom = part.split("/")
-                numbers.append(float(num) / float(denom))
-                i += 1
-                continue
-            except (ValueError, ZeroDivisionError):
-                i += 1
-                continue
-
-        # Check for decimal number
-        if re.match(r"^\d*\.?\d+$", part):
-            try:
-                whole_num = float(part)
-                # Check if next part is a fraction (e.g., "11" followed by "1/2")
-                if i + 1 < len(parts) and "/" in parts[i + 1]:
-                    try:
-                        frac_num, frac_denom = parts[i + 1].split("/")
-                        fraction = float(frac_num) / float(frac_denom)
-                        numbers.append(whole_num + fraction)
-                        i += 2  # Skip both parts
-                        continue
-                    except (ValueError, ZeroDivisionError):
-                        pass
-                numbers.append(whole_num)
-            except ValueError:
-                pass
-        i += 1
-
-    if len(numbers) >= 3:
-        # Validate dimensions are reasonable (0.1 to 999 inches)
-        if all(0.1 <= dim <= 999 for dim in numbers[:3]):
-            return (numbers[0], numbers[1], numbers[2])
-        raise ValueError(f"Dimensions out of range (0.1-999 inches): {numbers[:3]}")
-
-    if len(numbers) > 0:
-        raise ValueError(
-            f"Insufficient dimensions: found {len(numbers)}, need 3 (L x W x H). "
-            f"Example: '12.5 x 10 x 3' or '11 1/2 x 9 x 2 1/4'"
-        )
-
-    raise ValueError(
-        f"Could not parse dimensions from '{dim_str}'. "
-        "Please use format: '12.5 x 10 x 3' or '11 1/2 x 9 x 2 1/4' (length x width x height)"
-    )
-
-
-def parse_weight(weight_str: str) -> float:
-    """
-    Parse weight string with intelligent unit detection and conversion.
-
-    Handles formats:
-    - With units: "1.8 lbs", "16 oz", "5LB 2oz", "2 lbs 3 oz", "1 pound 8 ounces"
-    - Numeric only: "5.26" (assumes lbs if > 1, oz if <= 1), "84" (assumes oz)
-    - Decimal: "5.26" (assumes lbs), "0.5" (assumes lbs), "16" (ambiguous - assumes oz)
-    - Common abbreviations: "lb", "lbs", "oz", "ounces", "pounds"
-
-    Args:
-        weight_str: Weight string with or without unit(s)
-
-    Returns:
-        Weight in ounces (never returns 0 - raises ValueError if truly unparseable)
-    """
-    if not weight_str or not weight_str.strip():
-        raise ValueError("Weight string is empty")
-
-    weight_str = weight_str.strip()
-    total_oz = 0.0
-
-    # Pattern to match: number + unit (handles both combined and single formats)
-    # Matches: "5LB", "2oz", "1.5 lbs", "3 ounces", etc.
-    pattern = r"([\d.]+)\s*(lbs?|oz|ounces?|pounds?|LB|OZ|kg|kilograms?|g|grams?)"
-
-    # Find all matches (handles combined formats like "5LB 2oz")
-    matches = list(re.finditer(pattern, weight_str.lower()))
-
-    if matches:
-        # Has explicit units - parse them
-        for match in matches:
-            value = float(match.group(1))
-            unit = match.group(2).lower()
-
-            # Convert to ounces
-            if "lb" in unit or "pound" in unit:
-                total_oz += value * 16.0  # 1 lb = 16 oz
-            elif "kg" in unit or "kilogram" in unit:
-                total_oz += value * 35.274  # 1 kg = 35.274 oz
-            elif "g" in unit or "gram" in unit:
-                total_oz += value / 28.35  # 1 oz = 28.35 g
-            else:
-                total_oz += value  # Already in oz
-
-        if total_oz > 0:
-            return total_oz
-    else:
-        # No explicit units - try to infer from numeric value
-        # Extract all numbers from the string
-        numbers = re.findall(r"[\d.]+", weight_str)
-        if numbers:
-            value = float(numbers[0])
-
-            # Heuristic: if value > 1 and has decimal, likely lbs
-            # If value <= 1, could be lbs or oz - check context
-            # If value > 16 and no decimal, likely oz (common for packages)
-            # If value < 16 and no decimal, ambiguous - assume lbs for typical packages
-
-            if value > 100:
-                # Very large number - likely oz (packages rarely > 100 lbs)
-                total_oz = value
-            elif value > 16:
-                # Between 16-100 - check if it looks like oz or lbs
-                # If it's a round number like 20, 30, 50, likely lbs
-                # If it's a decimal like 84.16, likely oz
-                total_oz = value if "." in weight_str else value * 16.0
-            elif value > 1:
-                # Between 1-16 - likely lbs (common package weights)
-                total_oz = value * 16.0
-            else:
-                # <= 1 - could be 0.5 lbs or 0.5 oz
-                # For packages, < 1 oz is rare, so assume lbs
-                total_oz = value * 16.0
-
-            if total_oz > 0:
-                return total_oz
-
-    # If we get here, couldn't parse - raise error instead of silent default
-    raise ValueError(
-        f"Could not parse weight from '{weight_str}'. "
-        "Please specify units (e.g., '5.26 lbs', '84 oz', '2.5 kg')"
-    )
-
-
-def detect_product_category(contents: str) -> str:
-    """
-    Detect product category from contents string.
-
-    Uses priority-based matching:
-    1. Exact word boundaries (e.g., "jeans" matches "jeans" not "jeansxx")
-    2. Substring match as fallback
-    3. First match wins (category order matters)
-
-    Args:
-        contents: Item description/contents string
-
-    Returns:
-        Category name (apparel, sporting, beauty, etc., or "default")
-    """
-    import re
-
-    contents_lower = contents.lower()
-
-    # First pass: try exact word boundary matches (more accurate)
-    for category, keywords in PRODUCT_CATEGORIES.items():
-        for keyword in keywords:
-            # Use word boundaries for single words, substring for phrases
-            if " " in keyword:
-                # Multi-word phrase: substring match
-                if keyword in contents_lower:
-                    return category
-            else:
-                # Single word: word boundary match (more precise)
-                if re.search(rf"\b{re.escape(keyword)}\b", contents_lower):
-                    return category
-
-    # Second pass: fallback to substring matching if no exact match
-    for category, keywords in PRODUCT_CATEGORIES.items():
-        for keyword in keywords:
-            if keyword in contents_lower:
-                return category
-
-    return "default"
-
-
-def get_warehouse_address(state: str, category: str) -> dict:
-    """
-    Get warehouse address based on state and product category.
-
-    Args:
-        state: Origin state (e.g., "California")
-        category: Product category
-
-    Returns:
-        Warehouse address dictionary
-    """
-    if state not in WAREHOUSE_BY_CATEGORY:
-        state = "California"  # Default fallback
-
-    state_warehouses = WAREHOUSE_BY_CATEGORY[state]
-
-    if category in state_warehouses:
-        return state_warehouses[category]
-
-    return state_warehouses.get("default", state_warehouses[list(state_warehouses.keys())[0]])
+"""
 
 
 def detect_field_type(value: str) -> str | None:
@@ -1046,10 +664,14 @@ def detect_field_type(value: str) -> str | None:
         r"^\d{3}[\s\-]?\d{3}[\s\-]?\d{4}(?:[\s]?(?:x|ext)[\s]?\d{1,6})?$",
     ]
     for pattern in phone_patterns:
-        cleaned_value = value.replace(" ", "").replace("-", "").replace("(", "").replace(")", "")
+        cleaned_value = (
+            value.replace(" ", "").replace("-", "").replace("(", "").replace(")", "")
+        )
         if re.match(pattern, cleaned_value):
             # Validate digit count (7-15 typical for phone numbers, excluding extensions)
-            digit_count = sum(c.isdigit() for c in cleaned_value.split("x")[0].split("ext")[0])
+            digit_count = sum(
+                c.isdigit() for c in cleaned_value.split("x")[0].split("ext")[0]
+            )
             if 7 <= digit_count <= 15:
                 return "phone"
 
@@ -1140,7 +762,17 @@ def detect_field_type(value: str) -> str | None:
         return "state_code"
 
     # Weight detection (contains weight keywords or patterns)
-    weight_keywords = ["lb", "lbs", "oz", "ounce", "pound", "kg", "kilogram", "g", "gram"]
+    weight_keywords = [
+        "lb",
+        "lbs",
+        "oz",
+        "ounce",
+        "pound",
+        "kg",
+        "kilogram",
+        "g",
+        "gram",
+    ]
     if any(keyword in value_lower for keyword in weight_keywords):
         return "weight"
     # Numeric weight pattern (decimal number that could be weight)
@@ -1185,7 +817,9 @@ def detect_field_type(value: str) -> str | None:
     ]
 
     # PO Box detection (must check before name detection)
-    if re.match(r"^p\.?o\.?\s*box\s+\d+", value_lower) or re.match(r"^box\s+\d+", value_lower):
+    if re.match(r"^p\.?o\.?\s*box\s+\d+", value_lower) or re.match(
+        r"^box\s+\d+", value_lower
+    ):
         return "street"
 
     # Military address detection (APO, FPO, DPO) - must check before name detection
@@ -1413,14 +1047,18 @@ def parse_spreadsheet_line(line: str) -> dict[str, Any]:
     # Adjust parts array by removing leading columns
     if offset > 0:
         parts = parts[offset:]
-        logger.info(f"Auto-detected column offset: {offset} (skipped {offset} leading columns)")
+        logger.info(
+            f"Auto-detected column offset: {offset} (skipped {offset} leading columns)"
+        )
 
     # Try standard positional parsing first (backward compatibility)
     if len(parts) >= 16:
         try:
             # Combine all content columns (15+) into single contents field
             contents_parts = []
-            for i in range(15, min(len(parts), 25)):  # Stop before sender address columns
+            for i in range(
+                15, min(len(parts), 25)
+            ):  # Stop before sender address columns
                 if parts[i] and parts[i].strip():
                     contents_parts.append(parts[i].strip())
 
@@ -1540,7 +1178,13 @@ def parse_spreadsheet_line(line: str) -> dict[str, Any]:
     # Add sender address if detected
     if any(
         detected.get(key)
-        for key in ["sender_email", "sender_phone", "sender_country", "sender_zip", "sender_city"]
+        for key in [
+            "sender_email",
+            "sender_phone",
+            "sender_country",
+            "sender_zip",
+            "sender_city",
+        ]
     ):
         result["sender_address"] = {
             "name": detected.get("sender_name", ""),
@@ -1658,7 +1302,9 @@ def parse_human_readable_shipment(text: str) -> dict | None:
                 all_emails.append(email_match.group(1))
 
             # Extract phone (flexible format)
-            phone_match = re.search(r"(?:phone[:\s]+)?(\+?[\d\s\-()]{7,20})", line, re.IGNORECASE)
+            phone_match = re.search(
+                r"(?:phone[:\s]+)?(\+?[\d\s\-()]{7,20})", line, re.IGNORECASE
+            )
             if phone_match and not email_match:  # Don't capture numbers in emails
                 phone_clean = (
                     phone_match.group(1)
@@ -1692,7 +1338,9 @@ def parse_human_readable_shipment(text: str) -> dict | None:
                     re.IGNORECASE,
                 )
                 if weight_match:
-                    result["weight"] = f"{weight_match.group(1)} {weight_match.group(2)}"
+                    result["weight"] = (
+                        f"{weight_match.group(1)} {weight_match.group(2)}"
+                    )
 
             # Extract customs item description
             if result["contents"] is None:
@@ -1714,7 +1362,9 @@ def parse_human_readable_shipment(text: str) -> dict | None:
 
             # Extract customs quantity
             if result["customs_quantity"] is None:
-                qty_match = re.search(r"(?:quantity|qty)[:\s]+(\d+)", line, re.IGNORECASE)
+                qty_match = re.search(
+                    r"(?:quantity|qty)[:\s]+(\d+)", line, re.IGNORECASE
+                )
                 if qty_match:
                     result["customs_quantity"] = int(qty_match.group(1))
 
@@ -1797,7 +1447,9 @@ def parse_human_readable_shipment(text: str) -> dict | None:
             "shop",
             "store",
         ]
-        has_company = any(indicator in lines[0].lower() for indicator in company_indicators)
+        has_company = any(
+            indicator in lines[0].lower() for indicator in company_indicators
+        )
 
         if has_company and len(lines) > 1:
             addr["company"] = lines[0]
@@ -1819,7 +1471,9 @@ def parse_human_readable_shipment(text: str) -> dict | None:
         for i in range(idx, len(lines)):
             line_lower = lines[i].lower().strip()
             # Check if it's a postal code (5+ digits)
-            if re.match(r"^\d{5,}(?:-\d{4})?$", lines[i]) or re.match(r"^\d{5,}$", lines[i]):
+            if re.match(r"^\d{5,}(?:-\d{4})?$", lines[i]) or re.match(
+                r"^\d{5,}$", lines[i]
+            ):
                 postal_idx = i
             # Check if it's a country name
             elif line_lower in common_countries:
@@ -1847,9 +1501,13 @@ def parse_human_readable_shipment(text: str) -> dict | None:
                     addr["city"] = remaining_before_postal[1]
                 else:
                     # Multiple lines - take first as street2, second as city
-                    addr["street2"] = remaining_before_postal[0] if remaining_before_postal else ""
+                    addr["street2"] = (
+                        remaining_before_postal[0] if remaining_before_postal else ""
+                    )
                     addr["city"] = (
-                        remaining_before_postal[1] if len(remaining_before_postal) > 1 else ""
+                        remaining_before_postal[1]
+                        if len(remaining_before_postal) > 1
+                        else ""
                     )
 
             addr["zip"] = lines[postal_idx]
@@ -1860,7 +1518,9 @@ def parse_human_readable_shipment(text: str) -> dict | None:
             if idx < len(lines):
                 next_line = lines[idx]
                 # If it's a postal code, we're missing city
-                if re.match(r"^\d{5,}(?:-\d{4})?$", next_line) or re.match(r"^\d{5,}$", next_line):
+                if re.match(r"^\d{5,}(?:-\d{4})?$", next_line) or re.match(
+                    r"^\d{5,}$", next_line
+                ):
                     addr["zip"] = next_line
                     idx += 1
                 # If it's a country, we're missing city and postal
@@ -1899,7 +1559,9 @@ def parse_human_readable_shipment(text: str) -> dict | None:
             # Try to get postal code if not set
             if not addr["zip"] and idx < len(lines):
                 zip_line = lines[idx]
-                if re.match(r"^\d{5,}(?:-\d{4})?$", zip_line) or re.match(r"^\d{5,}$", zip_line):
+                if re.match(r"^\d{5,}(?:-\d{4})?$", zip_line) or re.match(
+                    r"^\d{5,}$", zip_line
+                ):
                     addr["zip"] = zip_line
                     idx += 1
 
@@ -1916,12 +1578,22 @@ def parse_human_readable_shipment(text: str) -> dict | None:
         # Two address blocks: sender + recipient
         sender_phone = all_phones[0] if all_phones else ""
         sender_email = all_emails[0] if all_emails else ""
-        result["sender"] = parse_address_block(address_sections[0], sender_phone, sender_email)
+        result["sender"] = parse_address_block(
+            address_sections[0], sender_phone, sender_email
+        )
         recipient_phone = (
-            all_phones[1] if len(all_phones) > 1 else all_phones[0] if all_phones else ""
+            all_phones[1]
+            if len(all_phones) > 1
+            else all_phones[0]
+            if all_phones
+            else ""
         )
         recipient_email = (
-            all_emails[1] if len(all_emails) > 1 else all_emails[0] if all_emails else ""
+            all_emails[1]
+            if len(all_emails) > 1
+            else all_emails[0]
+            if all_emails
+            else ""
         )
         result["recipient"] = parse_address_block(
             address_sections[1], recipient_phone, recipient_email
@@ -1940,7 +1612,9 @@ def parse_human_readable_shipment(text: str) -> dict | None:
     result["dimensions"] = result["dimensions"] or "12 x 12 x 4"
     result["weight"] = result["weight"] or "1 lbs"
 
-    return result if result.get("recipient") and result["recipient"].get("name") else None
+    return (
+        result if result.get("recipient") and result["recipient"].get("name") else None
+    )
 
 
 def convert_natural_to_spreadsheet(text: str) -> str | None:
@@ -1999,7 +1673,9 @@ def convert_natural_to_spreadsheet(text: str) -> str | None:
     contents = parsed.get("contents", "Package")
     if parsed.get("customs_price") and parsed.get("customs_quantity"):
         # Embed customs info in contents for smart_customs to parse
-        contents = f"{contents} (${parsed['customs_price']} x{parsed['customs_quantity']})"
+        contents = (
+            f"{contents} (${parsed['customs_price']} x{parsed['customs_quantity']})"
+        )
     parts.append(contents)
 
     # Sender address fields (if provided)
@@ -2049,7 +1725,9 @@ def _generate_rate_table(shipments: list[dict]) -> str:
         # Get carrier preference early for use throughout
         carrier_pref = detailed.get("carrier_preference", "").upper()
 
-        lines.append(f"\n## Shipment #{shipment['shipment_number']}: {shipment['recipient']}")
+        lines.append(
+            f"\n## Shipment #{shipment['shipment_number']}: {shipment['recipient']}"
+        )
 
         # Add carrier preference indicator at the top
         if carrier_pref:
@@ -2083,7 +1761,9 @@ def _generate_rate_table(shipments: list[dict]) -> str:
         lines.append(f"**Email:** {recipient.get('email', 'N/A')}")
 
         lines.append("\n### 📋 SHIPMENT DETAILS")
-        lines.append(f"**Product:** {product.get('description', shipment.get('contents', 'N/A'))}")
+        lines.append(
+            f"**Product:** {product.get('description', shipment.get('contents', 'N/A'))}"
+        )
         lines.append(f"**Category:** {product.get('category', 'N/A')}")
         weight_oz = parcel.get("weight_oz", 0)
         weight_lbs = parcel.get("weight_lbs", 0)
@@ -2130,7 +1810,10 @@ def _generate_rate_table(shipments: list[dict]) -> str:
             matching_carriers = carrier_keywords.get(carrier_base, [carrier_base])
 
             for rate in rates:
-                if any(carrier.lower() in rate["carrier"].lower() for carrier in matching_carriers):
+                if any(
+                    carrier.lower() in rate["carrier"].lower()
+                    for carrier in matching_carriers
+                ):
                     requested_rates.append(rate)
                 else:
                     other_rates.append(rate)
@@ -2153,7 +1836,9 @@ def _generate_rate_table(shipments: list[dict]) -> str:
                     f"(cheapest: ${cheapest_overall:.2f})\n"
                 )
             else:
-                lines.append(f"✅ **{carrier_pref} offers the best rates for this shipment!**\n")
+                lines.append(
+                    f"✅ **{carrier_pref} offers the best rates for this shipment!**\n"
+                )
 
             lines.append("| Service | Rate | Delivery Days |")
             lines.append("|---------|------|---------------|")
@@ -2165,7 +1850,9 @@ def _generate_rate_table(shipments: list[dict]) -> str:
                 # Mark cheapest with special indicator
                 marker = "✓ CHEAPEST" if idx == 0 else ""
                 service_name = f"{rate['carrier']} {rate['service']}"
-                lines.append(f"| {service_name} {marker} | **${rate['rate']}** | {days} |")
+                lines.append(
+                    f"| {service_name} {marker} | **${rate['rate']}** | {days} |"
+                )
 
         # Display all other rates
         if other_rates:
@@ -2189,13 +1876,16 @@ def _generate_rate_table(shipments: list[dict]) -> str:
     return "\n".join(lines)
 
 
-def register_shipment_tools(mcp, easypost_service=None):
+def register_shipment_tools(
+    mcp: FastMCP, easypost_service: EasyPostService | None = None
+) -> None:
     """Register shipment tools with MCP server."""
 
     @mcp.tool(
         tags=["shipment", "rates", "shipping", "m3-optimized"],
         annotations={
             "readOnlyHint": True,
+            "idempotentHint": True,
         },
     )
     async def get_shipment_rates(
@@ -2264,7 +1954,9 @@ def register_shipment_tools(mcp, easypost_service=None):
                 }
 
             if ctx:
-                await ctx.info("🚀 Starting rate calculation (sequential, production-safe)...")
+                await ctx.info(
+                    "🚀 Starting rate calculation (sequential, production-safe)..."
+                )
 
             # Auto-detect format: tab-separated spreadsheet or natural text
             # If first line has no tabs, assume natural text format
@@ -2292,10 +1984,16 @@ def register_shipment_tools(mcp, easypost_service=None):
                     }
                 lines = [converted_line]
                 if ctx:
-                    await ctx.info("✅ Successfully converted natural text to spreadsheet format")
+                    await ctx.info(
+                        "✅ Successfully converted natural text to spreadsheet format"
+                    )
             else:
                 # Split into lines and filter empty (standard tab-separated format)
-                lines = [line.strip() for line in spreadsheet_data.split("\n") if line.strip()]
+                lines = [
+                    line.strip()
+                    for line in spreadsheet_data.split("\n")
+                    if line.strip()
+                ]
 
             if not lines:
                 return {
@@ -2319,7 +2017,9 @@ def register_shipment_tools(mcp, easypost_service=None):
 
                     try:
                         if ctx and idx % max(1, total_lines // 10) == 0:
-                            await ctx.info(f"Processing shipment {idx + 1}/{total_lines}...")
+                            await ctx.info(
+                                f"Processing shipment {idx + 1}/{total_lines}..."
+                            )
 
                         # Parse line
                         data = parse_spreadsheet_line(line)
@@ -2329,10 +2029,14 @@ def register_shipment_tools(mcp, easypost_service=None):
 
                         # PRIORITY 1: Use custom sender address if provided (columns 16-24)
                         # PRIORITY 2: Auto-select warehouse by product category + origin state
-                        if "sender_address" in data and data["sender_address"].get("name"):
+                        if "sender_address" in data and data["sender_address"].get(
+                            "name"
+                        ):
                             # Custom sender address provided - USE IT (ignores warehouse lookup)
                             from_address = data["sender_address"]
-                            warehouse_key = f"{from_address.get('name', 'Custom Sender')}"
+                            warehouse_key = (
+                                f"{from_address.get('name', 'Custom Sender')}"
+                            )
                             if ctx:
                                 await ctx.info(
                                     f"📍 Using custom sender: {warehouse_key} "
@@ -2340,10 +2044,12 @@ def register_shipment_tools(mcp, easypost_service=None):
                                 )
                         else:
                             # No custom sender - select warehouse by category + state
-                            from_address = get_warehouse_address(data["origin_state"], category)
-                            company_or_name = from_address.get("company") or from_address.get(
-                                "name", "Unknown"
+                            from_address = get_warehouse_address(
+                                data["origin_state"], category
                             )
+                            company_or_name = from_address.get(
+                                "company"
+                            ) or from_address.get("name", "Unknown")
                             warehouse_key = f"{company_or_name}"
                             if ctx:
                                 await ctx.info(
@@ -2394,7 +2100,9 @@ def register_shipment_tools(mcp, easypost_service=None):
                             customs_signer = get_customs_signer(from_address)
 
                             # DDP for FedEx, DDU for others by default
-                            preferred_carrier = data.get("carrier_preference", "").upper()
+                            preferred_carrier = data.get(
+                                "carrier_preference", ""
+                            ).upper()
                             incoterm = "DDP" if "FEDEX" in preferred_carrier else "DDU"
 
                             customs_info = await loop.run_in_executor(
@@ -2418,7 +2126,10 @@ def register_shipment_tools(mcp, easypost_service=None):
                         # Get rates with timeout (customs included for international)
                         rates_result = await asyncio.wait_for(
                             service.get_rates(
-                                to_address, from_address, parcel, customs_info=customs_info
+                                to_address,
+                                from_address,
+                                parcel,
+                                customs_info=customs_info,
                             ),
                             timeout=STANDARD_TIMEOUT,
                         )
@@ -2432,7 +2143,9 @@ def register_shipment_tools(mcp, easypost_service=None):
                             "contents": data["contents"][:100],
                             "category": category,
                             "from_warehouse": (
-                                from_address.get("company", from_address.get("name", "Unknown"))
+                                from_address.get(
+                                    "company", from_address.get("name", "Unknown")
+                                )
                             ),
                             "from_city": from_address.get("city", "Unknown"),
                             "rates": (
@@ -2472,12 +2185,16 @@ def register_shipment_tools(mcp, easypost_service=None):
                                     "category": category,
                                     "is_international": is_international,
                                 },
-                                "carrier_preference": data.get("carrier_preference", ""),
+                                "carrier_preference": data.get(
+                                    "carrier_preference", ""
+                                ),
                                 "customs": (
                                     {
                                         "required": is_international,
                                         "auto_generated": (
-                                            bool(customs_info) if is_international else False
+                                            bool(customs_info)
+                                            if is_international
+                                            else False
                                         ),
                                         "items": (
                                             [
@@ -2493,7 +2210,9 @@ def register_shipment_tools(mcp, easypost_service=None):
                                                         else 1
                                                     ),
                                                     "value": (
-                                                        item.value if hasattr(item, "value") else 0
+                                                        item.value
+                                                        if hasattr(item, "value")
+                                                        else 0
                                                     ),
                                                     "weight": (
                                                         item.weight
@@ -2502,18 +2221,24 @@ def register_shipment_tools(mcp, easypost_service=None):
                                                     ),
                                                     "hs_tariff_number": (
                                                         item.hs_tariff_number
-                                                        if hasattr(item, "hs_tariff_number")
+                                                        if hasattr(
+                                                            item, "hs_tariff_number"
+                                                        )
                                                         else ""
                                                     ),
                                                     "origin_country": (
                                                         item.origin_country
-                                                        if hasattr(item, "origin_country")
+                                                        if hasattr(
+                                                            item, "origin_country"
+                                                        )
                                                         else "US"
                                                     ),
                                                 }
                                                 for item in (
                                                     customs_info.customs_items
-                                                    if hasattr(customs_info, "customs_items")
+                                                    if hasattr(
+                                                        customs_info, "customs_items"
+                                                    )
                                                     else []
                                                 )
                                             ]
@@ -2563,7 +2288,9 @@ def register_shipment_tools(mcp, easypost_service=None):
 
             if ctx:
                 await ctx.report_progress(total_lines, total_lines)
-                await ctx.info(f"✅ Complete! Processed {len(used_warehouses)} warehouses")
+                await ctx.info(
+                    f"✅ Complete! Processed {len(used_warehouses)} warehouses"
+                )
                 await ctx.info(
                     f"⏱️  Duration: {duration:.2f}s | Throughput: {throughput:.1f} shipments/s"
                 )

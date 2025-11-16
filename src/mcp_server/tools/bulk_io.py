@@ -74,7 +74,11 @@ async def verify_address_if_needed(
     errors = data.get("errors", [])
     warnings = data.get("warnings", [])
 
-    if verify_result.get("status") == "success" and verified_addr and verification_success:
+    if (
+        verify_result.get("status") == "success"
+        and verified_addr
+        and verification_success
+    ):
         # Use verified address
         verified_address = AddressDTO(**verified_addr)
         if ctx:
@@ -86,7 +90,9 @@ async def verify_address_if_needed(
             warnings=warnings,
         )
 
-    if verify_result.get("status") == "warning" or (verified_addr and not verification_success):
+    if verify_result.get("status") == "warning" or (
+        verified_addr and not verification_success
+    ):
         # Warnings but still usable
         verified_address = AddressDTO(**verified_addr) if verified_addr else address
         if ctx:
@@ -127,7 +133,9 @@ async def prepare_customs_if_international(
     """
     from src.mcp_server.tools.bulk_tools import get_customs_signer
 
-    incoterm = "DDP" if carrier_preference and "FEDEX" in carrier_preference.upper() else "DDU"
+    incoterm = (
+        "DDP" if carrier_preference and "FEDEX" in carrier_preference.upper() else "DDU"
+    )
     customs_signer = get_customs_signer(from_address.model_dump())
 
     loop = asyncio.get_running_loop()
@@ -188,7 +196,9 @@ async def prepare_customs_if_international(
                     "restriction_type": customs_dict.get("restriction_type"),
                     "restriction_comments": customs_dict.get("restriction_comments"),
                     "customs_certify": customs_dict.get("customs_certify", True),
-                    "customs_signer": customs_dict.get("customs_signer", customs_signer),
+                    "customs_signer": customs_dict.get(
+                        "customs_signer", customs_signer
+                    ),
                     "eel_pfc": customs_dict.get("eel_pfc"),
                     "customs_items": customs_items,
                     "incoterm": customs_dict.get("incoterm", incoterm),
@@ -197,11 +207,17 @@ async def prepare_customs_if_international(
         else:
             customs_dict = {
                 "contents_type": getattr(customs_obj, "contents_type", "merchandise"),
-                "contents_explanation": getattr(customs_obj, "contents_explanation", None),
+                "contents_explanation": getattr(
+                    customs_obj, "contents_explanation", None
+                ),
                 "restriction_type": getattr(customs_obj, "restriction_type", None),
-                "restriction_comments": getattr(customs_obj, "restriction_comments", None),
+                "restriction_comments": getattr(
+                    customs_obj, "restriction_comments", None
+                ),
                 "customs_certify": getattr(customs_obj, "customs_certify", True),
-                "customs_signer": getattr(customs_obj, "customs_signer", customs_signer),
+                "customs_signer": getattr(
+                    customs_obj, "customs_signer", customs_signer
+                ),
                 "eel_pfc": getattr(customs_obj, "eel_pfc", None),
                 "customs_items": customs_items,
                 "incoterm": incoterm,
@@ -231,7 +247,9 @@ async def create_shipment_with_rates(
         from_dict = request.from_address.model_dump(exclude_none=True)
         parcel_dict = request.parcel.model_dump()
         customs_dict = (
-            request.customs_info.model_dump(exclude_none=True) if request.customs_info else None
+            request.customs_info.model_dump(exclude_none=True)
+            if request.customs_info
+            else None
         )
 
         # Create shipment (never purchase in this phase)

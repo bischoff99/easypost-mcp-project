@@ -23,7 +23,9 @@ def aggregate_results(
     successful = [r for r in results if r.get("status") == "success"]
     failed = [r for r in results if r.get("status") == "error"]
 
-    total_cost = sum(float(s.get("cost", 0)) for s in successful if s.get("cost") is not None)
+    total_cost = sum(
+        float(s.get("cost", 0)) for s in successful if s.get("cost") is not None
+    )
 
     # Carrier breakdown
     carrier_stats: dict[str, dict[str, Any]] = {}

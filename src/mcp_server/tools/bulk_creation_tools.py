@@ -15,8 +15,9 @@ from datetime import UTC, datetime
 from time import time
 from typing import Any
 
-from fastmcp import Context
+from fastmcp import Context, FastMCP
 
+from src.services.easypost_service import EasyPostService
 from src.utils.constants import BULK_OPERATION_TIMEOUT
 
 from .bulk_tools import parse_spreadsheet_line
@@ -33,7 +34,9 @@ MAX_CONCURRENT = 2  # API concurrency limit - reduced to avoid rate limiting
 # Use get_or_create_customs from src.services.smart_customs for customs info
 
 
-def register_shipment_creation_tools(mcp, easypost_service=None):
+def register_shipment_creation_tools(
+    mcp: FastMCP, easypost_service: EasyPostService | None = None
+) -> None:
     """Register shipment creation tools with MCP server."""
 
     @mcp.tool(
@@ -87,13 +90,17 @@ def register_shipment_creation_tools(mcp, easypost_service=None):
 
         # Environment warning
         if settings.ENVIRONMENT == "production" and not dry_run:
-            logger.warning("⚠️  PRODUCTION MODE: Creating real shipments with actual charges!")
+            logger.warning(
+                "⚠️  PRODUCTION MODE: Creating real shipments with actual charges!"
+            )
         elif dry_run:
             logger.info("✓ Dry run mode: No shipments will be created")
 
         try:
             if ctx:
-                await ctx.info("🚀 Starting bulk shipment creation (16 parallel workers)...")
+                await ctx.info(
+                    "🚀 Starting bulk shipment creation (16 parallel workers)..."
+                )
 
             # Auto-detect format: tab-separated spreadsheet or natural text
             # If first line has no tabs, assume natural text format
@@ -123,10 +130,16 @@ def register_shipment_creation_tools(mcp, easypost_service=None):
                     }
                 lines = [converted_line]
                 if ctx:
-                    await ctx.info("✅ Successfully converted natural text to spreadsheet format")
+                    await ctx.info(
+                        "✅ Successfully converted natural text to spreadsheet format"
+                    )
             else:
                 # Parse lines (standard tab-separated format)
-                lines = [line.strip() for line in spreadsheet_data.split("\n") if line.strip()]
+                lines = [
+                    line.strip()
+                    for line in spreadsheet_data.split("\n")
+                    if line.strip()
+                ]
 
             if not lines:
                 return {
@@ -176,7 +189,10 @@ def register_shipment_creation_tools(mcp, easypost_service=None):
 
             if invalid_shipments:
                 error_summary = "\n".join(
-                    [f"Line {v['line']}: {', '.join(v['errors'])}" for v in invalid_shipments]
+                    [
+                        f"Line {v['line']}: {', '.join(v['errors'])}"
+                        for v in invalid_shipments
+                    ]
                 )
                 if ctx:
                     await ctx.info(f"⚠️ Validation errors:\n{error_summary}")
@@ -193,7 +209,8 @@ def register_shipment_creation_tools(mcp, easypost_service=None):
                             "invalid": len(invalid_shipments),
                         },
                         "invalid_shipments": [
-                            {"line": v["line"], "errors": v["errors"]} for v in invalid_shipments
+                            {"line": v["line"], "errors": v["errors"]}
+                            for v in invalid_shipments
                         ],
                     },
                     "message": f"Dry-run: {len(valid_shipments)}/{len(validation_results)} valid",
@@ -219,7 +236,9 @@ def register_shipment_creation_tools(mcp, easypost_service=None):
             semaphore = asyncio.Semaphore(MAX_CONCURRENT)
             performance_start = time()
 
-            async def create_one_shipment(validation_result: dict[str, Any]) -> dict[str, Any]:
+            async def create_one_shipment(
+                validation_result: dict[str, Any],
+            ) -> dict[str, Any]:
                 """Create a single shipment using refactored helpers."""
                 from src.mcp_server.tools.bulk_helpers import (
                     build_parcel,
@@ -243,7 +262,9 @@ def register_shipment_creation_tools(mcp, easypost_service=None):
                     shipment_data = ShipmentDataDTO(**data_dict)
 
                     # Select warehouse address
-                    from_address, warehouse_info = select_warehouse_address(shipment_data)
+                    from_address, warehouse_info = select_warehouse_address(
+                        shipment_data
+                    )
 
                     # Progress reporting
                     if ctx and line_number % max(1, total_lines // 10) == 0:
@@ -290,7 +311,9 @@ def register_shipment_creation_tools(mcp, easypost_service=None):
 
                     # Validate address before creating
                     if not to_address.street1 or not to_address.street1.strip():
-                        error_msg = f"Invalid address: street1 is empty for {to_address.name}"
+                        error_msg = (
+                            f"Invalid address: street1 is empty for {to_address.name}"
+                        )
                         logger.error(error_msg)
                         return {
                             "line": line_number,
@@ -339,7 +362,10 @@ def register_shipment_creation_tools(mcp, easypost_service=None):
                         "error": f"Timeout ({BULK_OPERATION_TIMEOUT}s exceeded)",
                     }
                 except Exception as e:
-                    logger.error(f"Error creating shipment line {validation_result['line']}: {e}")
+                    logger.error(
+                        f"Error creating shipment line {validation_result['line']}: {e}",
+                        exc_info=True,
+                    )
                     return {
                         "line": validation_result["line"],
                         "status": "error",
@@ -382,7 +408,11 @@ def register_shipment_creation_tools(mcp, easypost_service=None):
                         if completed % progress_interval == 0 or completed == total:
                             elapsed = time() - performance_start
                             throughput = completed / elapsed if elapsed > 0 else 0
-                            eta = (total - completed) / throughput if throughput > 0 else 0
+                            eta = (
+                                (total - completed) / throughput
+                                if throughput > 0
+                                else 0
+                            )
                             await ctx.info(
                                 f"📦 {completed}/{total} | {throughput:.1f}/s | ETA: {eta:.0f}s"
                             )
@@ -404,7 +434,9 @@ def register_shipment_creation_tools(mcp, easypost_service=None):
 
             if ctx:
                 throughput = len(valid_shipments) / duration if duration > 0 else 0.0
-                await ctx.info(f"✅ Complete! {len(successful)}/{len(valid_shipments)} successful")
+                await ctx.info(
+                    f"✅ Complete! {len(successful)}/{len(valid_shipments)} successful"
+                )
                 await ctx.info(f"⏱️ Total time: {duration:.1f}s")
                 await ctx.info(f"⚡ Throughput: {throughput:.2f} shipments/second")
 
@@ -426,12 +458,15 @@ def register_shipment_creation_tools(mcp, easypost_service=None):
                         ),
                         "duration_seconds": round(duration, 2),
                         "throughput": (
-                            round(len(valid_shipments) / duration, 2) if duration > 0 else 0.0
+                            round(len(valid_shipments) / duration, 2)
+                            if duration > 0
+                            else 0.0
                         ),
                         "carrier_breakdown": carrier_stats,
                     },
                     "validation_errors": [
-                        {"line": v["line"], "errors": v["errors"]} for v in invalid_shipments
+                        {"line": v["line"], "errors": v["errors"]}
+                        for v in invalid_shipments
                     ],
                 },
                 "message": (
@@ -498,7 +533,9 @@ def register_shipment_creation_tools(mcp, easypost_service=None):
 
         try:
             if ctx:
-                await ctx.info(f"🛒 Purchasing {len(shipment_ids)} labels with selected rates...")
+                await ctx.info(
+                    f"🛒 Purchasing {len(shipment_ids)} labels with selected rates..."
+                )
 
             # Validate inputs
             if len(shipment_ids) != len(rate_ids):
@@ -515,7 +552,9 @@ def register_shipment_creation_tools(mcp, easypost_service=None):
             semaphore = asyncio.Semaphore(MAX_CONCURRENT)
             performance_start = time()
 
-            async def buy_one(_idx: int, shipment_id: str, rate_id: str) -> dict[str, Any]:
+            async def buy_one(
+                _idx: int, shipment_id: str, rate_id: str
+            ) -> dict[str, Any]:
                 try:
                     async with semaphore:
                         loop = asyncio.get_running_loop()
@@ -556,17 +595,23 @@ def register_shipment_creation_tools(mcp, easypost_service=None):
                             )
 
                         # Buy label using service method (better error handling)
-                        buy_result = await easypost_service.buy_shipment(shipment_id, rate_id)
+                        buy_result = await easypost_service.buy_shipment(
+                            shipment_id, rate_id
+                        )
 
                         if buy_result.get("status") != "success":
                             error_msg = buy_result.get("message", "Unknown error")
                             error_details = buy_result.get("error_details", {})
-                            logger.error(f"Purchase failed for {shipment_id}: {error_msg}")
+                            logger.error(
+                                f"Purchase failed for {shipment_id}: {error_msg}"
+                            )
                             logger.error(f"Error details: {error_details}")
                             # Include error_details in error message for visibility
                             full_error = error_msg
                             if error_details.get("errors"):
-                                full_error = f"{error_msg} | Details: {error_details['errors']}"
+                                full_error = (
+                                    f"{error_msg} | Details: {error_details['errors']}"
+                                )
                             return {
                                 "status": "error",
                                 "shipment_id": shipment_id,
@@ -594,11 +639,17 @@ def register_shipment_creation_tools(mcp, easypost_service=None):
                     if hasattr(e, "errors"):
                         error_details = f"{error_details} | Errors: {e.errors}"
                     if hasattr(e, "http_status"):
-                        error_details = f"{error_details} | HTTP Status: {e.http_status}"
+                        error_details = (
+                            f"{error_details} | HTTP Status: {e.http_status}"
+                        )
                     if hasattr(e, "json_body"):
                         error_details = f"{error_details} | JSON: {e.json_body}"
                     logger.error(f"Purchase error for {shipment_id}: {error_details}")
-                    return {"status": "error", "shipment_id": shipment_id, "error": error_details}
+                    return {
+                        "status": "error",
+                        "shipment_id": shipment_id,
+                        "error": error_details,
+                    }
 
             # Execute - pass index, shipment_id, and rate_id
             tasks = [
@@ -622,11 +673,15 @@ def register_shipment_creation_tools(mcp, easypost_service=None):
             # Summary
             successful = [r for r in results if r.get("status") == "success"]
             failed = [r for r in results if r.get("status") == "error"]
-            total_cost = sum(float(s["cost"]) for s in successful if s.get("cost") is not None)
+            total_cost = sum(
+                float(s["cost"]) for s in successful if s.get("cost") is not None
+            )
             duration = (datetime.now(UTC) - start_time).total_seconds()
 
             if ctx:
-                await ctx.info(f"✅ Purchased {len(successful)}/{total} labels - ${total_cost:.2f}")
+                await ctx.info(
+                    f"✅ Purchased {len(successful)}/{total} labels - ${total_cost:.2f}"
+                )
 
             return {
                 "status": "success",
@@ -646,7 +701,7 @@ def register_shipment_creation_tools(mcp, easypost_service=None):
             }
 
         except Exception as e:
-            logger.error(f"Bulk purchase error: {str(e)}")
+            logger.error(f"Bulk purchase error: {str(e)}", exc_info=True)
             return {
                 "status": "error",
                 "message": str(e),

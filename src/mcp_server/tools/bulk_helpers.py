@@ -22,7 +22,9 @@ from src.models.bulk_dto import (
 )
 
 
-def validate_shipment_data(data: ShipmentDataDTO, line_number: int) -> ValidationResultDTO:
+def validate_shipment_data(
+    data: ShipmentDataDTO, line_number: int
+) -> ValidationResultDTO:
     """
     Validate shipment data and parse dimensions/weight.
 
@@ -36,7 +38,9 @@ def validate_shipment_data(data: ShipmentDataDTO, line_number: int) -> Validatio
         import re
 
         if not re.search(r"\d", data.dimensions):
-            errors.append(f"Invalid dimensions format: '{data.dimensions}' contains no numbers")
+            errors.append(
+                f"Invalid dimensions format: '{data.dimensions}' contains no numbers"
+            )
             return ValidationResultDTO(
                 line=line_number,
                 data=data,
@@ -102,7 +106,9 @@ def select_warehouse_address(
     origin_state = data.origin_state or "California"
     warehouse_dict = get_warehouse_address(origin_state, category)
 
-    warehouse_name = warehouse_dict.get("company") or warehouse_dict.get("name", "Unknown")
+    warehouse_name = warehouse_dict.get("company") or warehouse_dict.get(
+        "name", "Unknown"
+    )
     warehouse_city = warehouse_dict.get("city", "Unknown")
     warehouse_info = f"{warehouse_name} ({warehouse_city}, {origin_state})"
 
@@ -246,7 +252,9 @@ def is_preferred_carrier(easypost_carrier: str, preferred: str) -> bool:
         logger.debug("[DEBUG] ✅ MATCH: FedEx carrier matched")
         return True
     # UPS matching
-    if "UPS" in preferred_upper and ("UPS" in easypost_upper or easypost_upper == "UPSDAP"):
+    if "UPS" in preferred_upper and (
+        "UPS" in easypost_upper or easypost_upper == "UPSDAP"
+    ):
         logger.debug("[DEBUG] ✅ MATCH: UPS carrier matched")
         return True
     # USPS matching
@@ -254,19 +262,25 @@ def is_preferred_carrier(easypost_carrier: str, preferred: str) -> bool:
         logger.debug("[DEBUG] ✅ MATCH: USPS carrier matched")
         return True
     # DHL matching
-    if "DHL" in preferred_upper and ("DHL" in easypost_upper or "DHEXPRESS" in easypost_upper):
+    if "DHL" in preferred_upper and (
+        "DHL" in easypost_upper or "DHEXPRESS" in easypost_upper
+    ):
         logger.debug("[DEBUG] ✅ MATCH: DHL carrier matched")
         return True
     # USA Export/Asendia matching
     usa_match = (
-        "USA" in preferred_upper or "EXPORT" in preferred_upper or "ASENDIA" in preferred_upper
+        "USA" in preferred_upper
+        or "EXPORT" in preferred_upper
+        or "ASENDIA" in preferred_upper
     )
     easypost_match = "USAEXPORT" in easypost_upper or "ASENDIA" in easypost_upper
     if usa_match and easypost_match:
         logger.debug("[DEBUG] ✅ MATCH: USA Export/Asendia carrier matched")
         return True
 
-    logger.debug(f"[DEBUG] ❌ NO MATCH: '{easypost_upper}' does not match '{preferred_upper}'")
+    logger.debug(
+        f"[DEBUG] ❌ NO MATCH: '{easypost_upper}' does not match '{preferred_upper}'"
+    )
     return False
 
 
@@ -340,7 +354,9 @@ def mark_preferred_rates(
 
 
 def select_best_rate(
-    rates: list[dict[str, Any]], purchase_labels: bool, preferred_carrier: str | None = None
+    rates: list[dict[str, Any]],
+    purchase_labels: bool,
+    preferred_carrier: str | None = None,
 ) -> dict[str, Any] | None:
     """
     Select best rate based on carrier and optional service preference.
@@ -377,9 +393,13 @@ def select_best_rate(
     # Parse preference to check if specific service requested
     carrier_only, service_keyword = parse_carrier_preference(preferred_carrier)
     if service_keyword:
-        logger.debug(f"[DEBUG] Specific service requested: {carrier_only} - {service_keyword}")
+        logger.debug(
+            f"[DEBUG] Specific service requested: {carrier_only} - {service_keyword}"
+        )
     elif carrier_only:
-        logger.debug(f"[DEBUG] Carrier-only preference: {carrier_only} (will select cheapest)")
+        logger.debug(
+            f"[DEBUG] Carrier-only preference: {carrier_only} (will select cheapest)"
+        )
 
     # Log all input rates for visibility
     for i, rate in enumerate(rates):
@@ -392,7 +412,9 @@ def select_best_rate(
 
     # Log marked rates
     preferred_count = sum(1 for r in marked_rates if r.get("preferred"))
-    logger.debug(f"[DEBUG] Marked {preferred_count}/{len(marked_rates)} rates as preferred")
+    logger.debug(
+        f"[DEBUG] Marked {preferred_count}/{len(marked_rates)} rates as preferred"
+    )
     for i, rate in enumerate(marked_rates):
         logger.debug(
             f"[DEBUG] Marked rate {i + 1}: {rate.get('carrier')} - {rate.get('service')} - "
@@ -420,7 +442,9 @@ def select_best_rate(
                 logger.debug(
                     f"[DEBUG] Multiple matches for service '{service_keyword}', selecting cheapest"
                 )
-                selected = min(preferred_rates, key=lambda r: float(r.get("rate", 0) or 0))
+                selected = min(
+                    preferred_rates, key=lambda r: float(r.get("rate", 0) or 0)
+                )
                 logger.debug(
                     f"[DEBUG] ✅ SELECTED (cheapest matching service): "
                     f"{selected.get('carrier')} - {selected.get('service')} - "
