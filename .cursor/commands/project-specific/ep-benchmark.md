@@ -3,6 +3,8 @@ Run EasyPost performance benchmarks to validate optimizations.
 **Domain**: Performance testing
 **Performance**: Measures sequential vs parallel performance improvements
 
+> Safety: Benchmarks are read-only and do not modify code or data.
+
 ## Usage
 
 ```bash
@@ -25,6 +27,7 @@ Run EasyPost performance benchmarks to validate optimizations.
 ## What It Does
 
 **Performance Validation:**
+
 1. Runs benchmark tests from `test_bulk_performance.py`
 2. Measures sequential vs parallel performance
 3. Calculates speedup ratios
@@ -34,21 +37,25 @@ Run EasyPost performance benchmarks to validate optimizations.
 ## Benchmarks
 
 ### 1. Bulk Shipment Creation
+
 **Test**: Sequential vs auto-detected parallel workers
 **Expected**: >5x speedup
 **Validates**: ThreadPoolExecutor, asyncio.gather()
 
 ### 2. Batch Tracking
+
 **Test**: Sequential vs auto-detected parallel tracking calls
 **Expected**: >8x speedup
 **Validates**: Parallel API calls
 
 ### 3. Analytics Processing
+
 **Test**: Sequential vs auto-detected parallel aggregation
 **Expected**: 5x+ speedup
 **Validates**: asyncio.gather() for CPU tasks
 
 ### 4. Parsing Performance
+
 **Test**: 1000 iterations of parsing functions
 **Expected**: <1s total
 **Validates**: Parsing efficiency
@@ -59,6 +66,7 @@ Run EasyPost performance benchmarks to validate optimizations.
 **Tool**: `start_process` with pytest
 
 **Execution**:
+
 ```bash
 cd backend
 source venv/bin/activate
@@ -165,6 +173,7 @@ Last baseline: 2025-11-02 14:30:00
 ## Export Results
 
 **JSON Export** (`--export=json`):
+
 ```json
 {
   "timestamp": "2025-11-03T17:30:00Z",

@@ -33,12 +33,11 @@
 
   "project": {
     "name": "EasyPost MCP",
-    "type": "fullstack",
-    "description": "Shipping and logistics automation with EasyPost API",
+    "type": "backend",
+    "description": "Backend-only EasyPost shipping integration with MCP server",
     "scope": "personal-use",
     "constraints": {
       "maxWorkers": 16,
-      "maxDbConnections": 20,
       "enterpriseFeatures": false,
       "multiTenancy": false
     },
@@ -54,32 +53,19 @@
       "language": "python",
       "framework": "fastapi",
       "version": "3.14",
-      "orm": "sqlalchemy",
-      "database": "postgresql",
-      "features": ["async", "rest-api", "mcp-tools", "orm", "migrations"]
-    },
-    "frontend": {
-      "language": "javascript",
-      "framework": "react",
-      "buildTool": "vite",
-      "stateManagement": "zustand",
-      "styling": "tailwindcss",
-      "components": "shadcn-ui"
+      "mcp": "fastmcp",
+      "features": ["async", "rest-api", "mcp-tools"]
     }
   },
 
   "paths": {
     "root": "/Users/andrejs/Projects/personal/easypost-mcp-project",
-    "backend": "apps/backend/src",
-    "frontend": "apps/frontend/src",
+    "backend": "src",
     "tests": {
-      "backend": "apps/backend/tests",
-      "frontend": "apps/frontend/src/tests"
+      "backend": "tests"
     },
-    "components": "apps/frontend/src/components",
     "services": {
-      "backend": "apps/backend/src/services",
-      "frontend": "apps/frontend/src/services"
+      "backend": "src/services"
     }
   },
 
@@ -105,12 +91,6 @@
       "framework": "pytest",
       "parallel": true,
       "coverage": 36
-    },
-    "frontend": {
-      "framework": "vitest",
-      "library": "testing-library/react",
-      "parallel": true,
-      "coverage": 70
     }
   }
 }

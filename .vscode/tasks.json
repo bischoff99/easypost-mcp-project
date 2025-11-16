@@ -1,25 +1,7 @@
 {
-  // VS Code Tasks Configuration
-  // Supports JSON with Comments (jsonc) mode for documentation
-  // Schema provides IntelliSense, validation, and hover descriptions
   "$schema": "https://raw.githubusercontent.com/microsoft/vscode/main/src/vs/workbench/contrib/tasks/common/tasks.json.schema.json",
   "version": "2.0.0",
   "tasks": [
-    {
-      // Compound task: Starts both backend and frontend servers in parallel
-      // Uses background tasks with problem matchers for error detection
-      "label": "🚀 Dev: Full Stack",
-      "dependsOn": [
-        "Dev: Backend",
-        "Dev: Frontend"
-      ],
-      "dependsOrder": "parallel",
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated"
-      }
-    },
     {
       "label": "Dev: Backend",
       "type": "shell",
@@ -33,9 +15,9 @@
         "${input:backendPort}"
       ],
       "options": {
-        "cwd": "${workspaceFolder}/apps/backend",
+        "cwd": "${workspaceFolder}",
         "env": {
-          "PYTHONPATH": "${workspaceFolder}/apps/backend",
+          "PYTHONPATH": "${workspaceFolder}/src",
           "ENVIRONMENT": "development"
         }
       },
@@ -43,8 +25,6 @@
       "problemMatcher": {
         "owner": "python",
         "source": "uvicorn",
-        // Regex pattern matches: file:line:column: severity: message
-        // Example: "src/server.py:42:5: error: Undefined variable"
         "pattern": {
           "regexp": "^(.+):(\\d+):(\\d+): (\\w+): (.+)$",
           "file": 1,
@@ -55,48 +35,8 @@
         },
         "background": {
           "activeOnStart": true,
-          // Wait for uvicorn startup message before marking task as ready
-          "beginsPattern": "^.*Uvicorn running.*$",
-          "endsPattern": "^.*Application startup complete.*$"
-        }
-      },
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated",
-        "group": "dev-servers",
-        "echo": true
-      }
-    },
-    {
-      "label": "Dev: Frontend",
-      "type": "shell",
-      "command": "npm",
-      "args": [
-        "run",
-        "dev"
-      ],
-      "options": {
-        "cwd": "${workspaceFolder}/apps/frontend"
-      },
-      "isBackground": true,
-      "problemMatcher": {
-        "owner": "vite",
-        "source": "vite",
-        // Regex pattern matches: file:line:column: error|warning: message
-        // Example: "src/App.jsx:15:3: error: Unexpected token"
-        "pattern": {
-          "regexp": "^(.+):(\\d+):(\\d+): (error|warning): (.+)$",
-          "file": 1,
-          "line": 2,
-          "column": 3,
-          "severity": 4,
-          "message": 5
-        },
-        "background": {
-          "activeOnStart": true,
-          // Wait for Vite startup message before marking task as ready
-          "beginsPattern": "^.*VITE.*$",
-          "endsPattern": "^.*ready in.*$"
+          "beginsPattern": ".*Uvicorn running.*",
+          "endsPattern": ".*Application startup complete.*"
         }
       },
       "presentation": {
@@ -110,18 +50,11 @@
       "label": "🧪 Test: Backend",
       "type": "shell",
       "command": "${command:python.interpreterPath}",
-      "args": [
-        "-m",
-        "pytest",
-        "tests/",
-        "-v",
-        "-n",
-        "auto"
-      ],
+      "args": ["-m", "pytest", "tests/", "-v", "-n", "auto"],
       "options": {
-        "cwd": "${workspaceFolder}/apps/backend",
+        "cwd": "${workspaceFolder}",
         "env": {
-          "PYTHONPATH": "${workspaceFolder}/apps/backend"
+          "PYTHONPATH": "${workspaceFolder}/src"
         }
       },
       "problemMatcher": "$python",
@@ -135,54 +68,6 @@
       }
     },
     {
-      "label": "🧪 Test: Frontend",
-      "type": "shell",
-      "command": "npm",
-      "args": [
-        "test"
-      ],
-      "options": {
-        "cwd": "${workspaceFolder}/apps/frontend"
-      },
-      "problemMatcher": [
-        "$eslint-stylish"
-      ],
-      "group": {
-        "kind": "test",
-        "isDefault": false
-      },
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated"
-      }
-    },
-    {
-      "label": "🏗️ Build: Frontend",
-      "type": "shell",
-      "command": "npm",
-      "args": [
-        "run",
-        "build"
-      ],
-      "options": {
-        "cwd": "${workspaceFolder}/apps/frontend"
-      },
-      "problemMatcher": [
-        "$eslint-stylish"
-      ],
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      },
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated"
-      }
-    },
-    {
-      // Pre-commit workflow: Runs format, lint, and test via Makefile
-      // Use before committing code to ensure quality
-      // Note: Uses Makefile commands for consistency (lint/format tasks removed to reduce redundancy)
       "label": "✅ Pre-Commit: Run All Checks",
       "type": "shell",
       "command": "make",
@@ -195,38 +80,14 @@
         "reveal": "always",
         "panel": "dedicated"
       }
-    },
-    {
-      "label": "🗄️ Database: Create Migration",
-      "type": "shell",
-      "command": "${command:python.interpreterPath}",
-      "args": ["-m", "alembic", "revision", "--autogenerate", "-m", "${input:migrationMessage}"],
-      "options": {
-        "cwd": "${workspaceFolder}/apps/backend"
-      },
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated"
-      }
     }
   ],
   "inputs": [
     {
-      // Prompt for backend server port when starting dev server
-      // Default: 8000 (FastAPI default port)
       "id": "backendPort",
       "type": "promptString",
       "description": "Backend server port",
       "default": "8000"
-    },
-    {
-      // Prompt for migration message when creating database migration
-      // Example: "add user table" or "update shipment schema"
-      "id": "migrationMessage",
-      "type": "promptString",
-      "description": "Migration message",
-      "default": "auto migration"
     }
   ]
 }

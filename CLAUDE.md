@@ -62,9 +62,6 @@ make build
 
 # Run production locally
 make prod
-
-# Run production with Docker
-make prod-docker
 ```
 
 ## Architecture
@@ -147,10 +144,10 @@ MCP (Model Context Protocol) tools are designed for AI agents to interact with t
 ## Important Configuration Files
 
 - **Backend**:
-  - `pyproject.toml`: Ruff, Black, mypy configuration
+  - `config/pyproject.toml`: Ruff, Black, mypy configuration
   - `pytest.ini`: Test configuration with auto-detected parallel workers
-  - `requirements.in`: Production dependencies (compile with `pip-compile`)
-  - `.env`: Environment variables (EASYPOST_API_KEY)
+  - `config/requirements.txt`: Production dependencies with version ranges
+  - `config/.env*`: Environment variables (EASYPOST_API_KEY)
 
 - **Root**:
   - `Makefile`: Quick development commands
@@ -239,13 +236,15 @@ The backend can run as a standalone MCP server for AI agents:
 ## Documentation
 
 - **Project Guides**: `docs/guides/`
-  - `QUICK_REFERENCE.md`: Code templates and patterns
-  - `PROXY_AND_DATABASE_INTEGRATION.md`: Architecture deep dive
-  - `MCP_TOOLS_USAGE.md`: MCP tool documentation
-  - `BULK_RATES_DATA.md`: Bulk operations guide
+  - `BENCHMARKING.md`: Performance testing
+  - `MCP_BASH_INTEGRATION.md`: Shell integration
+  - `MCP_ENVIRONMENT_SWITCHING.md`: Environment management
+  - `WORKFLOW_USAGE_GUIDE.md`: Development workflows
 
-- **Review Reports**: `docs/reviews/`
-  - Comprehensive project reviews and analysis
+- **Architecture**: `docs/architecture/`
+  - `FASTMCP_STRUCTURE.md`: MCP server architecture
+  - `MCP_TOOLS_INVENTORY.md`: Available MCP tools
+  - `decisions/`: Architectural decision records
 
 - **Cursor Rules**: `.cursor/rules/`
   - `00-INDEX.mdc`: Complete rules index

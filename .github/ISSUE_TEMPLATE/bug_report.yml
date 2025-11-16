@@ -50,10 +50,10 @@ body:
       label: Component
       options:
         - Backend (FastAPI)
-        - Frontend (React)
         - MCP Server
-        - Database
-        - Docker
+        - Docker/Deployment
+        - Configuration
+        - Documentation
         - Other
     validations:
       required: true

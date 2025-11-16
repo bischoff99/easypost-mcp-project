@@ -1,39 +1,16 @@
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: easypost-postgres
-    environment:
-      - POSTGRES_DB=easypost_mcp
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-    ports:
-      - '5432:5432'
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - easypost-network
-
   backend:
     build:
       context: ..
       dockerfile: deploy/Dockerfile
     container_name: easypost-backend
     ports:
-      - '8000:8000'
-    depends_on:
-      postgres:
-        condition: service_healthy
+      - "8000:8000"
     # Personal use optimizations: Balanced resource allocation
-    cpus: '8' # 8 cores for personal use (leaves 8 for system/other tasks)
+    cpus: "8" # 8 cores for personal use (leaves 8 for system/other tasks)
     mem_limit: 16g # 16GB RAM allocation (sufficient for personal workload)
     environment:
       - EASYPOST_API_KEY=${EASYPOST_API_KEY}
-      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/easypost_mcp
       - MCP_HOST=0.0.0.0
       - MCP_PORT=8000
       - MCP_LOG_LEVEL=INFO
@@ -42,7 +19,13 @@ services:
       - PYTHONOPTIMIZE=2 # Enable Python optimizations
     restart: unless-stopped
     healthcheck:
-      test: ['CMD', 'python', '-c', "import requests; requests.get('http://localhost:8000/health')"]
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import requests; requests.get('http://localhost:8000/health')",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -53,9 +36,6 @@ services:
 networks:
   easypost-network:
     driver: bridge
-
-volumes:
-  postgres_data:
 # To run:
 # 1. Create .env file with EASYPOST_API_KEY=your_key_here
 # 2. Run: docker-compose up -d

@@ -1,87 +1,56 @@
-# Docker Configuration
+# Docker Deployment
 
-This directory contains Docker Compose configurations for the EasyPost MCP project.
+Docker configuration for the EasyPost MCP project (personal use).
 
 ## Files
 
-- `docker-compose.yml` - Development environment
-- `docker-compose.prod.yml` - Production environment
-- `nginx-local.conf` - Nginx configuration for local development
-
-## Dockerfiles
-
-Each service has its own Dockerfiles:
-
-- `backend/Dockerfile` - Development build
-- `backend/Dockerfile.prod` - Production build (multi-stage, optimized)
+- `Dockerfile` - Docker image build configuration
+- `docker-compose.yml` - Local development environment
 
 ## Usage
 
 ### Development
 
-Start all services:
+Start services:
 
 ```bash
-docker compose -f docker/docker-compose.yml up
+docker compose -f deploy/docker-compose.yml up
 ```
 
 Start in detached mode:
 
 ```bash
-docker compose -f docker/docker-compose.yml up -d
+docker compose -f deploy/docker-compose.yml up -d
 ```
 
 View logs:
 
 ```bash
-docker compose -f docker/docker-compose.yml logs -f
+docker compose -f deploy/docker-compose.yml logs -f
 ```
 
 Stop services:
 
 ```bash
-docker compose -f docker/docker-compose.yml down
+docker compose -f deploy/docker-compose.yml down
 ```
 
-### Production
+### Build
 
-Start production services:
+Build Docker image:
 
 ```bash
-docker compose -f docker/docker-compose.prod.yml --env-file .env.production up -d
+docker compose -f deploy/docker-compose.yml build
 ```
 
-View logs:
+## Environment Variables
 
-```bash
-docker compose -f docker/docker-compose.prod.yml logs -f
+Create a `.env` file with:
+
+```env
+EASYPOST_API_KEY=your_api_key_here
 ```
 
-Stop services:
+## Note
 
-```bash
-docker compose -f docker/docker-compose.prod.yml down
-```
-
-## Build
-
-Build all images:
-
-```bash
-docker compose -f docker/docker-compose.yml build
-```
-
-Build backend service only:
-
-```bash
-docker compose -f docker/docker-compose.yml build backend
-```
-
-## Makefile Commands
-
-The project Makefile provides convenient shortcuts:
-
-- `make prod-docker` - Start production with Docker
-- `make build-docker` - Build Docker images
-
-See `Makefile` for all available commands.
+This is a personal-use, backend-only project. The Docker setup includes only the backend service. Database persistence has been removed - all data is fetched directly from EasyPost API on-demand.

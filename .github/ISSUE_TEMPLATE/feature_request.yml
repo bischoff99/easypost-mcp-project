@@ -36,10 +36,10 @@ body:
     attributes:
       label: Component
       options:
-        - Backend (FastAPI/MCP)
-        - Frontend (React)
-        - Database
+        - Backend (FastAPI)
+        - MCP Server
         - DevOps/Docker
+        - Configuration
         - Documentation
         - Other
     validations:

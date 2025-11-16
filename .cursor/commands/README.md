@@ -68,8 +68,8 @@ Comprehensive suite of MCP-enhanced developer commands that work across any tech
 
 ```bash
 /commit                  # Auto-detect and commit all changes
-/commit --push           # Commit and push
 /commit --type=fix       # Override commit type
+/commit --push           # Commit and push (explicit; default is local-only)
 ```
 
 **How**: Detect Changes → Analyze → Generate Message → Stage → Commit

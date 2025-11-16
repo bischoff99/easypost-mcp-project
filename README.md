@@ -11,7 +11,7 @@
 ```bash
 git clone <repository-url>
 cd easypost-mcp-project
-cp .env.example .env
+cp config/.env.example .env
 # Edit .env with your EasyPost API key
 ```
 
@@ -51,7 +51,6 @@ easypost-mcp-project/
 ├── docs/                 # Project documentation
 ├── scripts/              # Utility scripts (dev/test/ops)
 └── venv/                 # Local Python virtual environment (personal use)
-└── scripts/              # Utility scripts
 ```
 
 ## Features

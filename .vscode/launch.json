@@ -4,7 +4,6 @@
   "$schema": "https://raw.githubusercontent.com/microsoft/vscode/main/src/schemas/json/launch.schema.json",
   "version": "0.2.0",
   "configurations": [
-
     {
       "name": "Python: Backend Server (Test)",
       "type": "debugpy",
@@ -20,8 +19,8 @@
         "--log-level",
         "debug"
       ],
-      "cwd": "${workspaceFolder}/apps/backend",
-      "envFile": "${workspaceFolder}/apps/backend/.env",
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env",
       "console": "integratedTerminal",
       "justMyCode": true,
       "env": {
@@ -43,8 +42,8 @@
         "--log-level",
         "info"
       ],
-      "cwd": "${workspaceFolder}/apps/backend",
-      "envFile": "${workspaceFolder}/apps/backend/.env",
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env",
       "console": "integratedTerminal",
       "justMyCode": true,
       "env": {
@@ -94,9 +93,9 @@
       "program": "${file}",
       "console": "integratedTerminal",
       "justMyCode": true,
-      "envFile": "${workspaceFolder}/apps/backend/.env",
+      "envFile": "${workspaceFolder}/.env",
       "env": {
-        "PYTHONPATH": "${workspaceFolder}/apps/backend"
+        "PYTHONPATH": "${workspaceFolder}"
       }
     },
     {
@@ -105,11 +104,11 @@
       "request": "launch",
       "module": "pytest",
       "args": ["-vv", "-s", "--tb=short", "--no-cov", "-n", "0", "${file}"],
-      "cwd": "${workspaceFolder}/apps/backend",
+      "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
       "justMyCode": true,
       "env": {
-        "PYTHONPATH": "${workspaceFolder}/apps/backend"
+        "PYTHONPATH": "${workspaceFolder}"
       }
     },
     {
@@ -118,7 +117,7 @@
       "request": "launch",
       "module": "pytest",
       "args": ["tests/unit", "-vv", "-s", "--tb=short", "--no-cov", "-n", "0"],
-      "cwd": "${workspaceFolder}/apps/backend",
+      "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
       "justMyCode": true
     },
@@ -128,28 +127,26 @@
       "request": "launch",
       "module": "pytest",
       "args": ["tests/integration", "-vv", "-s", "--tb=short", "-n", "0"],
-      "cwd": "${workspaceFolder}/apps/backend",
+      "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
       "justMyCode": true
-    },
-    {
-      "name": "Node: Start Frontend Dev Server",
-      "type": "node",
-      "request": "launch",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["run", "dev"],
-      "cwd": "${workspaceFolder}/apps/frontend",
-      "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen"
     },
     {
       "name": "Python: Backend (Production Simulation)",
       "type": "debugpy",
       "request": "launch",
       "module": "uvicorn",
-      "args": ["src.server:app", "--host", "0.0.0.0", "--port", "8000", "--log-level", "info"],
-      "cwd": "${workspaceFolder}/apps/backend",
-      "envFile": "${workspaceFolder}/apps/backend/.env",
+      "args": [
+        "src.server:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000",
+        "--log-level",
+        "info"
+      ],
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env",
       "console": "integratedTerminal",
       "justMyCode": true,
       "env": {
@@ -172,22 +169,9 @@
         "-k",
         "${input:testName}"
       ],
-      "cwd": "${workspaceFolder}/apps/backend",
+      "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
       "justMyCode": true
-    },
-    {
-      "name": "Browser: Debug Frontend (Chrome)",
-      "type": "chrome",
-      "request": "launch",
-      "url": "http://localhost:5173",
-      "webRoot": "${workspaceFolder}/apps/frontend/src",
-      "sourceMaps": true,
-      "sourceMapPathOverrides": {
-        "/@fs/*": "${webRoot}/*",
-        "/@id/*": "${webRoot}/*",
-        "/src/*": "${webRoot}/*"
-      }
     },
     {
       "name": "Python: Attach to Running Server",
@@ -199,7 +183,7 @@
       },
       "pathMappings": [
         {
-          "localRoot": "${workspaceFolder}/apps/backend",
+          "localRoot": "${workspaceFolder}",
           "remoteRoot": "."
         }
       ]
@@ -214,8 +198,8 @@
       },
       "pathMappings": [
         {
-          "localRoot": "${workspaceFolder}/apps/backend/src",
-          "remoteRoot": "/app/backend/src"
+          "localRoot": "${workspaceFolder}/src",
+          "remoteRoot": "/app/src"
         }
       ],
       "justMyCode": false
@@ -225,8 +209,17 @@
       "type": "debugpy",
       "request": "launch",
       "module": "pytest",
-      "args": ["-vv", "-s", "--tb=long", "--no-cov", "-n", "0", "-k", "${input:testPattern}"],
-      "cwd": "${workspaceFolder}/apps/backend",
+      "args": [
+        "-vv",
+        "-s",
+        "--tb=long",
+        "--no-cov",
+        "-n",
+        "0",
+        "-k",
+        "${input:testPattern}"
+      ],
+      "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
       "justMyCode": true
     },
@@ -239,47 +232,35 @@
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
       "justMyCode": false,
-      "envFile": "${workspaceFolder}/apps/backend/.env.test"
+      "envFile": "${workspaceFolder}/.env"
     },
     {
       "name": "Python: Run Performance Benchmarks",
       "type": "debugpy",
       "request": "launch",
       "module": "pytest",
-      "args": ["tests/integration/test_bulk_performance.py", "-v", "-s", "--no-cov"],
-      "cwd": "${workspaceFolder}/apps/backend",
+      "args": [
+        "tests/integration/test_bulk_performance.py",
+        "-v",
+        "-s",
+        "--no-cov"
+      ],
+      "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
       "justMyCode": true
     }
   ],
   "compounds": [
     {
-      "name": "Full Stack Debug (Test)",
-      "configurations": ["Python: Backend Server (Test)", "Node: Start Frontend Dev Server"],
-      "presentation": {
-        "hidden": false,
-        "group": "debug",
-        "order": 1
-      },
-      "stopAll": true
-    },
-    {
-      "name": "Full Stack Debug (Production)",
-      "configurations": ["Python: Backend Server (Production)", "Node: Start Frontend Dev Server"],
-      "presentation": {
-        "hidden": false,
-        "group": "debug",
-        "order": 2
-      },
-      "stopAll": true
-    },
-    {
       "name": "Debug All Tests",
-      "configurations": ["Python: Debug Unit Tests Only", "Python: Debug Integration Tests"],
+      "configurations": [
+        "Python: Debug Unit Tests Only",
+        "Python: Debug Integration Tests"
+      ],
       "presentation": {
         "hidden": false,
         "group": "test",
-        "order": 2
+        "order": 1
       },
       "stopAll": true
     },

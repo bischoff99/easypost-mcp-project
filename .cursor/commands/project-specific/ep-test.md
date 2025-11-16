@@ -28,14 +28,16 @@ Run EasyPost project tests with auto-detected parallel workers.
 ## What It Does
 
 **Smart Test Execution:**
+
 1. Auto-detects test type from filename/path
 2. Runs with pytest -n auto (auto-detects optimal workers)
 3. Shows clear pass/fail summary
-4. Handles both backend and frontend tests
+4. Backend-only tests (frontend is not part of this repo)
 
 ## Test Categories
 
 ### Backend Tests
+
 ```bash
 # Integration tests (slower, real API)
 /ep-test integration
@@ -47,14 +49,7 @@ Run EasyPost project tests with auto-detected parallel workers.
 /ep-test benchmark
 ```
 
-### Frontend Tests
-```bash
-# Component tests
-/ep-test frontend/components
-
-# Page tests
-/ep-test frontend/pages
-```
+<!-- Frontend tests section removed: project is backend-only -->
 
 ## MCP Integration
 
@@ -62,6 +57,7 @@ Run EasyPost project tests with auto-detected parallel workers.
 **Tool**: `start_process` with pytest
 
 **Execution**:
+
 ```bash
 cd backend
 source venv/bin/activate
@@ -69,6 +65,7 @@ pytest -n auto -v --tb=short tests/
 ```
 
 **For specific file:**
+
 ```bash
 pytest -n auto tests/integration/test_bulk_performance.py::test_parsing_performance -v
 ```
@@ -151,17 +148,20 @@ Total:                  36.40ms (27472/s)
 ## Smart Features
 
 **Auto-detects context:**
+
 - If file open: Runs tests for that file
 - If in backend/: Runs backend tests
 - If in frontend/: Runs frontend tests
 - Otherwise: Runs all tests
 
 **Fast feedback:**
+
 - Shows failures immediately
 - Stops on first error with `-x` flag
 - Clear error messages with `--tb=short`
 
 **Coverage integration:**
+
 - Generates HTML report
 - Shows uncovered lines
 - Warns if coverage drops

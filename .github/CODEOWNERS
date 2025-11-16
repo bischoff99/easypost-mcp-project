@@ -4,18 +4,20 @@
 # Default owner for everything
 * @bischoff99
 
-# Backend
-/backend/ @bischoff99
-/backend/src/mcp/ @bischoff99
-
-# Frontend
-/frontend/ @bischoff99
+# Source code
+/src/ @bischoff99
+/src/mcp_server/ @bischoff99
 
 # Infrastructure
-/docker-compose*.yml @bischoff99
-/Dockerfile* @bischoff99
+/deploy/ @bischoff99
+/deploy/docker-compose*.yml @bischoff99
+/deploy/Dockerfile* @bischoff99
 /.github/ @bischoff99
 
 # Documentation
 /docs/ @bischoff99
 /*.md @bischoff99
+
+# Configuration
+/config/ @bischoff99
+pytest.ini @bischoff99

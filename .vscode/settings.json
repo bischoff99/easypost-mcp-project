@@ -6,10 +6,6 @@
   // ===== Editor Core Settings =====
   "editor.formatOnSave": true,
   "editor.formatOnPaste": true,
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": "explicit"
-  },
   "editor.rulers": [100],
   "editor.bracketPairColorization.enabled": true,
   "editor.guides.bracketPairs": true,
@@ -100,26 +96,6 @@
       "source.organizeImports.ruff": "explicit"
     }
   },
-  "[javascript]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.tabSize": 2,
-    "editor.rulers": [100]
-  },
-  "[javascriptreact]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.tabSize": 2,
-    "editor.rulers": [100]
-  },
-  "[typescript]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.tabSize": 2,
-    "editor.rulers": [100]
-  },
-  "[typescriptreact]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.tabSize": 2,
-    "editor.rulers": [100]
-  },
   "[json]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.tabSize": 2
@@ -136,18 +112,11 @@
     "editor.wordWrap": "on"
   },
 
-  // ===== Prettier Configuration =====
-  "prettier.configPath": ".prettierrc",
-  "prettier.enableDebugLogs": false, // Set to false to reduce INFO messages in Output panel
-
   // ===== Security Settings =====
   // CRITICAL: Workspace trust enabled for MCP and credential safety
   "security.workspace.trust.enabled": true,
   "security.workspace.trust.untrustedFiles": "open",
   "security.workspace.trust.banner": "always",
-
-  // ===== ESLint Configuration =====
-  "eslint.workingDirectories": ["${workspaceFolder}"],
 
   // ===== Markdown Configuration =====
   "markdown.validate.enabled": true,

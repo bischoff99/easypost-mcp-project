@@ -1,63 +1,33 @@
 {
-  // VS Code Extensions Recommendations
-  // Schema provides IntelliSense and validation for extension IDs
   "$schema": "https://raw.githubusercontent.com/microsoft/vscode/main/src/schemas/json/extensions.schema.json",
   "recommendations": [
-    // ===================================
-    // PYTHON/BACKEND - CORE (Essential Only)
-    // ===================================
     "ms-python.python",
     "ms-python.vscode-pylance",
     "ms-python.debugpy",
     "charliermarsh.ruff",
     "ms-python.mypy-type-checker",
-
-    // ===================================
-    // REACT/FRONTEND - CORE (Essential Only)
-    // ===================================
+    "eamodio.gitlens",
+    "christian-kohler.path-intellisense",
+    "ms-azuretools.vscode-docker",
+    "yzhang.markdown-all-in-one"
+  ],
+  "unwantedRecommendations": [
+    "ms-python.black-formatter",
+    "ms-python.isort",
+    "hbenl.vscode-test-explorer",
+    "ms-vscode.test-adapter-converter",
+    "littlefoxteam.vscode-python-test-adapter",
+    "wix.vscode-import-cost",
     "dbaeumer.vscode-eslint",
     "esbenp.prettier-vscode",
     "bradlc.vscode-tailwindcss",
     "vitest.vitest",
-
-    // ===================================
-    // PRODUCTIVITY - ESSENTIAL ONLY
-    // ===================================
-    "eamodio.gitlens",
-    "christian-kohler.path-intellisense",
-
-    // ===================================
-    // DEVOPS - ESSENTIAL
-    // ===================================
-    "ms-azuretools.vscode-docker",
-
-    // ===================================
-    // DOCUMENTATION - ESSENTIAL
-    // ===================================
-    "yzhang.markdown-all-in-one",
-    "openai.chatgpt"
-  ],
-  "unwantedRecommendations": [
-    // Deprecated formatters (Ruff replaces both)
-    "ms-python.black-formatter",
-    "ms-python.isort",
-
-    // Deprecated test extensions (use native VSCode Testing API)
-    "hbenl.vscode-test-explorer",
-    "ms-vscode.test-adapter-converter",
-    "littlefoxteam.vscode-python-test-adapter",
-
-    // Performance issues / unmaintained
-    "wix.vscode-import-cost",
-
-    // Redundant AI assistants (Cursor has native AI)
     "github.copilot",
     "github.copilot-chat",
     "google.gemini-cli-vscode-ide-companion",
     "google.gemini-codeassist",
+    "openai.chatgpt",
     "rooveterinaryinc.roo-cline",
-
-    // Removed - Nice-to-have productivity (not essential)
     "dsznajder.es7-react-js-snippets",
     "formulahendry.auto-rename-tag",
     "formulahendry.auto-close-tag",

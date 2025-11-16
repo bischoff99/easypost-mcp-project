@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "lastModified": "2025-11-15",
+  "lastModified": "2025-01-17",
   "description": "MCP server configuration for EasyPost shipping integration with test/production environments",
   "mcpServers": {
     "easypost-test": {
@@ -9,7 +9,8 @@
       "cwd": "${workspaceFolder}",
       "env": {
         "ENVIRONMENT": "test",
-        "MCP_DEBUG": "false"
+        "MCP_DEBUG": "false",
+        "PYTHONPATH": "${workspaceFolder}/src"
       }
     },
     "easypost-prod": {
@@ -18,7 +19,8 @@
       "cwd": "${workspaceFolder}",
       "env": {
         "ENVIRONMENT": "production",
-        "MCP_DEBUG": "false"
+        "MCP_DEBUG": "false",
+        "PYTHONPATH": "${workspaceFolder}/src"
       }
     }
   }

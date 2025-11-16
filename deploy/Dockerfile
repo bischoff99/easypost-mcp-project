@@ -6,7 +6,6 @@ WORKDIR /build
 # Install build dependencies
 RUN apt-get update && apt-get install -y \
     gcc \
-    libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install to /usr/local (system-wide)
@@ -18,9 +17,8 @@ FROM python:3.13-slim
 
 WORKDIR /app
 
-# Install only runtime dependencies (PostgreSQL client libs)
+# Install only runtime dependencies
 RUN apt-get update && apt-get install -y \
-    libpq5 \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
